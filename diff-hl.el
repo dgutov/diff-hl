@@ -2,22 +2,24 @@
 (require 'vc)
 
 (defface diff-hl-insert
-  '((default :inherit diff-added)
-    (((class color) (min-colors 88)) :background "#33dd33"))
+  '((t :inherit diff-added))
   "Face used to highlight inserted lines."
   :group 'diff-hl)
 
 (defface diff-hl-delete
-  '((default :inherit diff-removed)
-    (((class color) (min-colors 88)) :background "#dd3333"))
+  '((t :inherit diff-removed))
   "Face used to highlight deleted lines."
   :group 'diff-hl)
 
 (defface diff-hl-change
-  '((default :inherit diff-changed)
-    (((class color) (min-colors 88)) :background "#3333dd"))
+  '((((class color) (min-colors 88) (background light))
+     :background "#ddddff")
+    (((class color) (min-colors 88) (background dark))
+     :background "#333355"))
   "Face used to highlight changed lines."
   :group 'diff-hl)
+
+(define-fringe-bitmap 'diff-hl-empty [0] 1 1 'center)
 
 (defun diff-hl-changes ()
   (let* ((buf-name " *vc-bg-diff* ")
@@ -25,7 +27,6 @@
          (vc-hg-diff-switches nil)
          (vc-diff-switches '("-U0"))
          (file (buffer-file-name))
-         (vc-handled-backends (default-value 'vc-handled-backends))
          (backend (vc-backend file))
          res)
     (when backend
@@ -52,9 +53,8 @@
   (let* ((type-str (symbol-name type))
          (spec-sym (intern (concat "diff-hl-" type-str "-spec")))
          (face-sym (intern (concat "diff-hl-" type-str))))
-    `(defconst ,spec-sym ,(propertize " " 'display
-                                      `((margin left-margin)
-                                        ,(propertize " " 'face face-sym))))))
+    `(defconst ,spec-sym
+       ,(propertize " " 'display `((left-fringe diff-hl-empty ,face-sym))))))
 
 (mapc (lambda (type) (diff-hl-defspec type)) '(insert delete change))
 
@@ -62,14 +62,14 @@
   (let ((changes (diff-hl-changes))
         (current-line 1))
     (save-excursion
-      (set-window-margins nil 1 (cdr (window-margins)))
       (goto-char (point-min))
       (mapc (lambda (o) (when (overlay-get o 'diff-hl) (delete-overlay o)))
             (overlays-in (point-min) (point-max)))
       (dolist (c changes)
         (destructuring-bind (line len type) c
           (when (eq type 'delete)
-            (setq len 1))
+            (setq len 1)
+            (incf line))
           (forward-line (- line current-line))
           (setq current-line line)
           (while (plusp len)
@@ -79,9 +79,22 @@
                            (case type
                              ('insert diff-hl-insert-spec)
                              ('delete diff-hl-delete-spec)
-                             ('change diff-hl-change-spec))))
+                             ('change diff-hl-change-spec)))
+              (overlay-put o 'modification-hooks '(diff-hl-overlay-modified))
+              (overlay-put o 'insert-in-front-hooks '(diff-hl-overlay-modified)))
             (forward-line 1)
             (incf current-line)
             (decf len)))))))
+
+(defun diff-hl-overlay-modified (ov after-p beg end &optional length)
+  (when after-p (delete-overlay ov)))
+
+;;;###autoload
+(define-minor-mode diff-hl-mode
+  "Toggle display of vc diff indicators in the left margin."
+  :after-hook (diff-hl-update)
+  (if diff-hl-mode
+      (add-hook 'after-save-hook 'diff-hl-update nil t)
+    (remove-hook 'after-save-hook 'diff-hl-update t)))
 
 (provide 'diff-hl)
