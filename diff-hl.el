@@ -20,6 +20,7 @@
 
 (require 'diff-mode)
 (require 'vc)
+(eval-when-compile (require 'cl))
 
 (defface diff-hl-insert
   '((t :inherit diff-added))
@@ -70,13 +71,14 @@
                 (push (list line len type) res)))))))
     (nreverse res)))
 
-(dolist (type '(insert delete change))
-  (let* ((type-str (symbol-name type))
-         (spec-sym (intern (concat "diff-hl-" type-str "-spec")))
-         (face-sym (intern (concat "diff-hl-" type-str))))
-    (eval `(defconst ,spec-sym
-             ,(propertize " " 'display
-                          `((left-fringe diff-hl-empty ,face-sym)))))))
+(eval-and-compile
+  (dolist (type '(insert delete change))
+    (let* ((type-str (symbol-name type))
+           (spec-sym (intern (concat "diff-hl-" type-str "-spec")))
+           (face-sym (intern (concat "diff-hl-" type-str))))
+      (eval `(defconst ,spec-sym
+               ,(propertize " " 'display
+                            `((left-fringe diff-hl-empty ,face-sym))))))))
 
 (defun diff-hl-update ()
   (let ((changes (diff-hl-changes))
