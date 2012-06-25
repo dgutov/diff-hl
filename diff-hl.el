@@ -88,15 +88,34 @@
             (decf len)))))))
 
 (defun diff-hl-overlay-modified (ov after-p beg end &optional length)
+  ;; Do the simplest possible thing for now.
   (when after-p (delete-overlay ov)))
+
+(defvar diff-hl-timer nil)
+
+(defun diff-hl-edit (beg end len)
+  ;; DTRT when we've `undo'-ed the buffer into unmodified state.
+  (when undo-in-progress
+    (when diff-hl-timer
+      (cancel-timer diff-hl-timer))
+    (setq diff-hl-timer
+          (run-with-idle-timer 0.01 nil #'diff-hl-after-undo (current-buffer)))))
+
+(defun diff-hl-after-undo (buffer)
+  (with-current-buffer buffer
+    (unless (buffer-modified-p)
+      (diff-hl-update))))
 
 ;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle display of vc diff indicators in the left margin."
   :after-hook (diff-hl-update)
   (if diff-hl-mode
-      (add-hook 'after-save-hook 'diff-hl-update nil t)
-    (remove-hook 'after-save-hook 'diff-hl-update t)))
+      (progn
+        (add-hook 'after-save-hook 'diff-hl-update nil t)
+        (add-hook 'after-change-functions 'diff-hl-edit nil t))
+    (remove-hook 'after-save-hook 'diff-hl-update t)
+    (remove-hook 'after-change-functions 'diff-hl-edit t)))
 
 (defun turn-on-diff-hl-mode ()
   (when (buffer-file-name)
