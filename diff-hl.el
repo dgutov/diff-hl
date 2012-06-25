@@ -43,7 +43,7 @@
 (define-fringe-bitmap 'diff-hl-empty [0] 1 1 'center)
 
 (defun diff-hl-changes ()
-  (let* ((buf-name " *vc-bg-diff* ")
+  (let* ((buf-name " *vc-diff-hl* ")
          (vc-git-diff-switches nil)
          (vc-hg-diff-switches nil)
          (vc-diff-switches '("-U0"))
