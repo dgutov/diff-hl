@@ -50,14 +50,13 @@
                 (push (list line len type) res)))))))
     (nreverse res)))
 
-(defmacro diff-hl-defspec (symbol)
+(dolist (type '(insert delete change))
   (let* ((type-str (symbol-name type))
          (spec-sym (intern (concat "diff-hl-" type-str "-spec")))
          (face-sym (intern (concat "diff-hl-" type-str))))
-    `(defconst ,spec-sym
-       ,(propertize " " 'display `((left-fringe diff-hl-empty ,face-sym))))))
-
-(mapc (lambda (type) (diff-hl-defspec type)) '(insert delete change))
+    (eval `(defconst ,spec-sym
+             ,(propertize " " 'display
+                          `((left-fringe diff-hl-empty ,face-sym)))))))
 
 (defun diff-hl-update ()
   (let ((changes (diff-hl-changes))
