@@ -142,7 +142,9 @@
     (remove-hook 'after-change-functions 'diff-hl-edit t)))
 
 (defun turn-on-diff-hl-mode ()
-  (when (buffer-file-name)
+  ;; FIXME: Why is this called twice for each buffer?
+  ;; Isn't fundamental-mode supposed to not run any hooks?
+  (when (and buffer-file-name (not (eq major-mode (default-value 'major-mode))))
     (diff-hl-mode 1)))
 
 ;;;###autoload
