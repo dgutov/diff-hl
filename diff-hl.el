@@ -97,4 +97,12 @@
       (add-hook 'after-save-hook 'diff-hl-update nil t)
     (remove-hook 'after-save-hook 'diff-hl-update t)))
 
+(defun turn-on-diff-hl-mode ()
+  (when (buffer-file-name)
+    (diff-hl-mode 1)))
+
+;;;###autoload
+(define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
+  turn-on-diff-hl-mode)
+
 (provide 'diff-hl)
