@@ -1,4 +1,4 @@
-;;; diff-hl.el --- VC diff highlighting in the buffer window
+;;; diff-hl.el --- VC diff fringe highlighting -*- lexical-binding: t -*-
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; Keywords: vc, diff
@@ -20,7 +20,10 @@
 
 (require 'diff-mode)
 (require 'vc)
-(eval-when-compile (require 'cl))
+(eval-when-compile
+  (require 'cl)
+  (require 'vc-git)
+  (require 'vc-hg))
 
 (defface diff-hl-insert
   '((t :inherit diff-added))
@@ -108,13 +111,13 @@
             (incf current-line)
             (decf len)))))))
 
-(defun diff-hl-overlay-modified (ov after-p beg end &optional length)
+(defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
   ;; Do the simplest possible thing, for now.
   (when after-p (delete-overlay ov)))
 
 (defvar diff-hl-timer nil)
 
-(defun diff-hl-edit (beg end len)
+(defun diff-hl-edit (_beg _end _len)
   ;; DTRT when we've `undo'-ed the buffer into unmodified state.
   (when undo-in-progress
     (when diff-hl-timer
