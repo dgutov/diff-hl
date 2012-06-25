@@ -1,3 +1,23 @@
+;;; diff-hl.el --- VC diff highlighting in the buffer window
+
+;; Author:   Dmitry Gutov <dgutov@yandex.ru>
+;; Keywords: vc, diff
+
+;; This file is not part of GNU Emacs.
+
+;; This file is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This file is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+
 (require 'diff-mode)
 (require 'vc)
 
@@ -87,7 +107,7 @@
             (decf len)))))))
 
 (defun diff-hl-overlay-modified (ov after-p beg end &optional length)
-  ;; Do the simplest possible thing for now.
+  ;; Do the simplest possible thing, for now.
   (when after-p (delete-overlay ov)))
 
 (defvar diff-hl-timer nil)
@@ -107,7 +127,7 @@
 
 ;;;###autoload
 (define-minor-mode diff-hl-mode
-  "Toggle display of vc diff indicators in the left margin."
+  "Toggle display of VC diff indicators in the left fringe."
   :after-hook (diff-hl-update)
   (if diff-hl-mode
       (progn
