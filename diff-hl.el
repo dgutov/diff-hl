@@ -65,7 +65,7 @@
                   (len (let ((m (match-string 4)))
                          (if m (string-to-number m) 1)))
                   (beg (point)))
-               (diff-end-of-hunk)
+              (diff-end-of-hunk)
               (let* ((inserts (diff-count-matches "^\\+" beg (point)))
                      (deletes (diff-count-matches "^-" beg (point)))
                      (type (cond ((zerop deletes) 'insert)
