@@ -133,13 +133,17 @@
 ;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle display of VC diff indicators in the left fringe."
-  :after-hook (diff-hl-update)
+  :lighter ""
   (if diff-hl-mode
       (progn
         (add-hook 'after-save-hook 'diff-hl-update nil t)
-        (add-hook 'after-change-functions 'diff-hl-edit nil t))
+        (add-hook 'after-change-functions 'diff-hl-edit nil t)
+        (if vc-mode
+            (diff-hl-update)
+          (add-hook 'find-file-hook 'diff-hl-update t t)))
     (remove-hook 'after-save-hook 'diff-hl-update t)
-    (remove-hook 'after-change-functions 'diff-hl-edit t)))
+    (remove-hook 'after-change-functions 'diff-hl-edit t)
+    (remove-hook 'find-file-hook 'diff-hl-update t)))
 
 (defun turn-on-diff-hl-mode ()
   ;; FIXME: Why is this called twice for each buffer?
