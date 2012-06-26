@@ -86,10 +86,9 @@
 (defun diff-hl-update ()
   (let ((changes (diff-hl-changes))
         (current-line 1))
+    (diff-hl-remove-overlays)
     (save-excursion
       (goto-char (point-min))
-      (mapc (lambda (o) (when (overlay-get o 'diff-hl) (delete-overlay o)))
-            (overlays-in (point-min) (point-max)))
       (dolist (c changes)
         (destructuring-bind (line len type) c
           (when (eq type 'delete)
@@ -110,6 +109,10 @@
             (forward-line 1)
             (incf current-line)
             (decf len)))))))
+
+(defun diff-hl-remove-overlays ()
+  (dolist (o (overlays-in (point-min) (point-max)))
+    (when (overlay-get o 'diff-hl) (delete-overlay o))))
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
   ;; Do the simplest possible thing, for now.
@@ -143,7 +146,8 @@
           (add-hook 'find-file-hook 'diff-hl-update t t)))
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
-    (remove-hook 'find-file-hook 'diff-hl-update t)))
+    (remove-hook 'find-file-hook 'diff-hl-update t)
+    (diff-hl-remove-overlays)))
 
 (defun turn-on-diff-hl-mode ()
   ;; FIXME: Why is this called twice for each buffer?
