@@ -40,12 +40,12 @@
   :group 'diff-hl)
 
 (defface diff-hl-change
-  '((((class color) (min-colors 88) (background light))
+  '((default
+     :foreground "blue")
+    (((class color) (min-colors 88) (background light))
      :background "#ddddff")
     (((class color) (min-colors 88) (background dark))
-     :background "#333355")
-    (((class color))
-     :foreground "blue"))
+     :background "#333355"))
   "Face used to highlight changed lines."
   :group 'diff-hl)
 
