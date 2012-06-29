@@ -176,10 +176,12 @@
         (add-hook 'after-change-functions 'diff-hl-edit nil t)
         (if vc-mode
             (diff-hl-update)
-          (add-hook 'find-file-hook 'diff-hl-update t t)))
+          (add-hook 'find-file-hook 'diff-hl-update t t))
+        (add-hook 'vc-checkin-hook 'diff-hl-update nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
+    (remove-hook 'vc-checkin-hook 'diff-hl-update t)
     (diff-hl-remove-overlays)))
 
 (defun turn-on-diff-hl-mode ()
