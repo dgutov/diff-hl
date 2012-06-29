@@ -25,6 +25,10 @@
   (require 'vc-git)
   (require 'vc-hg))
 
+(defgroup diff-hl nil
+  "VC diff fringe highlighting"
+  :group 'vc)
+
 (defface diff-hl-insert
   '((t :inherit diff-added))
   "Face used to highlight inserted lines."
@@ -39,11 +43,46 @@
   '((((class color) (min-colors 88) (background light))
      :background "#ddddff")
     (((class color) (min-colors 88) (background dark))
-     :background "#333355"))
+     :background "#333355")
+    (((class color))
+     :foreground "blue"))
   "Face used to highlight changed lines."
   :group 'diff-hl)
 
-(define-fringe-bitmap 'diff-hl-empty [0] 1 1 'center)
+(defcustom diff-hl-draw-borders t
+  "Non-nil to draw borders around fringe indicators."
+  :group 'diff-hl
+  :type 'boolean)
+
+(when (window-system)
+  (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center)
+  (let* ((h (frame-char-height))
+         (w (frame-parameter nil 'left-fringe))
+         (middle (make-vector h (expt 2 (1- w))))
+         (ones (1- (expt 2 w)))
+         (top (copy-sequence middle))
+         (bottom (copy-sequence middle))
+         (single (copy-sequence middle)))
+    (aset top 0 ones)
+    (aset bottom (1- h) ones)
+    (aset single 0 ones)
+    (aset single (1- h) ones)
+    (define-fringe-bitmap 'diff-hl-bmp-top top h 8 'top)
+    (define-fringe-bitmap 'diff-hl-bmp-middle middle h 8 'center)
+    (define-fringe-bitmap 'diff-hl-bmp-bottom bottom h 8 'bottom)
+    (define-fringe-bitmap 'diff-hl-bmp-single single h 8 'center)))
+
+(defvar diff-hl-spec-cache (make-hash-table :test 'equal))
+
+(defun diff-hl-fringe-spec (type pos)
+  (let* ((key (cons type pos))
+         (val (gethash key diff-hl-spec-cache)))
+    (unless val
+      (let* ((face-sym (intern (concat "diff-hl-" (symbol-name type))))
+             (bmp-sym (intern (concat "diff-hl-bmp-" (symbol-name pos)))))
+        (setq val (propertize " " 'display `((left-fringe ,bmp-sym ,face-sym))))
+        (puthash key val diff-hl-spec-cache)))
+    val))
 
 (defun diff-hl-changes ()
   (let* ((buf-name " *vc-diff-hl* ")
@@ -74,15 +113,6 @@
                 (push (list line len type) res)))))))
     (nreverse res)))
 
-(eval-and-compile
-  (dolist (type '(insert delete change))
-    (let* ((type-str (symbol-name type))
-           (spec-sym (intern (concat "diff-hl-" type-str "-spec")))
-           (face-sym (intern (concat "diff-hl-" type-str))))
-      (eval `(defconst ,spec-sym
-               ,(propertize " " 'display
-                            `((left-fringe diff-hl-empty ,face-sym))))))))
-
 (defun diff-hl-update ()
   (let ((changes (diff-hl-changes))
         (current-line 1))
@@ -100,10 +130,13 @@
             (let ((o (make-overlay (point) (line-end-position))))
               (overlay-put o 'diff-hl t)
               (overlay-put o 'before-string
-                           (case type
-                             ('insert diff-hl-insert-spec)
-                             ('delete diff-hl-delete-spec)
-                             ('change diff-hl-change-spec)))
+                           (diff-hl-fringe-spec
+                            type
+                            (cond ((not diff-hl-draw-borders) 'empty)
+                                  ((and (= len 1) (= line current-line)) 'single)
+                                  ((= len 1) 'bottom)
+                                  ((= line current-line) 'top)
+                                  (t 'middle))))
               (overlay-put o 'modification-hooks '(diff-hl-overlay-modified))
               (overlay-put o 'insert-in-front-hooks '(diff-hl-overlay-modified)))
             (forward-line 1)
@@ -152,8 +185,9 @@
 (defun turn-on-diff-hl-mode ()
   ;; FIXME: Why is this called twice for each buffer?
   ;; Isn't fundamental-mode supposed to not run any hooks?
-  (when (and buffer-file-name (not (eq major-mode (default-value 'major-mode))))
-    (diff-hl-mode 1)))
+  (and buffer-file-name (not (eq major-mode (default-value 'major-mode)))
+       (window-system) ;; No fringes in the console.
+       (diff-hl-mode 1)))
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
