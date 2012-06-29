@@ -54,9 +54,12 @@
   :group 'diff-hl
   :type 'boolean)
 
-(when (window-system)
-  (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center)
-  (let* ((h (frame-char-height))
+(defun diff-hl-define-bitmaps ()
+  (let* ((scale (if (and (boundp 'text-scale-mode-amount)
+                         (plusp text-scale-mode-amount))
+                    (expt text-scale-mode-step text-scale-mode-amount)
+                  1))
+         (h (round (* (frame-char-height) scale)))
          (w (frame-parameter nil 'left-fringe))
          (middle (make-vector h (expt 2 (1- w))))
          (ones (1- (expt 2 w)))
@@ -67,10 +70,14 @@
     (aset bottom (1- h) ones)
     (aset single 0 ones)
     (aset single (1- h) ones)
-    (define-fringe-bitmap 'diff-hl-bmp-top top h 8 'top)
-    (define-fringe-bitmap 'diff-hl-bmp-middle middle h 8 'center)
-    (define-fringe-bitmap 'diff-hl-bmp-bottom bottom h 8 'bottom)
-    (define-fringe-bitmap 'diff-hl-bmp-single single h 8 'center)))
+    (define-fringe-bitmap 'diff-hl-bmp-top top h w 'top)
+    (define-fringe-bitmap 'diff-hl-bmp-middle middle h w 'center)
+    (define-fringe-bitmap 'diff-hl-bmp-bottom bottom h w 'bottom)
+    (define-fringe-bitmap 'diff-hl-bmp-single single h w 'top)))
+
+(when (window-system)
+  (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center)
+  (diff-hl-define-bitmaps))
 
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
@@ -177,11 +184,13 @@
         (if vc-mode
             (diff-hl-update)
           (add-hook 'find-file-hook 'diff-hl-update t t))
-        (add-hook 'vc-checkin-hook 'diff-hl-update nil t))
+        (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
+        (add-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
     (remove-hook 'vc-checkin-hook 'diff-hl-update t)
+    (remove-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps t)
     (diff-hl-remove-overlays)))
 
 (defun turn-on-diff-hl-mode ()
