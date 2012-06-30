@@ -173,10 +173,34 @@
     (unless (buffer-modified-p)
       (diff-hl-update))))
 
+(defun diff-hl-diff-goto-hunk ()
+  "Open diff buffer and skip to the line corresponding to current."
+  (interactive)
+  (vc-buffer-sync)
+  (let* ((line (line-number-at-pos)))
+    (vc-diff-internal t (vc-deduce-fileset) nil nil t)
+    (vc-exec-after `(diff-hl-diff-skip-to ,line))))
+
+(defun diff-hl-diff-skip-to (line)
+  (diff-beginning-of-hunk t)
+  (let (found)
+    (while (and (looking-at diff-hunk-header-re-unified) (not found))
+      (let ((hunk-line (string-to-number (match-string 3)))
+            (len (let ((m (match-string 4)))
+                   (if m (string-to-number m) 1))))
+        (if (> line (+ hunk-line len))
+            (diff-end-of-hunk)
+          (setq found t)
+          (let ((to-go (1+ (- line hunk-line))))
+            (while (plusp to-go)
+              (forward-line 1)
+              (unless (looking-at "^-")
+                (decf to-go)))))))))
+
 ;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle display of VC diff indicators in the left fringe."
-  :lighter ""
+  :lighter "" :keymap '(([remap vc-diff] . diff-hl-diff-goto-hunk))
   (if diff-hl-mode
       (progn
         (add-hook 'after-save-hook 'diff-hl-update nil t)
