@@ -23,7 +23,8 @@
 (eval-when-compile
   (require 'cl)
   (require 'vc-git)
-  (require 'vc-hg))
+  (require 'vc-hg)
+  (require 'face-remap))
 
 (defgroup diff-hl nil
   "VC diff fringe highlighting"
