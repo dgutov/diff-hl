@@ -208,10 +208,42 @@
                 (unless (looking-at "^-")
                   (decf to-go))))))))))
 
+(defun diff-hl-revert (arg)
+  (interactive "P")
+  (if (not arg)
+      (vc-revert)
+    (vc-buffer-sync)
+    (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
+          (buffer (current-buffer))
+          (line (line-number-at-pos))
+          (fileset (vc-deduce-fileset)))
+      (unless (loop for o in (overlays-at (point))
+                    thereis (overlay-get o 'diff-hl))
+        (error "No hunk at point"))
+      (unwind-protect
+          (progn
+            (vc-diff-internal nil fileset nil nil nil diff-buffer)
+            (vc-exec-after
+             `(progn
+                (when (eobp)
+                  (with-current-buffer ,buffer (diff-hl-remove-overlays))
+                  (error "Buffer seems up-to-date"))
+                (diff-hl-diff-skip-to ,line)
+                (save-restriction
+                  (diff-restrict-view)
+                  (unless (yes-or-no-p (format "Revert current hunk in %s?"
+                                               ,(caadr fileset)))
+                    (error "Revert canceled")))
+                (let ((diff-advance-after-apply-hunk nil))
+                  (diff-apply-hunk t)))))
+        (quit-windows-on diff-buffer)
+        (save-buffer)))))
+
 ;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle display of VC diff indicators in the left fringe."
-  :lighter "" :keymap '(([remap vc-diff] . diff-hl-diff-goto-hunk))
+  :lighter "" :keymap '(([remap vc-diff] . diff-hl-diff-goto-hunk)
+                        ([remap vc-revert] . diff-hl-revert))
   (if diff-hl-mode
       (progn
         (add-hook 'after-save-hook 'diff-hl-update nil t)
