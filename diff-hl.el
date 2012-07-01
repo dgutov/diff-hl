@@ -162,7 +162,7 @@
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
   ;; Delete the overlay and all our overlays inside it.
-  (when after-p
+  (unless after-p
     (save-restriction
       (narrow-to-region (overlay-start ov) (overlay-end ov))
       (diff-hl-remove-overlays))
