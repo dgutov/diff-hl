@@ -1,10 +1,13 @@
 About
 =====
 
-`diff-hl-mode` provides IDE-like highlighting on the fringe to the left of the
-changed buffer lines, compared to current HEAD.
+`diff-hl-mode` provides IDE-like highlighting of `vc-diff` results on the left
+fringe of the current buffer.
 
-Since it uses the corresponding VC diff command, it's only accurate when a
+Additionally, it defines and binds `diff-hl-diff-goto-hunk` and
+`diff-hl-revert-hunk`, to `C-x v =` and `C-x v n` respectively.
+
+Since it uses the corresponding VC diff command, it's only accurate when the
 buffer is in saved state.
 
 Tested with Git, Mercurial, and Bazaar. May work with other VC backends, too.

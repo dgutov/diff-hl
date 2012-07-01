@@ -1,7 +1,9 @@
 ;;; diff-hl.el --- VC diff fringe highlighting -*- lexical-binding: t -*-
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
+;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
+;; Version:  1.0
 
 ;; This file is not part of GNU Emacs.
 
@@ -17,6 +19,15 @@
 
 ;; You should have received a copy of the GNU General Public License
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; `diff-hl-mode' provides IDE-like highlighting of `vc-diff' results
+;; on the left fringe of the current buffer.
+;;
+;; For full description, see README.md or the home page.
+
+;;; Code:
 
 (require 'diff-mode)
 (require 'vc)
@@ -188,7 +199,7 @@
       (diff-hl-update))))
 
 (defun diff-hl-diff-goto-hunk ()
-  "Open diff buffer and skip to the line corresponding to current."
+  "Run VC diff command and go to the line corresponding to current."
   (interactive)
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
@@ -220,6 +231,7 @@ in the source file, or the last line of the hunk above it."
                   (decf to-go))))))))))
 
 (defun diff-hl-revert-hunk ()
+  "Revert the diff hunk with changes at or above the point."
   (interactive)
   (vc-buffer-sync)
   (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
@@ -281,3 +293,5 @@ in the source file, or the last line of the hunk above it."
   turn-on-diff-hl-mode)
 
 (provide 'diff-hl)
+
+;;; diff-hl.el ends here
