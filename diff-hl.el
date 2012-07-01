@@ -98,17 +98,21 @@
         (puthash key val diff-hl-spec-cache)))
     val))
 
-(defun diff-hl-changes ()
-  (let* ((buf-name " *vc-diff-hl* ")
-         (vc-git-diff-switches nil)
+(defmacro diff-hl-with-diff-switches (body)
+  `(let ((vc-git-diff-switches nil)
          (vc-hg-diff-switches nil)
          (vc-diff-switches '("-U0"))
-         (vc-disable-async-diff t)
+         (vc-disable-async-diff t))
+     ,body))
+
+(defun diff-hl-changes ()
+  (let* ((buf-name " *diff-hl* ")
          (file (buffer-file-name))
          (backend (vc-backend file))
          res)
     (when backend
-      (vc-call-backend backend 'diff (list file) nil nil buf-name)
+      (diff-hl-with-diff-switches
+       (vc-call-backend backend 'diff (list file) nil nil buf-name))
       (with-current-buffer buf-name
         (goto-char (point-min))
         (unless (eobp)
@@ -227,7 +231,8 @@
           (fileset (vc-deduce-fileset)))
       (unwind-protect
           (progn
-            (vc-diff-internal nil fileset nil nil nil diff-buffer)
+            (diff-hl-with-diff-switches
+             (vc-diff-internal nil fileset nil nil nil diff-buffer))
             (vc-exec-after
              `(progn
                 (when (eobp)
