@@ -55,6 +55,12 @@
   :group 'diff-hl
   :type 'boolean)
 
+(defcustom diff-hl-revert-current-hunk t
+  "Non-nil to only revert current hunk by default.
+`diff-hl-revert' will do the opposite when called with prefix argument."
+  :group 'diff-hl
+  :type 'boolean)
+
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
                          (plusp text-scale-mode-amount))
@@ -210,16 +216,13 @@
 
 (defun diff-hl-revert (arg)
   (interactive "P")
-  (if (not arg)
+  (if (not (diff-xor arg diff-hl-revert-current-hunk))
       (vc-revert)
     (vc-buffer-sync)
     (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
           (buffer (current-buffer))
           (line (line-number-at-pos))
           (fileset (vc-deduce-fileset)))
-      (unless (loop for o in (overlays-at (point))
-                    thereis (overlay-get o 'diff-hl))
-        (error "No hunk at point"))
       (unwind-protect
           (progn
             (vc-diff-internal nil fileset nil nil nil diff-buffer)
@@ -227,7 +230,7 @@
              `(progn
                 (when (eobp)
                   (with-current-buffer ,buffer (diff-hl-remove-overlays))
-                  (error "Buffer seems up-to-date"))
+                  (error "Buffer is up-to-date"))
                 (diff-hl-diff-skip-to ,line)
                 (save-restriction
                   (diff-restrict-view)
@@ -237,7 +240,8 @@
                 (let ((diff-advance-after-apply-hunk nil))
                   (diff-apply-hunk t)))))
         (quit-windows-on diff-buffer)
-        (save-buffer)))))
+        (save-buffer)
+        (message "Hunk reverted")))))
 
 ;;;###autoload
 (define-minor-mode diff-hl-mode
