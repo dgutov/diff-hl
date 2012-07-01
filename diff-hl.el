@@ -205,6 +205,8 @@
                       (diff-hl-diff-skip-to ,line)))))
 
 (defun diff-hl-diff-skip-to (line)
+  "In `diff-mode', skip to the hunk and line corresponding to LINE
+in the source file, or the last line of the hunk above it."
   (diff-hunk-next)
   (let (found)
     (while (and (looking-at diff-hunk-header-re-unified) (not found))
@@ -214,11 +216,14 @@
         (if (> line (+ hunk-line len))
             (diff-hunk-next)
           (setq found t)
-          (let ((to-go (1+ (- line hunk-line))))
-            (while (plusp to-go)
-              (forward-line 1)
-              (unless (looking-at "^-")
-                (decf to-go)))))))))
+          (if (< line hunk-line)
+              ;; Retreat to the previous hunk.
+              (forward-line -1)
+            (let ((to-go (1+ (- line hunk-line))))
+              (while (plusp to-go)
+                (forward-line 1)
+                (unless (looking-at "^-")
+                  (decf to-go))))))))))
 
 (defun diff-hl-revert (arg)
   (interactive "P")
