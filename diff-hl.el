@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.0
+;; Version:  1.0.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -115,7 +115,8 @@
          (file (buffer-file-name))
          (backend (vc-backend file))
          res)
-    (when backend
+    (when (and backend (not (eq (vc-state (buffer-file-name) backend)
+                                'up-to-date)))
       (diff-hl-with-diff-switches
        (vc-call-backend backend 'diff (list file) nil nil buf-name))
       (with-current-buffer buf-name
