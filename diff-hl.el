@@ -281,12 +281,31 @@ in the source file, or the last line of the hunk above it."
     (remove-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps t)
     (diff-hl-remove-overlays)))
 
+(defun diff-hl-dir-update ()
+  (dolist (pair (vc-dir-marked-only-files-and-states))
+    (when (eq 'up-to-date (cdr pair))
+      (let ((buffer (find-buffer-visiting (car pair))))
+        (when buffer
+          (with-current-buffer buffer
+            (diff-hl-remove-overlays)))))))
+
+;;;###autoload
+(define-minor-mode diff-hl-dir-mode
+  "Toggle `diff-hl-mode' link in `vc-dir-mode' buffer."
+  :lighter ""
+  (if diff-hl-dir-mode
+      (add-hook 'vc-checkin-hook 'diff-hl-dir-update t t)
+    (remove-hook 'vc-checkin-hook 'diff-hl-dir-update t)))
+
 (defun turn-on-diff-hl-mode ()
-  ;; FIXME: Why is this called twice for each buffer?
-  ;; Isn't fundamental-mode supposed to not run any hooks?
-  (and buffer-file-name (not (eq major-mode (default-value 'major-mode)))
-       (window-system) ;; No fringes in the console.
-       (diff-hl-mode 1)))
+  (when (window-system) ;; No fringes in the console.
+    (cond
+     ;; FIXME: Why is this called twice for each buffer?
+     ;; Isn't fundamental-mode supposed to not run any hooks?
+     ((and buffer-file-name (not (eq major-mode (default-value 'major-mode))))
+      (diff-hl-mode 1))
+     ((eq major-mode 'vc-dir-mode)
+      (diff-hl-dir-mode 1)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode

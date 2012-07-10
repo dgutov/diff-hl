@@ -24,6 +24,7 @@ and, to use it in all buffers
 
     (global-diff-hl-mode)
 
-or, for example, to use it in all `prog-mode` buffers
+or, for example, to use it in all `prog-mode` and `vc-dir-mode` buffers
 
     (add-hook 'prog-mode-hook 'turn-on-diff-hl-mode)
+    (add-hook 'vc-dir-mode-hook 'turn-on-diff-hl-mode)
