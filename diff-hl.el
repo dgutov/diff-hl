@@ -281,7 +281,9 @@ in the source file, or the last line of the hunk above it."
     (diff-hl-remove-overlays)))
 
 (defun diff-hl-dir-update ()
-  (dolist (pair (vc-dir-marked-only-files-and-states))
+  (dolist (pair (if (vc-dir-marked-files)
+                    (vc-dir-marked-only-files-and-states)
+                  (vc-dir-child-files-and-states)))
     (when (eq 'up-to-date (cdr pair))
       (let ((buffer (find-buffer-visiting (car pair))))
         (when buffer
