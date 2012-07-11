@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.0.1
+;; Version:  1.1
 
 ;; This file is not part of GNU Emacs.
 
@@ -260,7 +260,6 @@ in the source file, or the last line of the hunk above it."
               (message "Hunk reverted"))))
       (quit-windows-on diff-buffer))))
 
-;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle display of VC diff indicators in the left fringe."
   :lighter "" :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
@@ -289,7 +288,6 @@ in the source file, or the last line of the hunk above it."
           (with-current-buffer buffer
             (diff-hl-remove-overlays)))))))
 
-;;;###autoload
 (define-minor-mode diff-hl-dir-mode
   "Toggle `diff-hl-mode' link in `vc-dir-mode' buffer."
   :lighter ""
@@ -297,7 +295,9 @@ in the source file, or the last line of the hunk above it."
       (add-hook 'vc-checkin-hook 'diff-hl-dir-update t t)
     (remove-hook 'vc-checkin-hook 'diff-hl-dir-update t)))
 
+;;;###autoload
 (defun turn-on-diff-hl-mode ()
+  "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."
   (when (window-system) ;; No fringes in the console.
     (cond
      ;; FIXME: Why is this called twice for each buffer?
@@ -307,9 +307,16 @@ in the source file, or the last line of the hunk above it."
      ((eq major-mode 'vc-dir-mode)
       (diff-hl-dir-mode 1)))))
 
+(defun diff-hl-global-mode-change ()
+  (unless global-diff-hl-mode
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when diff-hl-dir-mode
+          (diff-hl-dir-mode -1))))))
+
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
-  turn-on-diff-hl-mode)
+  turn-on-diff-hl-mode :after-hook (diff-hl-global-mode-change))
 
 (provide 'diff-hl)
 
