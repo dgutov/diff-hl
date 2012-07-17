@@ -291,7 +291,7 @@ in the source file, or the last line of the hunk above it."
             (diff-hl-remove-overlays)))))))
 
 (define-minor-mode diff-hl-dir-mode
-  "Toggle `diff-hl-mode' link in `vc-dir-mode' buffer."
+  "Toggle `diff-hl-mode' integration in a `vc-dir-mode' buffer."
   :lighter ""
   (if diff-hl-dir-mode
       (add-hook 'vc-checkin-hook 'diff-hl-dir-update t t)
