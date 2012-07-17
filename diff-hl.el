@@ -112,7 +112,7 @@
 
 (defun diff-hl-changes ()
   (let* ((buf-name " *diff-hl* ")
-         (file (buffer-file-name))
+         (file buffer-file-name)
          (backend (vc-backend file))
          res)
     (when (and backend (not (eq (vc-state file backend) 'up-to-date)))
@@ -302,9 +302,7 @@ in the source file, or the last line of the hunk above it."
   "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."
   (when (window-system) ;; No fringes in the console.
     (cond
-     ;; FIXME: Why is this called twice for each buffer?
-     ;; Isn't fundamental-mode supposed to not run any hooks?
-     ((and buffer-file-name (not (eq major-mode (default-value 'major-mode))))
+     (buffer-file-name
       (diff-hl-mode 1))
      ((eq major-mode 'vc-dir-mode)
       (diff-hl-dir-mode 1)))))
