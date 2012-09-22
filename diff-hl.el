@@ -272,11 +272,13 @@ in the source file, or the last line of the hunk above it."
             (diff-hl-update)
           (add-hook 'find-file-hook 'diff-hl-update t t))
         (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
+        (add-hook 'after-revert-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
     (remove-hook 'vc-checkin-hook 'diff-hl-update t)
+    (remove-hook 'after-revert-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps t)
     (diff-hl-remove-overlays)))
 
