@@ -327,7 +327,7 @@ in the source file, or the last line of the hunk above it."
   (let (smart-keys)
     (dolist (c '("n" "[" "]"))
       (let* ((cmd (lookup-key diff-hl-mode-map (kbd (concat "C-x v " c)))))
-        (push (cons (read-kbd-macro c) cmd) smart-keys)))
+        (push (cons c cmd) smart-keys)))
     (smartrep-define-key diff-hl-mode-map "C-x v" smart-keys)))
 
 (defun diff-hl-dir-update ()
