@@ -237,23 +237,31 @@ in the source file, or the last line of the hunk above it."
   (vc-buffer-sync)
   (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
         (buffer (current-buffer))
-        (line (line-number-at-pos))
+        (line (save-excursion
+                (unless (diff-hl-hunk-overlay-at (point))
+                  (diff-hl-previous-hunk))
+                (line-number-at-pos)))
         (fileset (vc-deduce-fileset)))
     (unwind-protect
         (progn
-          (diff-hl-with-diff-switches
-           (vc-diff-internal nil fileset nil nil nil diff-buffer))
+          (vc-diff-internal nil fileset nil nil nil diff-buffer)
           (vc-exec-after
            `(progn
               (when (eobp)
                 (with-current-buffer ,buffer (diff-hl-remove-overlays))
                 (error "Buffer is up-to-date"))
               (diff-hl-diff-skip-to ,line)
-              (save-restriction
-                (diff-restrict-view)
-                (unless (yes-or-no-p (format "Revert current hunk in %s?"
-                                             ,(caadr fileset)))
-                  (error "Revert canceled")))
+              (save-excursion
+                (while (looking-at "[-+]") (forward-line 1))
+                (unless (eobp) (diff-split-hunk)))
+              (unless (looking-at "[-+]") (forward-line -1))
+              (while (looking-at "[-+]") (forward-line -1))
+              (unless (looking-at "@")
+                (forward-line 1)
+                (diff-split-hunk))
+              (unless (yes-or-no-p (format "Revert current hunk in %s?"
+                                           ,(caadr fileset)))
+                (error "Revert canceled"))
               (let ((diff-advance-after-apply-hunk nil))
                 (diff-apply-hunk t))
               (with-current-buffer ,buffer
@@ -261,21 +269,26 @@ in the source file, or the last line of the hunk above it."
               (message "Hunk reverted"))))
       (quit-windows-on diff-buffer))))
 
+(defun diff-hl-hunk-overlay-at (pos)
+  (loop for o in (overlays-at pos)
+        when (overlay-get o 'diff-hl-hunk)
+        return o))
+
 (defun diff-hl-next-hunk (&optional backward)
   "Go to the beginning of the next hunk in the current buffer."
   (interactive)
   (let ((pos (save-excursion
                (catch 'found
+                 (when (and backward (bolp) (not (eobp))) (forward-char))
                  (while (not (if backward (bobp) (eobp)))
                    (goto-char (if backward
                                   (1- (previous-overlay-change (point)))
                                 (next-overlay-change (point))))
-                   (loop for o in (overlays-at (point))
-                         when (overlay-get o 'diff-hl-hunk)
-                         unless (if backward
-                                    (> (overlay-end o) (1+ (point)))
-                                  (< (overlay-start o) (point)))
-                         do (throw 'found (overlay-start o))))))))
+                   (let ((o (diff-hl-hunk-overlay-at (point))))
+                     (when (and o (if backward
+                                      (<= (overlay-end o) (1+ (point)))
+                                    (>= (overlay-start o) (point))))
+                       (throw 'found (overlay-start o)))))))))
     (if pos
         (goto-char pos)
       (error "No further hunks found"))))
