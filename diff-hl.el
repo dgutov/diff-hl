@@ -4,6 +4,7 @@
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
 ;; Version:  1.2
+;; Package-Requires: ((smartrep "0.0.3"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -321,6 +322,13 @@ in the source file, or the last line of the hunk above it."
     (remove-hook 'after-revert-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps t)
     (diff-hl-remove-overlays)))
+
+(when (require 'smartrep nil t)
+  (let (smart-keys)
+    (dolist (c '("n" "[" "]"))
+      (let* ((cmd (lookup-key diff-hl-mode-map (kbd (concat "C-x v " c)))))
+        (push (cons (read-kbd-macro c) cmd) smart-keys)))
+    (smartrep-define-key diff-hl-mode-map "C-x v" smart-keys)))
 
 (defun diff-hl-dir-update ()
   (dolist (pair (if (vc-dir-marked-files)
