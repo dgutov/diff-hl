@@ -32,6 +32,7 @@
 
 (require 'diff-mode)
 (require 'vc)
+(require 'vc-dir)
 (eval-when-compile
   (require 'cl)
   (require 'vc-git)
