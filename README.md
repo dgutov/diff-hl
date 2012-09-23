@@ -7,16 +7,20 @@ fringe of the current buffer.
 Since it uses the corresponding VC diff command, it's only accurate when the
 buffer is in saved state.
 
-Additionally, it defines and binds `diff-hl-diff-goto-hunk` and
-`diff-hl-revert-hunk`, to `C-x v =` and `C-x v n` respectively.
+Additionally, it defines and binds
+
+* `diff-hl-diff-goto-hunk` (`C-x v =`)
+* `diff-hl-revert-hunk` (`C-x v n`)
+* `diff-hl-previous-hunk` (`C-x v [`)
+* `diff-hl-next-hunk` (`C-x v ]`)
 
 Tested with Git, Mercurial, and Bazaar. May work with other VC backends, too.
 
 Usage
 =====
 
-Ensure diff-hl.el is in a directory on your load-path, and add the following to
-your `~/.emacs` or `~/.emacs.d/init.el`
+Ensure `diff-hl.el` is in a directory on your load-path, and add the following
+to your `~/.emacs` or `~/.emacs.d/init.el`
 
     (require 'diff-hl)
 

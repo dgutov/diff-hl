@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.1
+;; Version:  1.2
 
 ;; This file is not part of GNU Emacs.
 
@@ -168,6 +168,7 @@
             (let ((h (make-overlay hunk-beg (point)))
                   (hook '(diff-hl-overlay-modified)))
               (overlay-put h 'diff-hl t)
+              (overlay-put h 'diff-hl-hunk t)
               (overlay-put h 'modification-hooks hook)
               (overlay-put h 'insert-in-front-hooks hook))))))))
 
@@ -260,10 +261,36 @@ in the source file, or the last line of the hunk above it."
               (message "Hunk reverted"))))
       (quit-windows-on diff-buffer))))
 
+(defun diff-hl-next-hunk (&optional backward)
+  "Go to the beginning of the next hunk in the current buffer."
+  (interactive)
+  (let ((pos (save-excursion
+               (catch 'found
+                 (while (not (if backward (bobp) (eobp)))
+                   (goto-char (if backward
+                                  (1- (previous-overlay-change (point)))
+                                (next-overlay-change (point))))
+                   (loop for o in (overlays-at (point))
+                         when (overlay-get o 'diff-hl-hunk)
+                         unless (if backward
+                                    (> (overlay-end o) (1+ (point)))
+                                  (< (overlay-start o) (point)))
+                         do (throw 'found (overlay-start o))))))))
+    (if pos
+        (goto-char pos)
+      (error "No further hunks found"))))
+
+(defun diff-hl-previous-hunk ()
+  "Go to the beginning of the previous hunk in the current buffer."
+  (interactive)
+  (diff-hl-next-hunk t))
+
 (define-minor-mode diff-hl-mode
   "Toggle display of VC diff indicators in the left fringe."
   :lighter "" :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
-                        (,(kbd "C-x v n") . diff-hl-revert-hunk))
+                        (,(kbd "C-x v n") . diff-hl-revert-hunk)
+                        (,(kbd "C-x v [") . diff-hl-previous-hunk)
+                        (,(kbd "C-x v ]") . diff-hl-next-hunk))
   (if diff-hl-mode
       (progn
         (add-hook 'after-save-hook 'diff-hl-update nil t)
