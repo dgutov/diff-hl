@@ -326,10 +326,16 @@ in the source file, or the last line of the hunk above it."
 
 (when (require 'smartrep nil t)
   (let (smart-keys)
-    (dolist (c '("n" "[" "]"))
-      (let* ((cmd (lookup-key diff-hl-mode-map (kbd (concat "C-x v " c)))))
-        (push (cons c cmd) smart-keys)))
-    (smartrep-define-key diff-hl-mode-map "C-x v" smart-keys)))
+    (cl-labels ((scan (map)
+                      (map-keymap
+                       (lambda (event binding)
+                         (if (consp binding)
+                             (scan binding)
+                           (when (characterp event)
+                             (push (cons (string event) binding) smart-keys))))
+                       map)))
+      (scan diff-hl-mode-map)
+      (smartrep-define-key diff-hl-mode-map "C-x v" smart-keys))))
 
 (defun diff-hl-dir-update ()
   (dolist (pair (if (vc-dir-marked-files)
