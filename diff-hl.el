@@ -284,7 +284,7 @@ in the source file, or the last line of the hunk above it."
                  (when (and backward (bolp) (not (eobp))) (forward-char))
                  (while (not (if backward (bobp) (eobp)))
                    (goto-char (if backward
-                                  (1- (previous-overlay-change (point)))
+                                  (previous-overlay-change (point))
                                 (next-overlay-change (point))))
                    (let ((o (diff-hl-hunk-overlay-at (point))))
                      (when (and o (if backward
