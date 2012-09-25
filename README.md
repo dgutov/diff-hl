@@ -14,6 +14,8 @@ Additionally, it defines and binds
 * `diff-hl-previous-hunk` (`C-x v [`)
 * `diff-hl-next-hunk` (`C-x v ]`)
 
+The mode takes advantage of `smartrep` if it is installed.
+
 Tested with Git, Mercurial, and Bazaar. May work with other VC backends, too.
 
 Usage

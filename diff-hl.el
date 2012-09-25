@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.2
+;; Version:  1.3
 ;; Package-Requires: ((smartrep "0.0.3"))
 
 ;; This file is not part of GNU Emacs.
@@ -248,19 +248,25 @@ in the source file, or the last line of the hunk above it."
         (progn
           (vc-diff-internal nil fileset nil nil nil diff-buffer)
           (vc-exec-after
-           `(progn
+           `(let (beg-line end-line)
               (when (eobp)
                 (with-current-buffer ,buffer (diff-hl-remove-overlays))
                 (error "Buffer is up-to-date"))
               (diff-hl-diff-skip-to ,line)
               (save-excursion
                 (while (looking-at "[-+]") (forward-line 1))
+                (setq end-line (line-number-at-pos (point)))
                 (unless (eobp) (diff-split-hunk)))
               (unless (looking-at "[-+]") (forward-line -1))
               (while (looking-at "[-+]") (forward-line -1))
+              (setq beg-line (line-number-at-pos (point)))
               (unless (looking-at "@")
                 (forward-line 1)
                 (diff-split-hunk))
+              (let ((wbh (window-body-height)))
+                (if (>= wbh (- end-line beg-line))
+                    (recenter (/ (+ wbh (- beg-line end-line) 2) 2))
+                  (recenter 1)))
               (unless (yes-or-no-p (format "Revert current hunk in %s?"
                                            ,(caadr fileset)))
                 (error "Revert canceled"))
