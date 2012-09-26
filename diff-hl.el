@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.3
+;; Version:  1.3.1
 ;; Package-Requires: ((smartrep "0.0.3"))
 
 ;; This file is not part of GNU Emacs.
@@ -287,7 +287,6 @@ in the source file, or the last line of the hunk above it."
   (interactive)
   (let ((pos (save-excursion
                (catch 'found
-                 (when (and backward (bolp) (not (eobp))) (forward-char))
                  (while (not (if backward (bobp) (eobp)))
                    (goto-char (if backward
                                   (previous-overlay-change (point))
