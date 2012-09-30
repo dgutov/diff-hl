@@ -1,36 +1,26 @@
 About
 =====
 
-`diff-hl-mode` provides IDE-like highlighting of `vc-diff` results on the left
-fringe of the current buffer.
+`diff-hl-mode` highlights uncommitted changes on the left fringe of the buffer
+window, allows you to jump between them, and revert them selectively.
 
-Since it uses the corresponding VC diff command, it's only accurate when the
-buffer is in saved state.
-
-Additionally, it defines and binds
-
-* `diff-hl-diff-goto-hunk` (`C-x v =`)
-* `diff-hl-revert-hunk` (`C-x v n`)
-* `diff-hl-previous-hunk` (`C-x v [`)
-* `diff-hl-next-hunk` (`C-x v ]`)
-
-The mode takes advantage of `smartrep` if it is installed.
+For the usage instructions and the list of commands, see the header comment.
 
 Tested with Git, Mercurial, and Bazaar. May work with other VC backends, too.
 
-Usage
+Screenshot
 =====
 
-Ensure `diff-hl.el` is in a directory on your load-path, and add the following
-to your `~/.emacs` or `~/.emacs.d/init.el`
+[![Foo](http://i.imgur.com/bC8dBs.png)](http://i.imgur.com/bC8dB.png)
 
-    (require 'diff-hl)
+Notes
+=====
 
-and, to use it in all buffers
+* Since it uses the corresponding VC diff command, it's only accurate when the
+  buffer is in saved state. Highlighting changes "on the fly" might be better,
+  maybe we can do something similar to `highlight-markup-buffers` with a hidden
+  buffer containing the unmodified copy.
 
-    (global-diff-hl-mode)
-
-or, for example, to use it in all `prog-mode` and `vc-dir-mode` buffers
-
-    (add-hook 'prog-mode-hook 'turn-on-diff-hl-mode)
-    (add-hook 'vc-dir-mode-hook 'turn-on-diff-hl-mode)
+* Out of modes providing similar functionality, `highlight-changes-mode` is the
+  closest I could find. Angry Fruit Salad aside, it may be fine for writing
+  prose, but think it's pretty much useless for version-controlled files.

@@ -23,10 +23,30 @@
 
 ;;; Commentary:
 
-;; `diff-hl-mode' provides IDE-like highlighting of `vc-diff' results
-;; on the left fringe of the current buffer.
+;; `diff-hl-mode' highlights uncommitted changes on the left fringe of the
+;; buffer window, allows you to jump between them, and revert them selectively.
 ;;
-;; For full description, see README.md or the home page.
+;; For the full description, see README.md or the home page.
+
+;; Provided commands:
+;;
+;; `diff-hl-diff-goto-hunk'  C-x v =
+;; `diff-hl-revert-hunk'     C-x v n
+;; `diff-hl-previous-hunk'   C-x v [
+;; `diff-hl-next-hunk'       C-x v ]
+;;
+;; The mode takes advantage of `smartrep` if it is installed.
+
+;; Add either of the following to your init file.
+;;
+;; To use it in all buffers:
+;;
+;; (global-diff-hl-mode)
+;;
+;; Only in `prog-mode' and `vc-dir-mode' buffers:
+;;
+;; (add-hook 'prog-mode-hook 'turn-on-diff-hl-mode)
+;; (add-hook 'vc-dir-mode-hook 'turn-on-diff-hl-mode)
 
 ;;; Code:
 
@@ -179,7 +199,7 @@
     (when (overlay-get o 'diff-hl) (delete-overlay o))))
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
-  ;; Delete the overlay and all our overlays inside it.
+  "Delete the overlay and all our overlays inside it."
   (unless after-p
     (save-restriction
       (narrow-to-region (overlay-start ov) (overlay-end ov))
@@ -189,7 +209,7 @@
 (defvar diff-hl-timer nil)
 
 (defun diff-hl-edit (_beg _end _len)
-  ;; DTRT when we've `undo'-ed the buffer into unmodified state.
+  "DTRT when we've `undo'-ne the buffer into unmodified state."
   (when undo-in-progress
     (when diff-hl-timer
       (cancel-timer diff-hl-timer))
@@ -202,7 +222,7 @@
       (diff-hl-update))))
 
 (defun diff-hl-diff-goto-hunk ()
-  "Run VC diff command and go to the line corresponding to current."
+  "Run VC diff command and go to the line corresponding to the current."
   (interactive)
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
@@ -306,7 +326,7 @@ in the source file, or the last line of the hunk above it."
   (diff-hl-next-hunk t))
 
 (define-minor-mode diff-hl-mode
-  "Toggle display of VC diff indicators in the left fringe."
+  "Toggle VC diff fringe highlighting."
   :lighter "" :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
                         (,(kbd "C-x v n") . diff-hl-revert-hunk)
                         (,(kbd "C-x v [") . diff-hl-previous-hunk)
