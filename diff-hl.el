@@ -24,9 +24,7 @@
 ;;; Commentary:
 
 ;; `diff-hl-mode' highlights uncommitted changes on the left fringe of the
-;; buffer window, allows you to jump between them, and revert them selectively.
-;;
-;; For the full description, see README.md or the home page.
+;; window, allows you to jump between and revert them selectively.
 
 ;; Provided commands:
 ;;

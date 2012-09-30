@@ -1,8 +1,8 @@
 About
 =====
 
-`diff-hl-mode` highlights uncommitted changes on the left fringe of the buffer
-window, allows you to jump between them, and revert them selectively.
+`diff-hl-mode` highlights uncommitted changes on the left fringe of the window,
+allows you to jump between and revert them selectively.
 
 For the usage instructions and the list of commands, see the header comment.
 
@@ -11,7 +11,7 @@ Tested with Git, Mercurial, and Bazaar. May work with other VC backends, too.
 Screenshot
 =====
 
-[![Foo](http://i.imgur.com/bC8dBs.png)](http://i.imgur.com/bC8dB.png)
+[![screenie](http://i.imgur.com/bC8dBs.png)](http://i.imgur.com/bC8dB.png)
 
 Notes
 =====
@@ -23,4 +23,4 @@ Notes
 
 * Out of modes providing similar functionality, `highlight-changes-mode` is the
   closest I could find. Angry Fruit Salad aside, it may be fine for writing
-  prose, but think it's pretty much useless for version-controlled files.
+  prose, but I think it's pretty much useless for version-controlled files.
