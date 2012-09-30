@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.3.1
+;; Version:  1.3.2
 ;; Package-Requires: ((smartrep "0.0.3"))
 
 ;; This file is not part of GNU Emacs.
@@ -41,7 +41,7 @@
 ;;
 ;; (global-diff-hl-mode)
 ;;
-;; Only in `prog-mode' and `vc-dir-mode' buffers:
+;; Only in `prog-mode' buffers, with `vc-dir' integration:
 ;;
 ;; (add-hook 'prog-mode-hook 'turn-on-diff-hl-mode)
 ;; (add-hook 'vc-dir-mode-hook 'turn-on-diff-hl-mode)
