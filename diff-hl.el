@@ -33,7 +33,7 @@
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
 ;;
-;; The mode takes advantage of `smartrep` if it is installed.
+;; The mode takes advantage of `smartrep' if it is installed.
 
 ;; Add either of the following to your init file.
 ;;
