@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.3.2
+;; Version:  1.3.3
 ;; Package-Requires: ((smartrep "0.0.3"))
 
 ;; This file is not part of GNU Emacs.
@@ -228,7 +228,8 @@
     (vc-diff-internal t (vc-deduce-fileset) nil nil t)
     (vc-exec-after `(if (eobp)
                         (with-current-buffer ,buffer (diff-hl-remove-overlays))
-                      (diff-hl-diff-skip-to ,line)))))
+                      (diff-hl-diff-skip-to ,line)
+                      (setq vc-sentinel-movepoint (point))))))
 
 (defun diff-hl-diff-skip-to (line)
   "In `diff-mode', skip to the hunk and line corresponding to LINE
