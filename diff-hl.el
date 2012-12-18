@@ -135,7 +135,7 @@
          (file buffer-file-name)
          (backend (vc-backend file))
          res)
-    (when (and backend (not (eq (vc-state file backend) 'up-to-date)))
+    (when (and backend (eq (vc-state file backend) 'edited))
       (diff-hl-with-diff-switches
        (vc-call-backend backend 'diff (list file) nil nil buf-name))
       (with-current-buffer buf-name
