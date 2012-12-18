@@ -226,7 +226,7 @@
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer)))
     (vc-diff-internal t (vc-deduce-fileset) nil nil t)
-    (vc-exec-after `(if (eobp)
+    (vc-exec-after `(if (< (line-number-at-pos (point-max)) 3)
                         (with-current-buffer ,buffer (diff-hl-remove-overlays))
                       (diff-hl-diff-skip-to ,line)
                       (setq vc-sentinel-movepoint (point))))))
