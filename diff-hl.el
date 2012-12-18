@@ -3,8 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.3.3
-;; Package-Requires: ((smartrep "0.0.3"))
+;; Version:  1.3.4
 
 ;; This file is not part of GNU Emacs.
 
