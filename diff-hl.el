@@ -1,4 +1,4 @@
-;;; diff-hl.el --- VC diff fringe highlighting -*- lexical-binding: t -*-
+;;; diff-hl.el --- Highlight uncommitted changes -*- lexical-binding: t -*-
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -23,7 +23,7 @@
 ;;; Commentary:
 
 ;; `diff-hl-mode' highlights uncommitted changes on the left fringe of the
-;; window, allows you to jump between and revert them selectively.
+;; window, allows you to jump between them and revert them selectively.
 
 ;; Provided commands:
 ;;
