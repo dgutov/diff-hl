@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.3.4
+;; Version:  1.3.5
 
 ;; This file is not part of GNU Emacs.
 
@@ -198,10 +198,11 @@
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
   "Delete the overlay and all our overlays inside it."
   (unless after-p
-    (save-restriction
-      (narrow-to-region (overlay-start ov) (overlay-end ov))
-      (diff-hl-remove-overlays))
-    (delete-overlay ov)))
+    (when (overlay-buffer ov)
+      (save-restriction
+        (narrow-to-region (overlay-start ov) (overlay-end ov))
+        (diff-hl-remove-overlays))
+      (delete-overlay ov))))
 
 (defvar diff-hl-timer nil)
 
