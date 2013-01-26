@@ -23,7 +23,7 @@
 ;;; Commentary:
 
 ;; `diff-hl-mode' highlights uncommitted changes on the left fringe of the
-;; window, allows you to jump between them and revert them selectively.
+;; window, allows you to jump between the hunks and revert them selectively.
 
 ;; Provided commands:
 ;;
