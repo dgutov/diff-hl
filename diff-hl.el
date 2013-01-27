@@ -62,18 +62,19 @@
   :group 'vc)
 
 (defface diff-hl-insert
-  '((t :inherit diff-added))
+  '((default :inherit diff-added)
+    (((class color)) :foreground "green4"))
   "Face used to highlight inserted lines."
   :group 'diff-hl)
 
 (defface diff-hl-delete
-  '((t :inherit diff-removed))
+  '((default :inherit diff-removed)
+    (((class color)) :foreground "red3"))
   "Face used to highlight deleted lines."
   :group 'diff-hl)
 
 (defface diff-hl-change
-  '((default
-     :foreground "blue")
+  '((default :foreground "blue3")
     (((class color) (min-colors 88) (background light))
      :background "#ddddff")
     (((class color) (min-colors 88) (background dark))
