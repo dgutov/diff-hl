@@ -389,16 +389,16 @@ in the source file, or the last line of the hunk above it."
      ((eq major-mode 'vc-dir-mode)
       (diff-hl-dir-mode 1)))))
 
+;;;###autoload
+(define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
+  turn-on-diff-hl-mode :after-hook (diff-hl-global-mode-change))
+
 (defun diff-hl-global-mode-change ()
   (unless global-diff-hl-mode
     (dolist (buf (buffer-list))
       (with-current-buffer buf
         (when diff-hl-dir-mode
           (diff-hl-dir-mode -1))))))
-
-;;;###autoload
-(define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
-  turn-on-diff-hl-mode :after-hook (diff-hl-global-mode-change))
 
 (provide 'diff-hl)
 
