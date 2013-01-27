@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.3.6
+;; Version:  1.4.0
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is not part of GNU Emacs.
@@ -132,30 +132,39 @@
      ,body))
 
 (defun diff-hl-changes ()
-  (let* ((buf-name " *diff-hl* ")
-         (file buffer-file-name)
-         (backend (vc-backend file))
-         res)
-    (when (and backend (eq (vc-state file backend) 'edited))
-      (diff-hl-with-diff-switches
-       (vc-call-backend backend 'diff (list file) nil nil buf-name))
-      (with-current-buffer buf-name
-        (goto-char (point-min))
-        (unless (eobp)
-          (diff-beginning-of-hunk t)
-          (while (looking-at diff-hunk-header-re-unified)
-            (let ((line (string-to-number (match-string 3)))
-                  (len (let ((m (match-string 4)))
-                         (if m (string-to-number m) 1)))
-                  (beg (point)))
-              (diff-end-of-hunk)
-              (let* ((inserts (diff-count-matches "^\\+" beg (point)))
-                     (deletes (diff-count-matches "^-" beg (point)))
-                     (type (cond ((zerop deletes) 'insert)
-                                 ((zerop inserts) 'delete)
-                                 (t 'change))))
-                (push (list line len type) res)))))))
-    (nreverse res)))
+  (let* ((file buffer-file-name)
+         (backend (vc-backend file)))
+    (when backend
+      (cl-case (vc-state file backend)
+        (edited
+         (let* ((buf-name " *diff-hl* ")
+                res)
+           (diff-hl-with-diff-switches
+            (vc-call-backend backend 'diff (list file) nil nil buf-name))
+           (with-current-buffer buf-name
+             (goto-char (point-min))
+             (unless (eobp)
+               (diff-beginning-of-hunk t)
+               (while (looking-at diff-hunk-header-re-unified)
+                 (let ((line (string-to-number (match-string 3)))
+                       (len (let ((m (match-string 4)))
+                              (if m (string-to-number m) 1)))
+                       (beg (point)))
+                   (diff-end-of-hunk)
+                   (let* ((inserts (diff-count-matches "^\\+" beg (point)))
+                          (deletes (diff-count-matches "^-" beg (point)))
+                          (type (cond ((zerop deletes) 'insert)
+                                      ((zerop inserts) 'delete)
+                                      (t 'change))))
+                     (when (eq type 'delete)
+                       (setq len 1)
+                       (cl-incf line))
+                     (push (list line len type) res))))))
+           (nreverse res)))
+        (added
+         `((1 ,(line-number-at-pos (point-max)) insert)))
+        (removed
+         `((1 ,(line-number-at-pos (point-max)) delete)))))))
 
 (defun diff-hl-update ()
   (let ((changes (diff-hl-changes))
@@ -165,9 +174,6 @@
       (goto-char (point-min))
       (dolist (c changes)
         (cl-destructuring-bind (line len type) c
-          (when (eq type 'delete)
-            (setq len 1)
-            (cl-incf line))
           (forward-line (- line current-line))
           (let ((hunk-beg (point)))
             (forward-line len)
