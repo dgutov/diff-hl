@@ -4,7 +4,7 @@
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
 ;; Version:  1.3.6
-;; Package-Depends: ((cl-lib "0.2"))
+;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is not part of GNU Emacs.
 
