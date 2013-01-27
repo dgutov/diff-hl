@@ -3,7 +3,8 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.3.5
+;; Version:  1.3.6
+;; Package-Depends: ((cl-lib "0.2"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -51,7 +52,7 @@
 (require 'vc)
 (require 'vc-dir)
 (eval-when-compile
-  (require 'cl)
+  (require 'cl-lib)
   (require 'vc-git)
   (require 'vc-hg)
   (require 'face-remap))
@@ -87,7 +88,7 @@
 
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
-                         (plusp text-scale-mode-amount))
+                         (cl-plusp text-scale-mode-amount))
                     (expt text-scale-mode-step text-scale-mode-amount)
                   1))
          (h (round (* (frame-char-height) scale)))
@@ -162,14 +163,14 @@
     (save-excursion
       (goto-char (point-min))
       (dolist (c changes)
-        (destructuring-bind (line len type) c
+        (cl-destructuring-bind (line len type) c
           (when (eq type 'delete)
             (setq len 1)
-            (incf line))
+            (cl-incf line))
           (forward-line (- line current-line))
           (setq current-line line)
           (let ((hunk-beg (point)))
-            (while (plusp len)
+            (while (cl-plusp len)
               (let ((o (make-overlay (point) (line-end-position))))
                 (overlay-put o 'diff-hl t)
                 (overlay-put o 'before-string
@@ -182,8 +183,8 @@
                                ((= line current-line) 'top)
                                (t 'middle)))))
               (forward-line 1)
-              (incf current-line)
-              (decf len))
+              (cl-incf current-line)
+              (cl-decf len))
             (let ((h (make-overlay hunk-beg (point)))
                   (hook '(diff-hl-overlay-modified)))
               (overlay-put h 'diff-hl t)
@@ -247,10 +248,10 @@ in the source file, or the last line of the hunk above it."
               ;; Retreat to the previous hunk.
               (forward-line -1)
             (let ((to-go (1+ (- line hunk-line))))
-              (while (plusp to-go)
+              (while (cl-plusp to-go)
                 (forward-line 1)
                 (unless (looking-at "^-")
-                  (decf to-go))))))))))
+                  (cl-decf to-go))))))))))
 
 (defun diff-hl-revert-hunk ()
   "Revert the diff hunk with changes at or above the point."
@@ -287,7 +288,7 @@ in the source file, or the last line of the hunk above it."
                     (recenter (/ (+ wbh (- beg-line end-line) 2) 2))
                   (recenter 1)))
               (unless (yes-or-no-p (format "Revert current hunk in %s?"
-                                           ,(caadr fileset)))
+                                           ,(cl-caadr fileset)))
                 (error "Revert canceled"))
               (let ((diff-advance-after-apply-hunk nil))
                 (diff-apply-hunk t))
@@ -297,9 +298,9 @@ in the source file, or the last line of the hunk above it."
       (quit-windows-on diff-buffer))))
 
 (defun diff-hl-hunk-overlay-at (pos)
-  (loop for o in (overlays-at pos)
-        when (overlay-get o 'diff-hl-hunk)
-        return o))
+  (cl-loop for o in (overlays-at pos)
+           when (overlay-get o 'diff-hl-hunk)
+           return o))
 
 (defun diff-hl-next-hunk (&optional backward)
   "Go to the beginning of the next hunk in the current buffer."
