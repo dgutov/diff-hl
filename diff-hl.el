@@ -169,41 +169,29 @@
             (setq len 1)
             (cl-incf line))
           (forward-line (- line current-line))
-          (setq current-line line)
           (let ((hunk-beg (point)))
-            (while (cl-plusp len)
-              (let ((o (make-overlay (point) (line-end-position))))
-                (overlay-put o 'diff-hl t)
-                (overlay-put o 'before-string
-                             (diff-hl-fringe-spec
-                              type
-                              (cond
-                               ((not diff-hl-draw-borders) 'empty)
-                               ((and (= len 1) (= line current-line)) 'single)
-                               ((= len 1) 'bottom)
-                               ((= line current-line) 'top)
-                               (t 'middle)))))
-              (forward-line 1)
-              (cl-incf current-line)
-              (cl-decf len))
-            (let ((h (make-overlay hunk-beg (point)))
+            (forward-line len)
+            (setq current-line (+ line len))
+            (let ((h (make-overlay hunk-beg (1- (point))))
                   (hook '(diff-hl-overlay-modified)))
               (overlay-put h 'diff-hl t)
-              (overlay-put h 'diff-hl-hunk t)
+              (if (= len 1)
+                  (overlay-put h 'before-string (diff-hl-fringe-spec type 'single))
+                (overlay-put h 'before-string (diff-hl-fringe-spec type 'top))
+                (overlay-put h 'line-prefix (diff-hl-fringe-spec type 'middle))
+                (overlay-put h 'after-string (diff-hl-fringe-spec type 'bottom)))
               (overlay-put h 'modification-hooks hook)
-              (overlay-put h 'insert-in-front-hooks hook))))))))
+              (overlay-put h 'insert-in-front-hooks hook)
+              (overlay-put h 'insert-behind-hooks hook))))))))
 
 (defun diff-hl-remove-overlays ()
   (dolist (o (overlays-in (point-min) (point-max)))
     (when (overlay-get o 'diff-hl) (delete-overlay o))))
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
-  "Delete the overlay and all our overlays inside it."
+  "Delete the overlay."
   (unless after-p
     (when (overlay-buffer ov)
-      (save-restriction
-        (narrow-to-region (overlay-start ov) (overlay-end ov))
-        (diff-hl-remove-overlays))
       (delete-overlay ov))))
 
 (defvar diff-hl-timer nil)
@@ -300,7 +288,7 @@ in the source file, or the last line of the hunk above it."
 
 (defun diff-hl-hunk-overlay-at (pos)
   (cl-loop for o in (overlays-at pos)
-           when (overlay-get o 'diff-hl-hunk)
+           when (overlay-get o 'diff-hl)
            return o))
 
 (defun diff-hl-next-hunk (&optional backward)
