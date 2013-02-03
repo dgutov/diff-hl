@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.4.0
+;; Version:  1.4.1
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is not part of GNU Emacs.
@@ -107,10 +107,6 @@
     (define-fringe-bitmap 'diff-hl-bmp-middle middle h w 'center)
     (define-fringe-bitmap 'diff-hl-bmp-bottom bottom h w 'bottom)
     (define-fringe-bitmap 'diff-hl-bmp-single single h w 'top)))
-
-(when (window-system)
-  (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center)
-  (diff-hl-define-bitmaps))
 
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
@@ -378,6 +374,9 @@ in the source file, or the last line of the hunk above it."
 (defun turn-on-diff-hl-mode ()
   "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."
   (when (window-system) ;; No fringes in the console.
+    (unless (fringe-bitmap-p 'diff-hl-bmp-empty)
+      (diff-hl-define-bitmaps)
+      (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center))
     (cond
      (buffer-file-name
       (diff-hl-mode 1))
