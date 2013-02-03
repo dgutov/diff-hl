@@ -22,9 +22,5 @@ Notes
   buffer containing the unmodified copy.
 
 * [git-gutter](https://github.com/syohex/emacs-git-gutter) provides the commands
-  to show/hide/toggle indicators for the same information, and allows you to
-  customize how the indicators look.
-
-* Out of other modes providing similar functionality, `highlight-changes-mode` is the
-  closest I could find. Angry Fruit Salad aside, it may be fine for writing
-  prose, but I think it's pretty much useless for version-controlled files.
+  to show/hide/toggle margin indicators for the same information, and allows you
+  to customize how the indicators look.
