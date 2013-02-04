@@ -308,8 +308,8 @@ in the source file, or the last line of the hunk above it."
                                 (next-overlay-change (point))))
                    (let ((o (diff-hl-hunk-overlay-at (point))))
                      (when (and o (if backward
-                                      (<= (overlay-end o) (1+ (point)))
-                                    (>= (overlay-start o) (point))))
+                                      (>= (overlay-end o) (point))
+                                    (<= (overlay-start o) (point))))
                        (throw 'found (overlay-start o)))))))))
     (if pos
         (goto-char pos)
