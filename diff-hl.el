@@ -328,6 +328,10 @@ in the source file, or the last line of the hunk above it."
                         (,(kbd "C-x v ]") . diff-hl-next-hunk))
   (if diff-hl-mode
       (progn
+        (when (window-system) ;; No fringes in the console.
+          (unless (fringe-bitmap-p 'diff-hl-bmp-empty)
+            (diff-hl-define-bitmaps)
+            (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center)))
         (add-hook 'after-save-hook 'diff-hl-update nil t)
         (add-hook 'after-change-functions 'diff-hl-edit nil t)
         (if vc-mode
@@ -377,15 +381,11 @@ in the source file, or the last line of the hunk above it."
 ;;;###autoload
 (defun turn-on-diff-hl-mode ()
   "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."
-  (when (window-system) ;; No fringes in the console.
-    (unless (fringe-bitmap-p 'diff-hl-bmp-empty)
-      (diff-hl-define-bitmaps)
-      (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center))
-    (cond
-     (buffer-file-name
-      (diff-hl-mode 1))
-     ((eq major-mode 'vc-dir-mode)
-      (diff-hl-dir-mode 1)))))
+  (cond
+   (buffer-file-name
+    (diff-hl-mode 1))
+   ((eq major-mode 'vc-dir-mode)
+    (diff-hl-dir-mode 1))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
