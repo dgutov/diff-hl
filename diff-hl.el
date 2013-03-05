@@ -123,6 +123,7 @@
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches nil)
          (vc-hg-diff-switches nil)
+         (vc-svn-diff-switches nil)
          (vc-diff-switches '("-U0"))
          (vc-disable-async-diff t))
      ,body))
