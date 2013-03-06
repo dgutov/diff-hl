@@ -13,7 +13,7 @@ Screenshot
 
 ![screenie](screenshot.png)
 
-Top window: buffer in this minor mode, bottom window: corresponding diff.
+Top window: a buffer in this minor mode, bottom window: the corresponding diff.
 
 Requirements
 =====
