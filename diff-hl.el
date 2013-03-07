@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.4.3
+;; Version:  1.4.4
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is not part of GNU Emacs.
@@ -308,9 +308,7 @@ in the source file, or the last line of the hunk above it."
                                   (previous-overlay-change (point))
                                 (next-overlay-change (point))))
                    (let ((o (diff-hl-hunk-overlay-at (point))))
-                     (when (and o (if backward
-                                      (>= (overlay-end o) (point))
-                                    (<= (overlay-start o) (point))))
+                     (when (and o (= (overlay-start o) (point)))
                        (throw 'found (overlay-start o)))))))))
     (if pos
         (goto-char pos)
