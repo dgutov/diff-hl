@@ -34,3 +34,19 @@ Notes
 * [git-gutter](https://github.com/syohex/emacs-git-gutter) provides interactive
   commands to show/hide/toggle margin indicators for the same information, and
   allows you to customize how the indicators look.
+
+Integration
+=====
+
+If you're using some package other than `vc` to commit changes, it might
+not run `vc-checkin-hook` after commits. In that case, you'll need to
+either add `diff-hl-update` to the hook it does run, or advise some
+function that's called in the buffer after its state has changed.
+
+psvn
+-----
+
+```lisp
+(defadvice svn-status-update-modeline (after svn-update-diff-hl activate)
+  (diff-hl-update))
+```
