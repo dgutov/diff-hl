@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.4.4
+;; Version:  1.4.5
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is not part of GNU Emacs.
@@ -176,17 +176,27 @@
       (dolist (c changes)
         (cl-destructuring-bind (line len type) c
           (forward-line (- line current-line))
+          (setq current-line line)
           (let ((hunk-beg (point)))
-            (forward-line len)
-            (setq current-line (+ line len))
-            (let ((h (make-overlay hunk-beg (1- (point))))
+            (while (cl-plusp len)
+              (let ((o (make-overlay (point) (point))))
+                (overlay-put o 'diff-hl t)
+                (overlay-put o 'before-string
+                             (diff-hl-fringe-spec
+                              type
+                              (cond
+                               ((not diff-hl-draw-borders) 'empty)
+                               ((and (= len 1) (= line current-line)) 'single)
+                               ((= len 1) 'bottom)
+                               ((= line current-line) 'top)
+                               (t 'middle)))))
+              (forward-line 1)
+              (cl-incf current-line)
+              (cl-decf len))
+            (let ((h (make-overlay hunk-beg (point)))
                   (hook '(diff-hl-overlay-modified)))
               (overlay-put h 'diff-hl t)
-              (if (= len 1)
-                  (overlay-put h 'before-string (diff-hl-fringe-spec type 'single))
-                (overlay-put h 'before-string (diff-hl-fringe-spec type 'top))
-                (overlay-put h 'line-prefix (diff-hl-fringe-spec type 'middle))
-                (overlay-put h 'after-string (diff-hl-fringe-spec type 'bottom)))
+              (overlay-put h 'diff-hl-hunk t)
               (overlay-put h 'modification-hooks hook)
               (overlay-put h 'insert-in-front-hooks hook)
               (overlay-put h 'insert-behind-hooks hook))))))))
@@ -196,9 +206,12 @@
     (when (overlay-get o 'diff-hl) (delete-overlay o))))
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
-  "Delete the overlay."
+  "Delete the hunk overlay and all our line overlays inside it."
   (unless after-p
     (when (overlay-buffer ov)
+      (save-restriction
+        (narrow-to-region (overlay-start ov) (overlay-end ov))
+        (diff-hl-remove-overlays))
       (delete-overlay ov))))
 
 (defvar diff-hl-timer nil)
@@ -295,7 +308,7 @@ in the source file, or the last line of the hunk above it."
 
 (defun diff-hl-hunk-overlay-at (pos)
   (cl-loop for o in (overlays-in pos (1+ pos))
-           when (overlay-get o 'diff-hl)
+           when (overlay-get o 'diff-hl-hunk)
            return o))
 
 (defun diff-hl-next-hunk (&optional backward)
