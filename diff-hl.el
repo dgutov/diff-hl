@@ -3,7 +3,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.4.5
+;; Version:  1.4.6
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is not part of GNU Emacs.
@@ -89,10 +89,14 @@
 
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
-                         (cl-plusp text-scale-mode-amount))
+                         (numberp text-scale-mode-amount))
                     (expt text-scale-mode-step text-scale-mode-amount)
                   1))
-         (h (round (* (frame-char-height) scale)))
+         (spacing (or (default-value 'line-spacing) 0))
+         (h (round (+ (* (frame-char-height) scale)
+                      (if (floatp spacing)
+                          (* (frame-char-height) spacing)
+                        spacing))))
          (w (frame-parameter nil 'left-fringe))
          (middle (make-vector h (expt 2 (1- w))))
          (ones (1- (expt 2 w)))

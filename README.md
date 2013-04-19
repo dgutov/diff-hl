@@ -31,6 +31,8 @@ Notes
 * There's no fringe when Emacs is running in the console, but the navigation and
   revert commands still work.
 
+* Frame-local and buffer-local values of `line-spacing` are not supported.
+
 * [git-gutter](https://github.com/syohex/emacs-git-gutter) provides interactive
   commands to show/hide/toggle margin indicators for the same information, and
   allows you to customize how the indicators look.
