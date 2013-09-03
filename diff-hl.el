@@ -87,6 +87,9 @@
   :group 'diff-hl
   :type 'boolean)
 
+(defvar diff-hl-reference-revision nil
+  "Revision to diff against.  nil means the most recent one.")
+
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
                          (numberp text-scale-mode-amount))
@@ -141,11 +144,16 @@
          ((or (eq state 'edited)
               (and (eq state 'up-to-date)
                    ;; VC state is stale in after-revert-hook.
-                   revert-buffer-in-progress-p))
+                   (or revert-buffer-in-progress-p
+                       ;; Diffing against an older revision.
+                       diff-hl-reference-revision)))
           (let* ((buf-name " *diff-hl* ")
+                 diff-auto-refine-mode
                  res)
             (diff-hl-with-diff-switches
-             (vc-call-backend backend 'diff (list file) nil nil buf-name))
+             (vc-call-backend backend 'diff (list file)
+                              diff-hl-reference-revision nil
+                              buf-name))
             (with-current-buffer buf-name
               (goto-char (point-min))
               (unless (eobp)
@@ -239,7 +247,7 @@
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer)))
-    (vc-diff-internal t (vc-deduce-fileset) nil nil t)
+    (vc-diff-internal t (vc-deduce-fileset) diff-hl-reference-revision nil t)
     (vc-exec-after `(if (< (line-number-at-pos (point-max)) 3)
                         (with-current-buffer ,buffer (diff-hl-remove-overlays))
                       (diff-hl-diff-skip-to ,line)
@@ -279,7 +287,8 @@ in the source file, or the last line of the hunk above it."
         (fileset (vc-deduce-fileset)))
     (unwind-protect
         (progn
-          (vc-diff-internal nil fileset nil nil nil diff-buffer)
+          (vc-diff-internal nil fileset diff-hl-reference-revision nil
+                            nil diff-buffer)
           (vc-exec-after
            `(let (beg-line end-line)
               (when (eobp)
