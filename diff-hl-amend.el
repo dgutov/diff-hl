@@ -61,3 +61,7 @@ Currently only supports Git, Mercurial and Bazaar."
 (defun turn-on-diff-hl-amend-mode ()
   "Turn on `diff-hl-amend-mode' in a buffer if appropriate."
   (and buffer-file-name (diff-hl-amend-mode 1)))
+
+(provide 'diff-hl-amend)
+
+;;; diff-hl-amend.el ends here
