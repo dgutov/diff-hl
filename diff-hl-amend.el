@@ -33,7 +33,7 @@ Currently only supports Git, Mercurial and Bazaar."
   (if diff-hl-amend-mode
       (progn
         (if vc-mode
-            (diff-hl-amend-set)
+            (diff-hl-amend-setup)
           (add-hook 'find-file-hook 'diff-hl-amend-setup nil t))
         (add-hook 'after-revert-hook 'diff-hl-amend-setup nil t))
     (remove-hook 'find-file-hook 'diff-hl-amend-setup t)
