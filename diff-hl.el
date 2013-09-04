@@ -347,6 +347,7 @@ in the source file, or the last line of the hunk above it."
   (interactive)
   (diff-hl-next-hunk t))
 
+;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle VC diff fringe highlighting."
   :lighter "" :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
