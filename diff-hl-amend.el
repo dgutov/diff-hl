@@ -23,6 +23,8 @@
 
 ;;; Code:
 
+(require 'diff-hl)
+
 ;;;###autoload
 (define-minor-mode diff-hl-amend-mode
   "Show changes against the second-last revision in `diff-hl-mode'.
