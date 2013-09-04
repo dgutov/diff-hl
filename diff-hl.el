@@ -191,17 +191,14 @@
           (setq current-line line)
           (let ((hunk-beg (point)))
             (while (cl-plusp len)
-              (let ((o (make-overlay (point) (point))))
-                (overlay-put o 'diff-hl t)
-                (overlay-put o 'before-string
-                             (diff-hl-fringe-spec
-                              type
-                              (cond
-                               ((not diff-hl-draw-borders) 'empty)
-                               ((and (= len 1) (= line current-line)) 'single)
-                               ((= len 1) 'bottom)
-                               ((= line current-line) 'top)
-                               (t 'middle)))))
+              (diff-hl-add-highlighting
+               type
+               (cond
+                ((not diff-hl-draw-borders) 'empty)
+                ((and (= len 1) (= line current-line)) 'single)
+                ((= len 1) 'bottom)
+                ((= line current-line) 'top)
+                (t 'middle)))
               (forward-line 1)
               (cl-incf current-line)
               (cl-decf len))
@@ -212,6 +209,11 @@
               (overlay-put h 'modification-hooks hook)
               (overlay-put h 'insert-in-front-hooks hook)
               (overlay-put h 'insert-behind-hooks hook))))))))
+
+(defun diff-hl-add-highlighting (type shape)
+  (let ((o (make-overlay (point) (point))))
+    (overlay-put o 'diff-hl t)
+    (overlay-put o 'before-string (diff-hl-fringe-spec type shape))))
 
 (defun diff-hl-remove-overlays ()
   (dolist (o (overlays-in (point-min) (point-max)))
