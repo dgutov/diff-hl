@@ -60,7 +60,8 @@
              (dolist (entry entries)
                (cl-destructuring-bind (file state &rest) entry
                  (let ((type (plist-get
-                              '(edited change added insert removed delete)
+                              '(edited change added insert removed delete
+                                unregistered unknown)
                               state)))
                    (if (string-match "\\`\\([^/]+\\)/" file)
                        (let* ((dir (match-string 1 file))

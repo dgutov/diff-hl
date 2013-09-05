@@ -82,6 +82,10 @@
   "Face used to highlight changed lines."
   :group 'diff-hl)
 
+(defface diff-hl-unknown
+  '((default :inherit diff-nonexistent))
+  "Face used to highlight unregistered files.")
+
 (defcustom diff-hl-draw-borders t
   "Non-nil to draw borders around fringe indicators."
   :group 'diff-hl
