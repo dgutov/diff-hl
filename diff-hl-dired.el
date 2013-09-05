@@ -17,9 +17,6 @@
 
 ;;; Commentary:
 
-;; FIXME: Raises "Stack overflow in equal" error in Emacs 24.3.50.2
-;; (at least) when changing directory.
-;;
 ;; To enable in all Dired buffers, add this to your init file:
 ;;
 ;; (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
@@ -33,48 +30,66 @@
   :lighter ""
   (if diff-hl-dired-mode
       (progn
-        (add-hook 'dired-after-readin-hook 'diff-hl-dired-update nil t)
-        (diff-hl-dired-update))
+        (set (make-local-variable 'diff-hl-dired-process-buffer) nil)
+        (add-hook 'dired-after-readin-hook 'diff-hl-dired-update nil t))
     (remove-hook 'dired-after-readin-hook 'diff-hl-dired-update t)
     (diff-hl-dired-clear)))
 
 (defvar diff-hl-dired-process-buffer nil)
 
 (defun diff-hl-dired-update ()
-  (let ((backend (cl-loop for file in (diff-hl-dired-files)
-                          for backend = (vc-backend file)
-                          thereis backend))
+  "Highlight the Dired buffer."
+  (let ((backend (ignore-errors (vc-responsible-backend default-directory)))
         (def-dir default-directory)
-        (buffer (current-buffer)))
-    (diff-hl-dired-clear)
-    (unless (buffer-live-p diff-hl-dired-process-buffer)
-      (setq diff-hl-dired-process-buffer
-            (generate-new-buffer " *diff-hl-dired* tmp status")))
-    (with-current-buffer diff-hl-dired-process-buffer
-      (setq default-directory (expand-file-name def-dir))
-      (erase-buffer)
-      (vc-call-backend
-       backend 'dir-status def-dir
-       (lambda (entries &optional more-to-come)
-         (with-current-buffer buffer
-           (dolist (entry entries)
-             (cl-destructuring-bind (file state &rest) entry
-               (let ((type (plist-get
-                            '(edited change added insert removed delete)
-                            state)))
-                 (save-excursion
-                   (goto-char (point-min))
-                   (when (and type (dired-goto-file-1 file
-                                                      (expand-file-name file)
-                                                      (point-max)))
-                     (diff-hl-add-highlighting type 'middle))))))))))))
+        (buffer (current-buffer))
+        dirs-alist files-alist)
+    (when backend
+      (diff-hl-dired-clear)
+      (if (buffer-live-p diff-hl-dired-process-buffer)
+          (let ((proc (get-buffer-process diff-hl-dired-process-buffer)))
+            (when proc (kill-process proc)))
+        (setq diff-hl-dired-process-buffer
+              (generate-new-buffer " *diff-hl-dired* tmp status")))
+      (with-current-buffer diff-hl-dired-process-buffer
+        (setq default-directory (expand-file-name def-dir))
+        (erase-buffer)
+        (vc-call-backend
+         backend 'dir-status def-dir
+         (lambda (entries &optional more-to-come)
+           (with-current-buffer buffer
+             (dolist (entry entries)
+               (cl-destructuring-bind (file state &rest) entry
+                 (let ((type (plist-get
+                              '(edited change added insert removed delete)
+                              state)))
+                   (if (string-match "\\`\\([^/]+\\)/" file)
+                       (let* ((dir (match-string 1 file))
+                              (value (cdr (assoc dir dirs-alist))))
+                         (unless (eq value type)
+                           (if (null value)
+                               (push (cons dir type) dirs-alist)
+                             (setcdr (assoc dir dirs-alist) 'change))))
+                     (push (cons file type) files-alist))
+                   ;; Process's finished, time to use the results.
+                   (unless (get-buffer-process diff-hl-dired-process-buffer)
+                     (diff-hl-dired-highlight-items (append dirs-alist
+                                                            files-alist))))))))
+         )))))
+
+(defun diff-hl-dired-highlight-items (alist)
+  "Highlight ALIST containing (FILE . TYPE) elements."
+  (dolist (pair alist)
+    (let ((file (car pair))
+          (type (cdr pair)))
+      (save-excursion
+        (goto-char (point-min))
+        (when (and type (dired-goto-file-1
+                         file (expand-file-name file) nil))
+          (forward-line 0)
+          (diff-hl-add-highlighting type 'middle))))))
 
 (defalias 'diff-hl-dired-clear 'diff-hl-remove-overlays)
 
-(defun diff-hl-dired-files ()
-  (cl-loop for file in (directory-files default-directory)
-           when (and (file-exists-p file)
-                     (not (file-directory-p file)))
-           collect (expand-file-name file)))
-
 (provide 'diff-hl-dired)
+
+;;; diff-hl-dired.el ends here
