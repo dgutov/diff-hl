@@ -25,6 +25,7 @@
 
 (require 'diff-hl)
 
+;;;###autoload
 (define-minor-mode diff-hl-dired-mode
   "Toggle VC diff fringe highlighting in a Dired buffer."
   :lighter ""
