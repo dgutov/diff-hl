@@ -88,7 +88,7 @@
         (when (and type (dired-goto-file-1
                          file (expand-file-name file) nil))
           (forward-line 0)
-          (diff-hl-add-highlighting type 'middle))))))
+          (diff-hl-add-highlighting type 'single))))))
 
 (defalias 'diff-hl-dired-clear 'diff-hl-remove-overlays)
 
