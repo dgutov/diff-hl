@@ -34,11 +34,8 @@ Currently only supports Git, Mercurial and Bazaar."
   :lighter " Amend"
   (if diff-hl-amend-mode
       (progn
-        (if vc-mode
-            (diff-hl-amend-setup)
-          (add-hook 'find-file-hook 'diff-hl-amend-setup nil t))
+        (diff-hl-amend-setup)
         (add-hook 'after-revert-hook 'diff-hl-amend-setup nil t))
-    (remove-hook 'find-file-hook 'diff-hl-amend-setup t)
     (remove-hook 'after-revert-hook 'diff-hl-amend-setup t)
     (setq-local diff-hl-reference-revision nil))
   (when diff-hl-mode
