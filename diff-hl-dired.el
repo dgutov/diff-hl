@@ -71,11 +71,11 @@
                            (if (null value)
                                (push (cons dir type) dirs-alist)
                              (setcdr (assoc dir dirs-alist) 'change))))
-                     (push (cons file type) files-alist))
-                   ;; Process's finished, time to use the results.
-                   (unless (get-buffer-process diff-hl-dired-process-buffer)
-                     (diff-hl-dired-highlight-items (append dirs-alist
-                                                            files-alist))))))))
+                     (push (cons file type) files-alist)))))
+             ;; Process's finished, time to use the results.
+             (unless (get-buffer-process diff-hl-dired-process-buffer)
+               (diff-hl-dired-highlight-items (append dirs-alist
+                                                      files-alist)))))
          )))))
 
 (defun diff-hl-dired-highlight-items (alist)
