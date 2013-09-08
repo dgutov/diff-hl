@@ -83,7 +83,7 @@
   :group 'diff-hl)
 
 (defface diff-hl-unknown
-  '((default :inherit diff-nonexistent))
+  '((default :inherit diff-header))
   "Face used to highlight unregistered files.")
 
 (defcustom diff-hl-draw-borders t
