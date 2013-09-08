@@ -243,7 +243,8 @@
 (defun diff-hl-add-highlighting (type shape)
   (let ((o (make-overlay (point) (point))))
     (overlay-put o 'diff-hl t)
-    (overlay-put o 'before-string (diff-hl-fringe-spec type shape))))
+    (overlay-put o 'before-string (diff-hl-fringe-spec type shape))
+    o))
 
 (defun diff-hl-remove-overlays ()
   (dolist (o (overlays-in (point-min) (point-max)))

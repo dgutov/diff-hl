@@ -87,9 +87,10 @@
         (goto-char (point-min))
         (when (and type (dired-goto-file-1
                          file (expand-file-name file) nil))
-          (forward-line 0)
-          (let ((diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-type))
-            (diff-hl-add-highlighting type 'single)))))))
+          (let* ((diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-type)
+                 (o (diff-hl-add-highlighting type 'single)))
+            (overlay-put o 'modification-hooks '(diff-hl-overlay-modified))
+            ))))))
 
 (defalias 'diff-hl-dired-clear 'diff-hl-remove-overlays)
 
