@@ -91,6 +91,14 @@
   :group 'diff-hl
   :type 'boolean)
 
+(defcustom diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-pos
+  "Function to choose the fringe bitmap for a given change type
+  and position within a hunk.  Should accept two arguments."
+  :group 'diff-hl
+  :type '(choice (const diff-hl-fringe-bmp-from-pos)
+                 (const diff-hl-fringe-bmp-from-type)
+                 function))
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -117,19 +125,37 @@
     (define-fringe-bitmap 'diff-hl-bmp-top top h w 'top)
     (define-fringe-bitmap 'diff-hl-bmp-middle middle h w 'center)
     (define-fringe-bitmap 'diff-hl-bmp-bottom bottom h w 'bottom)
-    (define-fringe-bitmap 'diff-hl-bmp-single single h w 'top)))
+    (define-fringe-bitmap 'diff-hl-bmp-single single h w 'top)
+    (let* ((w2 (- w 2))
+           (delete-row (1- (expr 2 w2)))
+           (middle-bit (expt 2 (1- (/ w2 2))))
+           (insert-bmp (make-vector 2 (* 3 middle-bit))))
+      (define-fringe-bitmap 'diff-hl-bmp-delete (make-vector 2 delete-row))
+      (aset insert-bmp middle-bit delete-row)
+      (aset insert-bmp (1+ middle-bit) delete-row)
+      (define-fringe-bitmap 'diff-hl-bmp-insert insert-bmp)
+      (define-fringe-bitmap 'diff-hl-bmp-change (make-vector
+                                                 w (* 3 middle-bit))))))
 
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
 (defun diff-hl-fringe-spec (type pos)
-  (let* ((key (cons type pos))
+  (let* ((key (list type pos diff-hl-fringe-bmp-function))
          (val (gethash key diff-hl-spec-cache)))
     (unless val
-      (let* ((face-sym (intern (concat "diff-hl-" (symbol-name type))))
-             (bmp-sym (intern (concat "diff-hl-bmp-" (symbol-name pos)))))
+      (let* ((face-sym (intern (format "diff-hl-%s" type)))
+             (bmp-sym (funcall diff-hl-fringe-bmp-function type pos)))
         (setq val (propertize " " 'display `((left-fringe ,bmp-sym ,face-sym))))
         (puthash key val diff-hl-spec-cache)))
     val))
+
+(defun diff-hl-fringe-bmp-from-pos (type pos)
+  (intern (format "diff-hl-bmp-%s" pos)))
+
+(defun diff-hl-fringe-bmp-from-type (type pos)
+  (if (eq type 'unknown)
+      'question-mark
+    (intern (format "diff-hl-bmp-%s" type))))
 
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches nil)
