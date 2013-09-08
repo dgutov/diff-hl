@@ -131,14 +131,14 @@
            (middle-pos (1- (/ w2 2)))
            (middle-bit (expt 2 middle-pos))
            (insert-bmp (make-vector w2 (* 3 middle-bit))))
-      (define-fringe-bitmap 'diff-hl-bmp-delete (make-vector 2 delete-row))
+      (define-fringe-bitmap 'diff-hl-bmp-delete (make-vector 2 delete-row) w2 w2)
       (aset insert-bmp 0 0)
       (aset insert-bmp middle-pos delete-row)
       (aset insert-bmp (1+ middle-pos) delete-row)
       (aset insert-bmp (1- w2) 0)
-      (define-fringe-bitmap 'diff-hl-bmp-insert insert-bmp)
+      (define-fringe-bitmap 'diff-hl-bmp-insert insert-bmp w2 w2)
       (define-fringe-bitmap 'diff-hl-bmp-change (make-vector
-                                                 w2 (* 3 middle-bit))))))
+                                                 w2 (* 3 middle-bit)) w2 w2))))
 
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
