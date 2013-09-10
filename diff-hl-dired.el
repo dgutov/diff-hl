@@ -31,6 +31,7 @@
   :lighter ""
   (if diff-hl-dired-mode
       (progn
+        (diff-hl-maybe-define-bitmaps)
         (set (make-local-variable 'diff-hl-dired-process-buffer) nil)
         (add-hook 'dired-after-readin-hook 'diff-hl-dired-update nil t))
     (remove-hook 'dired-after-readin-hook 'diff-hl-dired-update t)

@@ -140,6 +140,12 @@
       (define-fringe-bitmap 'diff-hl-bmp-change (make-vector
                                                  w2 (* 3 middle-bit)) w2 w2))))
 
+(defun diff-hl-maybe-define-bitmaps ()
+  (when (window-system) ;; No fringes in the console.
+    (unless (fringe-bitmap-p 'diff-hl-bmp-empty)
+      (diff-hl-define-bitmaps)
+      (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center))))
+
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
 (defun diff-hl-fringe-spec (type pos)
@@ -390,10 +396,7 @@ in the source file, or the last line of the hunk above it."
                         (,(kbd "C-x v ]") . diff-hl-next-hunk))
   (if diff-hl-mode
       (progn
-        (when (window-system) ;; No fringes in the console.
-          (unless (fringe-bitmap-p 'diff-hl-bmp-empty)
-            (diff-hl-define-bitmaps)
-            (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center)))
+        (diff-hl-maybe-define-bitmaps)
         (add-hook 'after-save-hook 'diff-hl-update nil t)
         (add-hook 'after-change-functions 'diff-hl-edit nil t)
         (if vc-mode
