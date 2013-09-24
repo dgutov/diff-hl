@@ -91,6 +91,12 @@
   :group 'diff-hl
   :type 'boolean)
 
+(defcustom diff-hl-highlight-function 'diff-hl-highlight-on-fringe
+  "Function to highlight the current line. Its arguments are
+  overlay, change type and position within a hunk."
+  :group 'diff-hl
+  :type 'function)
+
 (defcustom diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-pos
   "Function to choose the fringe bitmap for a given change type
   and position within a hunk.  Should accept two arguments."
@@ -252,8 +258,11 @@
 (defun diff-hl-add-highlighting (type shape)
   (let ((o (make-overlay (point) (point))))
     (overlay-put o 'diff-hl t)
-    (overlay-put o 'before-string (diff-hl-fringe-spec type shape))
+    (funcall diff-hl-highlight-function o type shape)
     o))
+
+(defun diff-hl-highlight-on-fringe (ovl type shape)
+  (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape)))
 
 (defun diff-hl-remove-overlays ()
   (dolist (o (overlays-in (point-min) (point-max)))
