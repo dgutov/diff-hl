@@ -45,24 +45,17 @@
       (progn
         (setq diff-hl-margin-old-highlight-function diff-hl-highlight-function
               diff-hl-highlight-function 'diff-hl-highlight-on-margin)
-        (setq-default left-margin-width 1)
-        (dolist (buffer (buffer-list))
-          (with-current-buffer buffer
-            (cond
-             (diff-hl-mode
-              (diff-hl-update))
-             (diff-hl-dired-mode
-              (diff-hl-dired-update))))))
+        (setq-default left-margin-width 1))
     (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
           diff-hl-margin-old-highlight-function nil)
-    (setq-default left-margin-width 0)
-    (dolist (buffer (buffer-list))
-      (with-current-buffer buffer
-        (cond
-         (diff-hl-mode
-          (diff-hl-update))
-         (diff-hl-dired-mode
-          (diff-hl-dired-update))))))
+    (setq-default left-margin-width 0))
+  (dolist (buffer (buffer-list))
+    (with-current-buffer buffer
+      (cond
+       (diff-hl-mode
+        (diff-hl-update))
+       (diff-hl-dired-mode
+        (diff-hl-dired-update)))))
   (walk-windows (lambda (win) (set-window-buffer win (window-buffer win)))))
 
 (defvar diff-hl-margin-spec-cache
