@@ -27,7 +27,7 @@
 
 ;;;###autoload
 (define-minor-mode diff-hl-dired-mode
-  "Toggle VC diff fringe highlighting in a Dired buffer."
+  "Toggle VC diff highlighting on the side of a Dired window."
   :lighter ""
   (if diff-hl-dired-mode
       (progn

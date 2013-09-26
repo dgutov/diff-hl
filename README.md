@@ -1,19 +1,43 @@
 About
 =====
 
-`diff-hl-mode` highlights uncommitted changes on the left fringe of the window,
+`diff-hl-mode` highlights uncommitted changes on the left side of the window,
 allows you to jump between and revert them selectively.
 
-For the usage instructions and the list of commands, see the header comment.
+For the usage instructions and the list of commands, see the Commentary section
+inside the file.
 
 Tested with Git, Mercurial, Bazaar and SVN. May work with other VC backends, too.
 
-Screenshot
+The package also contains auxiliary modes:
+
+* `diff-hl-dired-mode` provides similar functionality in Dired.
+* `diff-hl-margin-mode` changes the highlighting function to
+  use the margin instead of the fringe.
+* `diff-hl-amend-mode` shifts the reference revision back by one.
+
+Check out the Commentary section in each respective file for the usage
+instructions.
+
+Screenshots
 =====
+
+diff-hl-mode
+-----
 
 ![screenie](screenshot.png)
 
 Top window: a buffer in this minor mode, bottom window: the corresponding diff.
+
+diff-hl-dired-mode
+-----
+
+![screenie](screenshot-dired.png)
+
+diff-hl-margin-mode
+-----
+
+![screenie](screenshot-margin.png)
 
 Requirements
 =====
@@ -28,8 +52,14 @@ Notes
   maybe we can do something similar to `highlight-markup-buffers` with a hidden
   buffer containing the unmodified copy.
 
+* We conflict with other modes when they put indicators on the fringe,
+  such as [Flycheck](https://github.com/flycheck/flycheck). This is
+  rarely a significant problem, since if you're using such a mode,
+  you'd usually want to fix all errors and warnings before continuing,
+  and then the conflicting indicators go away.
+
 * There's no fringe when Emacs is running in the console, but the navigation and
-  revert commands still work.
+  revert commands still work. Consider turning `diff-hl-margin-mode` on.
 
 * Frame-local and buffer-local values of `line-spacing` are not supported.
 

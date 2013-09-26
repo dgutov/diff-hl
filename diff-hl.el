@@ -23,8 +23,9 @@
 
 ;;; Commentary:
 
-;; `diff-hl-mode' highlights uncommitted changes on the left fringe of the
-;; window, allows you to jump between the hunks and revert them selectively.
+;; `diff-hl-mode' highlights uncommitted changes on the left side of
+;; the window (using the fringe, by default), allows you to jump
+;; between the hunks and revert them selectively.
 
 ;; Provided commands:
 ;;
@@ -58,7 +59,7 @@
   (require 'face-remap))
 
 (defgroup diff-hl nil
-  "VC diff fringe highlighting"
+  "VC diff highlighting on the side of a window"
   :group 'vc)
 
 (defface diff-hl-insert
@@ -398,7 +399,7 @@ in the source file, or the last line of the hunk above it."
 
 ;;;###autoload
 (define-minor-mode diff-hl-mode
-  "Toggle VC diff fringe highlighting."
+  "Toggle VC diff highlighting."
   :lighter "" :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
                         (,(kbd "C-x v n") . diff-hl-revert-hunk)
                         (,(kbd "C-x v [") . diff-hl-previous-hunk)
