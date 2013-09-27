@@ -24,10 +24,9 @@ Screenshots
 
 diff-hl-mode
 -----
+Top window: a buffer in this minor mode, bottom window: the corresponding diff.
 
 ![screenie](screenshot.png)
-
-Top window: a buffer in this minor mode, bottom window: the corresponding diff.
 
 diff-hl-dired-mode
 -----
