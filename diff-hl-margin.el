@@ -37,18 +37,33 @@
 
 (defvar diff-hl-margin-old-highlight-function nil)
 
+(defgroup diff-hl-margin nil
+  "Highlight buffer changes on margin"
+  :group 'diff-hl)
+
+(defcustom diff-hl-margin-side 'left
+  "Which margin to use for indicators."
+  :type '(choice (const left)
+                 (const right))
+  :set (lambda (var value)
+         (let ((on diff-hl-margin-mode))
+           (when on (diff-hl-margin-mode -1))
+           (set-default var value)
+           (when on (diff-hl-margin-mode 1)))))
+
 ;;;###autoload
 (define-minor-mode diff-hl-margin-mode
   "Toggle displaying `diff-hl-mode' highlights on the margin."
   :lighter "" :global t
-  (if diff-hl-margin-mode
-      (progn
-        (setq diff-hl-margin-old-highlight-function diff-hl-highlight-function
-              diff-hl-highlight-function 'diff-hl-highlight-on-margin)
-        (setq-default left-margin-width 1))
-    (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
-          diff-hl-margin-old-highlight-function nil)
-    (setq-default left-margin-width 0))
+  (let ((width-var (intern (format "%s-margin-width" diff-hl-margin-side))))
+    (if diff-hl-margin-mode
+        (progn
+          (setq diff-hl-margin-old-highlight-function diff-hl-highlight-function
+                diff-hl-highlight-function 'diff-hl-highlight-on-margin)
+          (set-default width-var 1))
+      (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
+            diff-hl-margin-old-highlight-function nil)
+      (set-default width-var 0)))
   (dolist (buffer (buffer-list))
     (with-current-buffer buffer
       (cond
@@ -61,15 +76,19 @@
 (defvar diff-hl-margin-spec-cache
   (loop for (type . char) in '((insert . "+") (delete . "-")
                                (change . "|") (unknown . "?"))
-        collect (cons type
-                      (propertize
-                       " " 'display
-                       `((margin left-margin)
-                         ,(propertize char 'face
-                                      (intern (format "diff-hl-%s" type))))))))
+        nconc
+        (loop for side in '(left right)
+              collect
+              (cons (cons type side)
+                    (propertize
+                     " " 'display
+                     `((margin ,(intern (format "%s-margin" side)))
+                       ,(propertize char 'face
+                                    (intern (format "diff-hl-%s" type)))))))))
 
 (defun diff-hl-highlight-on-margin (ovl type _shape)
-  (let ((spec (cdr (assoc type diff-hl-margin-spec-cache))))
+  (let ((spec (cdr (assoc (cons type diff-hl-margin-side)
+                          diff-hl-margin-spec-cache))))
     (overlay-put ovl 'before-string spec)))
 
 (provide 'diff-hl-margin)
