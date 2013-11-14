@@ -27,6 +27,8 @@
 
 (require 'diff-hl)
 
+(defvar diff-hl-dired-process-buffer nil)
+
 ;;;###autoload
 (define-minor-mode diff-hl-dired-mode
   "Toggle VC diff highlighting on the side of a Dired window."
@@ -38,8 +40,6 @@
         (add-hook 'dired-after-readin-hook 'diff-hl-dired-update nil t))
     (remove-hook 'dired-after-readin-hook 'diff-hl-dired-update t)
     (diff-hl-dired-clear)))
-
-(defvar diff-hl-dired-process-buffer nil)
 
 (defun diff-hl-dired-update ()
   "Highlight the Dired buffer."
@@ -59,7 +59,7 @@
         (erase-buffer)
         (vc-call-backend
          backend 'dir-status def-dir
-         (lambda (entries &optional more-to-come)
+         (lambda (entries &optional _more-to-come)
            (with-current-buffer buffer
              (dolist (entry entries)
                (cl-destructuring-bind (file state &rest) entry

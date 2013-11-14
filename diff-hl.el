@@ -167,13 +167,15 @@
         (puthash key val diff-hl-spec-cache)))
     val))
 
-(defun diff-hl-fringe-bmp-from-pos (type pos)
+(defun diff-hl-fringe-bmp-from-pos (_type pos)
   (intern (format "diff-hl-bmp-%s" pos)))
 
-(defun diff-hl-fringe-bmp-from-type (type pos)
+(defun diff-hl-fringe-bmp-from-type (type _pos)
   (if (eq type 'unknown)
       'question-mark
     (intern (format "diff-hl-bmp-%s" type))))
+
+(defvar vc-svn-diff-switches)
 
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches nil)
