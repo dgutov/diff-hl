@@ -34,6 +34,7 @@
 ;;
 ;; (unless (window-system) (diff-hl-margin-mode))
 
+(require 'cl-lib)
 (require 'diff-hl)
 (require 'diff-hl-dired)
 
@@ -76,17 +77,17 @@
   (walk-windows (lambda (win) (set-window-buffer win (window-buffer win)))))
 
 (defvar diff-hl-margin-spec-cache
-  (loop for (type . char) in '((insert . "+") (delete . "-")
-                               (change . "|") (unknown . "?"))
+  (cl-loop for (type . char) in '((insert . "+") (delete . "-")
+                                  (change . "|") (unknown . "?"))
         nconc
-        (loop for side in '(left right)
-              collect
-              (cons (cons type side)
-                    (propertize
-                     " " 'display
-                     `((margin ,(intern (format "%s-margin" side)))
-                       ,(propertize char 'face
-                                    (intern (format "diff-hl-%s" type)))))))))
+        (cl-loop for side in '(left right)
+                 collect
+                 (cons (cons type side)
+                       (propertize
+                        " " 'display
+                        `((margin ,(intern (format "%s-margin" side)))
+                          ,(propertize char 'face
+                                       (intern (format "diff-hl-%s" type)))))))))
 
 (defun diff-hl-highlight-on-margin (ovl type _shape)
   (let ((spec (cdr (assoc (cons type diff-hl-margin-side)
