@@ -1,6 +1,6 @@
 ;;; diff-hl-margin.el --- Highlight buffer changes on margins -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2013  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2014  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -19,7 +19,7 @@
 
 ;;; Commentary:
 
-;; This is a global mode, it modified `diff-hl-mode' to use the margin
+;; This is a global mode, it modifies `diff-hl-mode' to use the margin
 ;; instead of the fringe. To toggle, type `M-x diff-hl-margin-mode'.
 ;;
 ;; Compared to the default behavior, this makes `diff-hl-mode'
