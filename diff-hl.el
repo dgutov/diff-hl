@@ -96,17 +96,31 @@
 
 (defcustom diff-hl-highlight-function 'diff-hl-highlight-on-fringe
   "Function to highlight the current line. Its arguments are
-  overlay, change type and position within a hunk."
+overlay, change type and position within a hunk."
   :group 'diff-hl
   :type 'function)
 
 (defcustom diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-pos
   "Function to choose the fringe bitmap for a given change type
-  and position within a hunk.  Should accept two arguments."
+and position within a hunk.  Should accept two arguments."
   :group 'diff-hl
   :type '(choice (const diff-hl-fringe-bmp-from-pos)
                  (const diff-hl-fringe-bmp-from-type)
                  function))
+
+(defcustom diff-hl-line-functions nil
+  "Special hook that runs when highlighting a line.
+Each function in this hook is called with two arguments: change
+type and position within a hunk."
+  :group 'diff-hl
+  :type 'hook)
+
+(defcustom diff-hl-clear-hook nil
+  "List of functions to be called to clean up the highlighting in
+the buffer, before either highlighting it according to the new
+data, or disabling this minor mode."
+  :group 'diff-hl
+  :type 'hook)
 
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
@@ -267,11 +281,12 @@
     o))
 
 (defun diff-hl-highlight-on-fringe (ovl type shape)
-  (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape)))
+  (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape))
+  (run-hook-with-args 'diff-hl-line-functions type shape))
 
 (defun diff-hl-remove-overlays ()
-  (dolist (o (overlays-in (point-min) (point-max)))
-    (when (overlay-get o 'diff-hl) (delete-overlay o))))
+  (remove-overlays (point-min) (point-max) 'diff-hl t)
+  (run-hook-with-args 'diff-hl-clear-hook))
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
   "Delete the hunk overlay and all our line overlays inside it."
