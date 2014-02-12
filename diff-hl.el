@@ -92,7 +92,7 @@
 (defcustom diff-hl-command-prefix (kbd "C-x v")
   "The prefix for all `diff-hl' commands."
   :group 'diff-hl
-  :type 'boolean)
+  :type 'string)
 
 (defcustom diff-hl-draw-borders t
   "Non-nil to draw borders around fringe indicators."
