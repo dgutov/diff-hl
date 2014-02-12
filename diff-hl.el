@@ -1,11 +1,11 @@
 ;;; diff-hl.el --- Highlight uncommitted changes -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2013  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2014  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.5.1
+;; Version:  1.5.2
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is part of GNU Emacs.
@@ -88,6 +88,9 @@
 (defface diff-hl-unknown
   '((default :inherit diff-header))
   "Face used to highlight unregistered files.")
+
+(defconst diff-hl-command-prefix (kbd "C-x v")
+  "The prefix for all `diff-hl' commands.")
 
 (defcustom diff-hl-draw-borders t
   "Non-nil to draw borders around fringe indicators."
@@ -401,13 +404,19 @@ in the source file, or the last line of the hunk above it."
   (interactive)
   (diff-hl-next-hunk t))
 
+(define-prefix-command 'diff-hl-command-map)
+
+(let ((map diff-hl-command-map))
+  (define-key map "n" 'diff-hl-revert-hunk)
+  (define-key map "[" 'diff-hl-previous-hunk)
+  (define-key map "]" 'diff-hl-next-hunk)
+  map)
+
 ;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle VC diff highlighting."
   :lighter "" :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
-                        (,(kbd "C-x v n") . diff-hl-revert-hunk)
-                        (,(kbd "C-x v [") . diff-hl-previous-hunk)
-                        (,(kbd "C-x v ]") . diff-hl-next-hunk))
+                        (,diff-hl-command-prefix . diff-hl-command-map))
   (if diff-hl-mode
       (progn
         (diff-hl-maybe-define-bitmaps)
@@ -437,8 +446,8 @@ in the source file, or the last line of the hunk above it."
                            (when (characterp event)
                              (push (cons (string event) binding) smart-keys))))
                        map)))
-      (scan diff-hl-mode-map)
-      (smartrep-define-key diff-hl-mode-map "C-x v" smart-keys))))
+      (scan diff-hl-command-map)
+      (smartrep-define-key diff-hl-mode-map diff-hl-command-prefix smart-keys))))
 
 (defun diff-hl-dir-update ()
   (dolist (pair (if (vc-dir-marked-files)
