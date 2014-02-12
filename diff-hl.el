@@ -5,7 +5,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.5.2
+;; Version:  1.5.3
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is part of GNU Emacs.
@@ -89,8 +89,10 @@
   '((default :inherit diff-header))
   "Face used to highlight unregistered files.")
 
-(defconst diff-hl-command-prefix (kbd "C-x v")
-  "The prefix for all `diff-hl' commands.")
+(defcustom diff-hl-command-prefix (kbd "C-x v")
+  "The prefix for all `diff-hl' commands."
+  :group 'diff-hl
+  :type 'boolean)
 
 (defcustom diff-hl-draw-borders t
   "Non-nil to draw borders around fringe indicators."
