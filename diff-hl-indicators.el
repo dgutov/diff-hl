@@ -43,9 +43,12 @@
         (add-hook 'diff-hl-line-functions 'diff-hl-indicators-add-line)
         (add-hook 'diff-hl-clear-hook 'ind-clear-indicators-relative))
     (remove-hook 'diff-hl-line-functions 'diff-hl-indicators-add-line)
-    (remove-hook 'diff-hl-clear-hook 'ind-clear-indicators-relative)
-    (dolist (buffer (buffer-list))
-      (when diff-hl-mode (diff-hl-update)))))
+    (remove-hook 'diff-hl-clear-hook 'ind-clear-indicators-relative))
+  (dolist (buffer (buffer-list))
+    (when diff-hl-mode
+      (if diff-hl-indicators-mode
+          (diff-hl-update)
+        (ind-clear-indicators-relative)))))
 
 (defun diff-hl-indicators-add-line (type _shape)
   (ind-create-indicator (point) :dynamic t :managed t
