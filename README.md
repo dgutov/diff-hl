@@ -57,14 +57,15 @@ Notes
   you'd usually want to fix all errors and warnings before continuing,
   and then the conflicting indicators go away.
 
-* There's no fringe when Emacs is running in the console, but the navigation and
-  revert commands still work. Consider turning `diff-hl-margin-mode` on.
+* There's no fringe when Emacs is running in the console, but the navigation
+  and revert commands still work. Consider turning `diff-hl-margin-mode` on,
+  to show the indicators in the margin instead.
 
 * Frame-local and buffer-local values of `line-spacing` are not supported.
 
-* [git-gutter](https://github.com/syohex/emacs-git-gutter) provides interactive
-  commands to show/hide/toggle margin indicators for the same information, and
-  allows you to customize how the indicators look.
+* [emacs-git-gutter](https://github.com/syohex/emacs-git-gutter) shows
+  indicators in the margin by default, allows you to customize how the
+  indicators look more easily, and has a "stage hunk" command.
 
 Integration
 =====
@@ -81,3 +82,9 @@ psvn
 (defadvice svn-status-update-modeline (after svn-update-diff-hl activate)
   (diff-hl-update))
 ```
+
+Magit
+-----
+
+If you have a recent enough version installed, it defines
+`magit-revert-buffer-hook`, which we use.
