@@ -51,6 +51,7 @@
 
 ;;; Code:
 
+(require 'fringe)
 (require 'diff-mode)
 (require 'vc)
 (require 'vc-dir)
