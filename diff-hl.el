@@ -425,9 +425,10 @@ in the source file, or the last line of the hunk above it."
         (diff-hl-maybe-define-bitmaps)
         (add-hook 'after-save-hook 'diff-hl-update nil t)
         (add-hook 'after-change-functions 'diff-hl-edit nil t)
-        (if vc-mode
-            (diff-hl-update)
-          (add-hook 'find-file-hook 'diff-hl-update t t))
+        (add-hook (if vc-mode
+                      'diff-hl-mode-on-hook
+                    'find-file-hook)
+                  'diff-hl-update t t)
         (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
         (add-hook 'after-revert-hook 'diff-hl-update nil t)
         (add-hook 'magit-revert-buffer-hook 'diff-hl-update nil t)
