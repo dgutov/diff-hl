@@ -426,11 +426,20 @@ in the source file, or the last line of the hunk above it."
         (add-hook 'after-save-hook 'diff-hl-update nil t)
         (add-hook 'after-change-functions 'diff-hl-edit nil t)
         (add-hook (if vc-mode
+                      ;; Defer until the end of this hook, so that its
+                      ;; elements can modify the update behavior.
                       'diff-hl-mode-on-hook
+                    ;; If we're only opening the file now,
+                    ;; `vc-find-file-hook' likely hasn't run yet, so
+                    ;; let's wait until the state information is
+                    ;; saved, in order not to fetch it twice.
                     'find-file-hook)
                   'diff-hl-update t t)
         (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
         (add-hook 'after-revert-hook 'diff-hl-update nil t)
+        ;; Magit does call `auto-revert-handler', but it usually
+        ;; doesn't do much, because `buffer-stale--default-function'
+        ;; doesn't care about changed VC state.
         (add-hook 'magit-revert-buffer-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
