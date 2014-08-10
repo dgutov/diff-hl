@@ -58,23 +58,46 @@
 (define-minor-mode diff-hl-margin-mode
   "Toggle displaying `diff-hl-mode' highlights on the margin."
   :lighter "" :global t
-  (let ((width-var (intern (format "%s-margin-width" diff-hl-margin-side))))
-    (if diff-hl-margin-mode
-        (progn
-          (setq diff-hl-margin-old-highlight-function diff-hl-highlight-function
-                diff-hl-highlight-function 'diff-hl-highlight-on-margin)
-          (set-default width-var 1))
-      (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
-            diff-hl-margin-old-highlight-function nil)
-      (set-default width-var 0)))
-  (dolist (buffer (buffer-list))
-    (with-current-buffer buffer
+  (if diff-hl-margin-mode
+      (progn
+        (add-hook 'diff-hl-mode-on-hook 'diff-hl-margin-minor-mode)
+        (add-hook 'diff-hl-mode-off-hook 'diff-hl-margin-minor-mode-off)
+        (add-hook 'diff-hl-dired-mode-on-hook 'diff-hl-margin-minor-mode)
+        (add-hook 'diff-hl-dired-mode-off-hook 'diff-hl-margin-minor-mode-off))
+    (remove-hook 'diff-hl-mode-on-hook 'diff-hl-margin-minor-mode)
+    (remove-hook 'diff-hl-mode-off-hook 'diff-hl-margin-minor-mode-off)
+    (remove-hook 'diff-hl-dired-mode-on-hook 'diff-hl-margin-minor-mode)
+    (remove-hook 'diff-hl-dired-mode-off-hook 'diff-hl-margin-minor-mode-off))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
       (cond
        (diff-hl-mode
+        (diff-hl-margin-minor-mode (if diff-hl-margin-mode 1 -1))
         (diff-hl-update))
        (diff-hl-dired-mode
-        (diff-hl-dired-update)))))
-  (walk-windows (lambda (win) (set-window-buffer win (window-buffer win)))))
+        (diff-hl-margin-minor-mode (if diff-hl-margin-mode 1 -1))
+        (diff-hl-dired-update))))))
+
+(define-minor-mode diff-hl-margin-minor-mode
+  "Toggle displaying `diff-hl-mode' highlights on the margin locally.
+You probably shouldn't use this function directly."
+  :lighter ""
+  (let ((width-var (intern (format "%s-margin-width" diff-hl-margin-side))))
+    (if diff-hl-margin-minor-mode
+        (progn
+          (set (make-local-variable 'diff-hl-margin-old-highlight-function)
+               diff-hl-highlight-function)
+          (set (make-local-variable 'diff-hl-highlight-function)
+               'diff-hl-highlight-on-margin)
+          (set width-var 1))
+      (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
+            diff-hl-margin-old-highlight-function nil)
+      (set width-var 0)))
+  (dolist (win (get-buffer-window-list))
+    (set-window-buffer win (current-buffer))))
+
+(defun diff-hl-margin-minor-mode-off ()
+  (diff-hl-margin-minor-mode -1))
 
 (defvar diff-hl-margin-spec-cache
   (cl-loop for (type . char) in '((insert . "+") (delete . "-")
