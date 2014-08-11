@@ -440,6 +440,7 @@ in the source file, or the last line of the hunk above it."
         ;; Magit does call `auto-revert-handler', but it usually
         ;; doesn't do much, because `buffer-stale--default-function'
         ;; doesn't care about changed VC state.
+        ;; https://github.com/magit/magit/issues/603
         (add-hook 'magit-revert-buffer-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
