@@ -86,10 +86,6 @@
   "Face used to highlight changed lines."
   :group 'diff-hl)
 
-(defface diff-hl-unknown
-  '((default :inherit diff-header))
-  "Face used to highlight unregistered files.")
-
 (defcustom diff-hl-command-prefix (kbd "C-x v")
   "The prefix for all `diff-hl' commands."
   :group 'diff-hl
@@ -113,6 +109,12 @@
   :type '(choice (const diff-hl-fringe-bmp-from-pos)
                  (const diff-hl-fringe-bmp-from-type)
                  function))
+
+(defcustom diff-hl-fringe-face-function 'diff-hl-fringe-face-from-type
+  "Function to choose the fringe face for a given change type
+  and position within a hunk.  Should accept two arguments."
+  :group 'diff-hl
+  :type 'function)
 
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
@@ -166,11 +168,14 @@
   (let* ((key (list type pos diff-hl-fringe-bmp-function))
          (val (gethash key diff-hl-spec-cache)))
     (unless val
-      (let* ((face-sym (intern (format "diff-hl-%s" type)))
+      (let* ((face-sym (funcall diff-hl-fringe-face-function type pos))
              (bmp-sym (funcall diff-hl-fringe-bmp-function type pos)))
         (setq val (propertize " " 'display `((left-fringe ,bmp-sym ,face-sym))))
         (puthash key val diff-hl-spec-cache)))
     val))
+
+(defun diff-hl-fringe-face-from-type (type _pos)
+  (intern (format "diff-hl-%s" type)))
 
 (defun diff-hl-fringe-bmp-from-pos (_type pos)
   (intern (format "diff-hl-bmp-%s" pos)))

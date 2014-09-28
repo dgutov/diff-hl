@@ -29,6 +29,26 @@
 
 (defvar diff-hl-dired-process-buffer nil)
 
+(defgroup diff-hl-dired nil
+  "VC diff highlighting on the side of a Dired window."
+  :group 'diff-hl)
+
+(defface diff-hl-dired-insert
+  '((default :inherit diff-hl-insert))
+  "Face used to highlight added files.")
+
+(defface diff-hl-dired-delete
+  '((default :inherit diff-hl-delete))
+  "Face used to highlight directories with deleted files.")
+
+(defface diff-hl-dired-change
+  '((default :inherit diff-hl-change))
+  "Face used to highlight changed files.")
+
+(defface diff-hl-dired-unknown
+  '((default :inherit diff-header))
+  "Face used to highlight unregistered files.")
+
 ;;;###autoload
 (define-minor-mode diff-hl-dired-mode
   "Toggle VC diff highlighting on the side of a Dired window."
@@ -91,9 +111,13 @@
         (when (and type (dired-goto-file-1
                          file (expand-file-name file) nil))
           (let* ((diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-type)
+                 (diff-hl-fringe-face-function 'diff-hl-dired-face-from-type)
                  (o (diff-hl-add-highlighting type 'single)))
             (overlay-put o 'modification-hooks '(diff-hl-overlay-modified))
             ))))))
+
+(defun diff-hl-dired-face-from-type (type _pos)
+  (intern (format "diff-hl-dired-%s" type)))
 
 (defalias 'diff-hl-dired-clear 'diff-hl-remove-overlays)
 
