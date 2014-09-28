@@ -152,8 +152,7 @@
       (aset insert-bmp (1+ middle-pos) delete-row)
       (aset insert-bmp (1- w2) 0)
       (define-fringe-bitmap 'diff-hl-bmp-insert insert-bmp w2 w2)
-      (define-fringe-bitmap 'diff-hl-bmp-change (make-vector
-                                                 w2 (* 3 middle-bit)) w2 w2))))
+      )))
 
 (defun diff-hl-maybe-define-bitmaps ()
   (when (window-system) ;; No fringes in the console.
@@ -177,9 +176,10 @@
   (intern (format "diff-hl-bmp-%s" pos)))
 
 (defun diff-hl-fringe-bmp-from-type (type _pos)
-  (if (eq type 'unknown)
-      'question-mark
-    (intern (format "diff-hl-bmp-%s" type))))
+  (cl-case type
+    (unknown 'question-mark)
+    (change 'exclamation-mark)
+    (t (intern (format "diff-hl-bmp-%s" type)))))
 
 (defvar vc-svn-diff-switches)
 
