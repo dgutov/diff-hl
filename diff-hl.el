@@ -184,6 +184,7 @@
   (cl-case type
     (unknown 'question-mark)
     (change 'exclamation-mark)
+    (ignored 'filled-square)
     (t (intern (format "diff-hl-bmp-%s" type)))))
 
 (defvar vc-svn-diff-switches)

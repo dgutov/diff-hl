@@ -49,6 +49,10 @@
   '((default :inherit diff-header))
   "Face used to highlight unregistered files.")
 
+(defface diff-hl-dired-ignored
+  '((default :inherit shadow))
+  "Face used to highlight unregistered files.")
+
 ;;;###autoload
 (define-minor-mode diff-hl-dired-mode
   "Toggle VC diff highlighting on the side of a Dired window."
@@ -79,7 +83,7 @@
         (erase-buffer)
         (vc-call-backend
          backend 'dir-status def-dir
-         (lambda (entries &optional _more-to-come)
+         (lambda (entries &optional more-to-come)
            (with-current-buffer buffer
              (dolist (entry entries)
                (cl-destructuring-bind (file state &rest) entry
@@ -95,11 +99,33 @@
                                (push (cons dir type) dirs-alist)
                              (setcdr (assoc dir dirs-alist) 'change))))
                      (push (cons file type) files-alist)))))
-             ;; Process's finished, time to use the results.
-             (unless (get-buffer-process diff-hl-dired-process-buffer)
+             (unless more-to-come
                (diff-hl-dired-highlight-items (append dirs-alist
-                                                      files-alist)))))
+                                                      files-alist))
+               (diff-hl-dired-update-ignores backend def-dir))))
          )))))
+
+(defun diff-hl-dired-update-ignores (backend def-dir)
+  (let ((buffer (current-buffer))
+        entries-alist)
+    (with-current-buffer diff-hl-dired-process-buffer
+      (erase-buffer)
+      (vc-call-backend
+       backend 'dir-status-files def-dir
+       (cl-loop for file in (directory-files def-dir)
+                unless (member file '("." ".."))
+                collect file)
+       nil
+       (lambda (entries &optional more-to-come)
+         (with-current-buffer buffer
+           (dolist (entry entries)
+             (cl-destructuring-bind (file state &rest) entry
+               (when (eq state 'ignored)
+                 (push (cons (directory-file-name file)
+                             'ignored) entries-alist))))
+           (unless more-to-come
+             (diff-hl-dired-highlight-items entries-alist))))
+       ))))
 
 (defun diff-hl-dired-highlight-items (alist)
   "Highlight ALIST containing (FILE . TYPE) elements."
