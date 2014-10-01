@@ -84,25 +84,26 @@
         (vc-call-backend
          backend 'dir-status def-dir
          (lambda (entries &optional more-to-come)
-           (with-current-buffer buffer
-             (dolist (entry entries)
-               (cl-destructuring-bind (file state &rest) entry
-                 (let ((type (plist-get
-                              '(edited change added insert removed delete
-                                unregistered unknown)
-                              state)))
-                   (if (string-match "\\`\\([^/]+\\)/" file)
-                       (let* ((dir (match-string 1 file))
-                              (value (cdr (assoc dir dirs-alist))))
-                         (unless (eq value type)
-                           (if (null value)
-                               (push (cons dir type) dirs-alist)
-                             (setcdr (assoc dir dirs-alist) 'change))))
-                     (push (cons file type) files-alist)))))
-             (unless more-to-come
-               (diff-hl-dired-highlight-items (append dirs-alist
-                                                      files-alist))
-               (diff-hl-dired-update-ignores backend def-dir))))
+           (when (buffer-live-p buffer)
+             (with-current-buffer buffer
+               (dolist (entry entries)
+                 (cl-destructuring-bind (file state &rest) entry
+                   (let ((type (plist-get
+                                '(edited change added insert removed delete
+                                         unregistered unknown)
+                                state)))
+                     (if (string-match "\\`\\([^/]+\\)/" file)
+                         (let* ((dir (match-string 1 file))
+                                (value (cdr (assoc dir dirs-alist))))
+                           (unless (eq value type)
+                             (if (null value)
+                                 (push (cons dir type) dirs-alist)
+                               (setcdr (assoc dir dirs-alist) 'change))))
+                       (push (cons file type) files-alist)))))
+               (unless more-to-come
+                 (diff-hl-dired-highlight-items (append dirs-alist
+                                                        files-alist))
+                 (diff-hl-dired-update-ignores backend def-dir)))))
          )))))
 
 (defun diff-hl-dired-update-ignores (backend def-dir)
@@ -117,14 +118,15 @@
                 collect file)
        nil
        (lambda (entries &optional more-to-come)
-         (with-current-buffer buffer
-           (dolist (entry entries)
-             (cl-destructuring-bind (file state &rest) entry
-               (when (eq state 'ignored)
-                 (push (cons (directory-file-name file)
-                             'ignored) entries-alist))))
-           (unless more-to-come
-             (diff-hl-dired-highlight-items entries-alist))))
+         (when (buffer-live-p buffer)
+           (with-current-buffer buffer
+             (dolist (entry entries)
+               (cl-destructuring-bind (file state &rest) entry
+                 (when (eq state 'ignored)
+                   (push (cons (directory-file-name file)
+                               'ignored) entries-alist))))
+             (unless more-to-come
+               (diff-hl-dired-highlight-items entries-alist)))))
        ))))
 
 (defun diff-hl-dired-highlight-items (alist)
