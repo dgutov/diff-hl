@@ -122,6 +122,8 @@
            (with-current-buffer buffer
              (dolist (entry entries)
                (cl-destructuring-bind (file state &rest) entry
+                 ;; Work around http://debbugs.gnu.org/18605
+                 (setq file (replace-regexp-in-string "\\` " "" file))
                  (when (eq state 'ignored)
                    (push (cons (directory-file-name file)
                                'ignored) entries-alist))))
