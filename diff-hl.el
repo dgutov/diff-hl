@@ -144,6 +144,9 @@
     (define-fringe-bitmap 'diff-hl-bmp-bottom bottom h w 'bottom)
     (define-fringe-bitmap 'diff-hl-bmp-single single h w 'top)
     (let* ((w2 (* (/ w 2) 2))
+           ;; When fringes are disabled, it's easier to fix up the width,
+           ;; instead of doing nothing (#20).
+           (w2 (if (zerop w2) 2 w2))
            (delete-row (- (expt 2 (1- w2)) 2))
            (middle-pos (1- (/ w2 2)))
            (middle-bit (expt 2 middle-pos))
