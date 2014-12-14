@@ -87,7 +87,7 @@
            (when (buffer-live-p buffer)
              (with-current-buffer buffer
                (dolist (entry entries)
-                 (cl-destructuring-bind (file state &rest) entry
+                 (cl-destructuring-bind (file state &rest r) entry
                    (let ((type (plist-get
                                 '(edited change added insert removed delete
                                          unregistered unknown)
@@ -114,14 +114,14 @@
       (vc-call-backend
        backend 'dir-status-files def-dir
        (cl-loop for file in (directory-files def-dir)
-                unless (member file '("." ".."))
+                unless (member file '("." ".." ".hg"))
                 collect file)
        nil
        (lambda (entries &optional more-to-come)
          (when (buffer-live-p buffer)
            (with-current-buffer buffer
              (dolist (entry entries)
-               (cl-destructuring-bind (file state &rest) entry
+               (cl-destructuring-bind (file state &rest r) entry
                  ;; Work around http://debbugs.gnu.org/18605
                  (setq file (replace-regexp-in-string "\\` " "" file))
                  (when (eq state 'ignored)
