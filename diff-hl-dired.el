@@ -46,11 +46,11 @@
   "Face used to highlight changed files.")
 
 (defface diff-hl-dired-unknown
-  '((default :inherit diff-header))
+  '((default :inherit dired-ignored))
   "Face used to highlight unregistered files.")
 
 (defface diff-hl-dired-ignored
-  '((default :inherit shadow))
+  '((default :inherit dired-ignored))
   "Face used to highlight unregistered files.")
 
 ;;;###autoload
