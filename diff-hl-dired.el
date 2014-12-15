@@ -22,6 +22,12 @@
 ;; To enable in all Dired buffers, add this to your init file:
 ;;
 ;; (add-hook 'dired-mode-hook 'diff-hl-dired-mode)
+;;
+;; or
+;;
+;; (add-hook 'dired-mode-hook 'diff-hl-dired-mode-unless-remote)
+;;
+;; to do it only in local Dired buffers.
 
 ;;; Code:
 
@@ -151,6 +157,10 @@
   (intern (format "diff-hl-dired-%s" type)))
 
 (defalias 'diff-hl-dired-clear 'diff-hl-remove-overlays)
+
+(defun diff-hl-dired-mode-unless-remote ()
+  (unless (file-remote-p default-directory)
+    (diff-hl-dired-mode)))
 
 (provide 'diff-hl-dired)
 
