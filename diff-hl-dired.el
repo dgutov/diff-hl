@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'diff-hl)
+(require 'dired)
 
 (defvar diff-hl-dired-process-buffer nil)
 
@@ -75,6 +76,9 @@
   (let ((backend (ignore-errors (vc-responsible-backend default-directory)))
         (def-dir default-directory)
         (buffer (current-buffer))
+        (contents (cl-loop for file in (directory-files default-directory)
+                           unless (member file '("." ".." ".hg"))
+                           collect file))
         dirs-alist files-alist)
     (when backend
       (diff-hl-dired-clear)
@@ -87,55 +91,46 @@
         (setq default-directory (expand-file-name def-dir))
         (erase-buffer)
         (vc-call-backend
-         backend 'dir-status def-dir
+         backend 'dir-status-files def-dir
+         (when diff-hl-dired-extra-indicators
+           contents)
+         nil
          (lambda (entries &optional more-to-come)
            (when (buffer-live-p buffer)
              (with-current-buffer buffer
                (dolist (entry entries)
                  (cl-destructuring-bind (file state &rest r) entry
+                   ;; Work around http://debbugs.gnu.org/18605
+                   (setq file (replace-regexp-in-string "\\` " "" file))
                    (let ((type (plist-get
                                 '(edited change added insert removed delete
-                                         unregistered unknown)
+                                  unregistered unknown ignored ignored)
                                 state)))
                      (if (string-match "\\`\\([^/]+\\)/" file)
                          (let* ((dir (match-string 1 file))
                                 (value (cdr (assoc dir dirs-alist))))
                            (unless (eq value type)
-                             (if (null value)
-                                 (push (cons dir type) dirs-alist)
-                               (setcdr (assoc dir dirs-alist) 'change))))
+                             (cond
+                              ((eq type 'up-to-date))
+                              ((null value)
+                               (push (cons dir type) dirs-alist))
+                              ((not (eq type 'ignored))
+                               (setcdr (assoc dir dirs-alist) 'change)))))
                        (push (cons file type) files-alist)))))
                (unless more-to-come
-                 (diff-hl-dired-highlight-items (append dirs-alist
-                                                        files-alist))
-                 (when diff-hl-dired-extra-indicators
-                   (diff-hl-dired-update-ignores backend def-dir))))))
+                 (diff-hl-dired-highlight-items
+                  (append dirs-alist files-alist))))))
          )))))
 
-(defun diff-hl-dired-update-ignores (backend def-dir)
-  (let ((buffer (current-buffer))
-        entries-alist)
-    (with-current-buffer diff-hl-dired-process-buffer
-      (erase-buffer)
-      (vc-call-backend
-       backend 'dir-status-files def-dir
-       (cl-loop for file in (directory-files def-dir)
-                unless (member file '("." ".." ".hg"))
-                collect file)
-       nil
-       (lambda (entries &optional more-to-come)
-         (when (buffer-live-p buffer)
-           (with-current-buffer buffer
-             (dolist (entry entries)
-               (cl-destructuring-bind (file state &rest r) entry
-                 ;; Work around http://debbugs.gnu.org/18605
-                 (setq file (replace-regexp-in-string "\\` " "" file))
-                 (when (eq state 'ignored)
-                   (push (cons (directory-file-name file)
-                               'ignored) entries-alist))))
-             (unless more-to-come
-               (diff-hl-dired-highlight-items entries-alist)))))
-       ))))
+(when (version< emacs-version "24.4.51.5")
+  ;; Work around http://debbugs.gnu.org/19386
+  (defadvice vc-git-dir-status-goto-stage (around
+                                            diff-hl-dired-skip-up-to-date
+                                            (stage files update-function)
+                                            activate)
+    (when (eq stage 'ls-files-up-to-date)
+      (setq stage 'diff-index))
+    ad-do-it))
 
 (defun diff-hl-dired-highlight-items (alist)
   "Highlight ALIST containing (FILE . TYPE) elements."
