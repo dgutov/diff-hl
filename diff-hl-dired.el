@@ -82,9 +82,6 @@
   (let ((backend (ignore-errors (vc-responsible-backend default-directory)))
         (def-dir default-directory)
         (buffer (current-buffer))
-        (contents (cl-loop for file in (directory-files default-directory)
-                           unless (member file '("." ".." ".hg"))
-                           collect file))
         dirs-alist files-alist)
     (when backend
       (diff-hl-dired-clear)
@@ -99,7 +96,9 @@
         (vc-call-backend
          backend 'dir-status-files def-dir
          (when diff-hl-dired-extra-indicators
-           contents)
+           (cl-loop for file in (directory-files def-dir)
+                    unless (member file '("." ".." ".hg"))
+                    collect file))
          nil
          (lambda (entries &optional more-to-come)
            (when (buffer-live-p buffer)
