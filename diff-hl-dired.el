@@ -53,6 +53,11 @@
   '((default :inherit dired-ignored))
   "Face used to highlight unregistered files.")
 
+(defcustom diff-hl-dired-extra-indicators t
+  "Non-nil to indicate ignored files."
+  :group 'diff-hl
+  :type 'boolean)
+
 ;;;###autoload
 (define-minor-mode diff-hl-dired-mode
   "Toggle VC diff highlighting on the side of a Dired window."
@@ -103,7 +108,8 @@
                (unless more-to-come
                  (diff-hl-dired-highlight-items (append dirs-alist
                                                         files-alist))
-                 (diff-hl-dired-update-ignores backend def-dir)))))
+                 (when diff-hl-dired-extra-indicators
+                   (diff-hl-dired-update-ignores backend def-dir))))))
          )))))
 
 (defun diff-hl-dired-update-ignores (backend def-dir)
