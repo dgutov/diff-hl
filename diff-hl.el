@@ -143,6 +143,7 @@
     (define-fringe-bitmap 'diff-hl-bmp-middle middle h w 'center)
     (define-fringe-bitmap 'diff-hl-bmp-bottom bottom h w 'bottom)
     (define-fringe-bitmap 'diff-hl-bmp-single single h w 'top)
+    (define-fringe-bitmap 'diff-hl-bmp-i [3 3 0 3 3 3 3 3 3 3] nil 2 'center)
     (let* ((w2 (* (/ w 2) 2))
            ;; When fringes are disabled, it's easier to fix up the width,
            ;; instead of doing nothing (#20).
@@ -187,7 +188,7 @@
   (cl-case type
     (unknown 'question-mark)
     (change 'exclamation-mark)
-    (ignored 'filled-square)
+    (ignored 'diff-hl-bmp-i)
     (t (intern (format "diff-hl-bmp-%s" type)))))
 
 (defvar vc-svn-diff-switches)

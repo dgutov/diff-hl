@@ -101,7 +101,8 @@ You probably shouldn't use this function directly."
 
 (defvar diff-hl-margin-spec-cache
   (cl-loop for (type . char) in '((insert . "+") (delete . "-")
-                                  (change . "|") (unknown . "?"))
+                                  (change . "!") (unknown . "?")
+                                  (ignored . "i"))
         nconc
         (cl-loop for side in '(left right)
                  collect
