@@ -5,7 +5,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.6.0
+;; Version:  1.7.0
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is part of GNU Emacs.
