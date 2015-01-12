@@ -35,6 +35,7 @@
 ;; `diff-hl-revert-hunk'     C-x v n
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
+;; `diff-hl-popup-hunk'      C-x v RET
 ;;
 ;; The mode takes advantage of `smartrep' if it is installed.
 
@@ -118,6 +119,9 @@
 
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
+
+(defvar diff-hl-popup-buffer "*diff-hl:diff*"
+  "Name of the buffer used to display diffs.")
 
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
@@ -235,11 +239,12 @@
                            (deletes (diff-count-matches "^-" beg (point)))
                            (type (cond ((zerop deletes) 'insert)
                                        ((zerop inserts) 'delete)
-                                       (t 'change))))
+                                       (t 'change)))
+                           (content (buffer-substring beg (point))))
                       (when (eq type 'delete)
                         (setq len 1)
                         (cl-incf line))
-                      (push (list line len type) res))))))
+                      (push (list line len type content) res))))))
             (nreverse res)))
          ((eq state 'added)
           `((1 ,(line-number-at-pos (point-max)) insert)))
@@ -253,7 +258,7 @@
     (save-excursion
       (goto-char (point-min))
       (dolist (c changes)
-        (cl-destructuring-bind (line len type) c
+        (cl-destructuring-bind (line len type content) c
           (forward-line (- line current-line))
           (setq current-line line)
           (let ((hunk-beg (point)))
@@ -273,6 +278,7 @@
                   (hook '(diff-hl-overlay-modified)))
               (overlay-put h 'diff-hl t)
               (overlay-put h 'diff-hl-hunk t)
+              (overlay-put h 'diff-hl-content content)
               (overlay-put h 'modification-hooks hook)
               (overlay-put h 'insert-in-front-hooks hook)
               (overlay-put h 'insert-behind-hooks hook))))))))
@@ -418,12 +424,33 @@ in the source file, or the last line of the hunk above it."
   (interactive)
   (diff-hl-next-hunk t))
 
+(defun diff-hl-update-popup-buffer (content)
+  (with-current-buffer (get-buffer-create diff-hl-popup-buffer)
+    (view-mode -1)
+    (setq buffer-read-only nil)
+    (erase-buffer)
+    (insert content "\n")
+    (goto-char (point-min))
+    (diff-mode)
+    (view-mode +1)
+    (current-buffer)))
+
+(defun diff-hl-popup-hunk ()
+  "Popup current diff hunk in a diff buffer."
+  (interactive)
+  (let ((overlay (save-excursion (or (diff-hl-hunk-overlay-at (point))
+                                     (diff-hl-previous-hunk)))))
+    (pop-to-buffer
+     (diff-hl-update-popup-buffer
+      (overlay-get overlay 'diff-hl-content)))))
+
 (define-prefix-command 'diff-hl-command-map)
 
 (let ((map diff-hl-command-map))
   (define-key map "n" 'diff-hl-revert-hunk)
   (define-key map "[" 'diff-hl-previous-hunk)
   (define-key map "]" 'diff-hl-next-hunk)
+  (define-key map (kbd "RET") 'diff-hl-popup-hunk)
   map)
 
 ;;;###autoload
