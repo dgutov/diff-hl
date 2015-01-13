@@ -108,7 +108,7 @@
                    (setq file (replace-regexp-in-string "\\` " "" file))
                    (let ((type (plist-get
                                 '(edited change added insert removed delete
-                                  unregistered unknown ignored ignored)
+                                         unregistered unknown ignored ignored)
                                 state)))
                      (if (string-match "\\`\\([^/]+\\)/" file)
                          (let* ((dir (match-string 1 file))
@@ -126,17 +126,19 @@
                   (append dirs-alist files-alist))))))
          )))))
 
-(defun diff-hl-dired-status-files (backend dir files uf)
+(defun diff-hl-dired-status-files (backend dir files update-function)
+  "Using version control BACKEND, return list of (FILE STATE EXTRA) entries
+for DIR containing FILES.  Call UPDATE-FUNCTION as entries are added."
   (if (version< "25" emacs-version)
-      (vc-call-backend backend 'dir-status-files dir files uf)
-    (vc-call-backend backend 'dir-status-files dir files nil uf)))
+      (vc-call-backend backend 'dir-status-files dir files update-function)
+    (vc-call-backend backend 'dir-status-files dir files nil update-function)))
 
 (when (version< emacs-version "24.4.51.5")
   ;; Work around http://debbugs.gnu.org/19386
   (defadvice vc-git-dir-status-goto-stage (around
-                                            diff-hl-dired-skip-up-to-date
-                                            (stage files update-function)
-                                            activate)
+                                           diff-hl-dired-skip-up-to-date
+                                           (stage files update-function)
+                                           activate)
     (when (eq stage 'ls-files-up-to-date)
       (setq stage 'diff-index))
     ad-do-it))
