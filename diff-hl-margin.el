@@ -44,16 +44,6 @@
   "Highlight buffer changes on margin"
   :group 'diff-hl)
 
-(defcustom diff-hl-margin-side 'left
-  "Which margin to use for indicators."
-  :type '(choice (const left)
-                 (const right))
-  :set (lambda (var value)
-         (let ((on diff-hl-margin-mode))
-           (when on (diff-hl-margin-mode -1))
-           (set-default var value)
-           (when on (diff-hl-margin-mode 1)))))
-
 ;;;###autoload
 (define-minor-mode diff-hl-margin-mode
   "Toggle displaying `diff-hl-mode' highlights on the margin."
@@ -95,6 +85,16 @@ You probably shouldn't use this function directly."
       (set width-var 0)))
   (dolist (win (get-buffer-window-list))
     (set-window-buffer win (current-buffer))))
+
+(defcustom diff-hl-margin-side 'left
+  "Which margin to use for indicators."
+  :type '(choice (const left)
+                 (const right))
+  :set (lambda (var value)
+         (let ((on diff-hl-margin-mode))
+           (when on (diff-hl-margin-mode -1))
+           (set-default var value)
+           (when on (diff-hl-margin-mode 1)))))
 
 (defun diff-hl-margin-minor-mode-off ()
   (diff-hl-margin-minor-mode -1))
