@@ -87,4 +87,4 @@ Magit
 -----
 
 If you have a recent enough version installed, it defines
-`magit-revert-buffer-hook`, which we use.
+`magit-revert-buffer-hook` (or `magit-not-reverted-hook`), which we use.

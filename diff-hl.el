@@ -453,6 +453,9 @@ in the source file, or the last line of the hunk above it."
         ;; doesn't care about changed VC state.
         ;; https://github.com/magit/magit/issues/603
         (add-hook 'magit-revert-buffer-hook 'diff-hl-update nil t)
+        ;; Magit 2+ doesn't do the above and calls this instead,
+        ;; but only when it doesn't call `revert-buffer':
+        (add-hook 'magit-not-reverted-hook 'diff-hl-update nil t)
         (add-hook 'auto-revert-mode-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
@@ -461,6 +464,7 @@ in the source file, or the last line of the hunk above it."
     (remove-hook 'vc-checkin-hook 'diff-hl-update t)
     (remove-hook 'after-revert-hook 'diff-hl-update t)
     (remove-hook 'magit-revert-buffer-hook 'diff-hl-update t)
+    (remove-hook 'magit-not-reverted-hook 'diff-hl-update t)
     (remove-hook 'auto-revert-mode-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps t)
     (diff-hl-remove-overlays)))
