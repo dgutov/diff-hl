@@ -38,6 +38,8 @@
 (require 'diff-hl)
 (require 'diff-hl-dired)
 
+(defvar diff-hl-margin-side)
+
 (defvar diff-hl-margin-old-highlight-function nil)
 
 (defgroup diff-hl-margin nil

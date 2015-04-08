@@ -59,7 +59,8 @@
   (require 'cl-lib)
   (require 'vc-git)
   (require 'vc-hg)
-  (require 'face-remap))
+  (require 'face-remap)
+  (declare-function smartrep-define-key 'smartrep))
 
 (defgroup diff-hl nil
   "VC diff highlighting on the side of a window"
