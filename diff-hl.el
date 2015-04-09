@@ -1,6 +1,6 @@
 ;;; diff-hl.el --- Highlight uncommitted changes -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2014  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2015  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
