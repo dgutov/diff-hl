@@ -5,7 +5,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.7.0
+;; Version:  1.7.1
 ;; Package-Requires: ((cl-lib "0.2"))
 
 ;; This file is part of GNU Emacs.
@@ -25,9 +25,9 @@
 
 ;;; Commentary:
 
-;; `diff-hl-mode' highlights uncommitted changes on the left side of
-;; the window (using the fringe, by default), allows you to jump
-;; between the hunks and revert them selectively.
+;; `diff-hl-mode' highlights uncommitted changes on the side of the
+;; window (using the fringe, by default), allows you to jump between
+;; the hunks and revert them selectively.
 
 ;; Provided commands:
 ;;
@@ -117,6 +117,16 @@
   :group 'diff-hl
   :type 'function)
 
+(defcustom diff-hl-side 'left
+  "Which side to use for indicators."
+  :type '(choice (const left)
+                 (const right))
+  :set (lambda (var value)
+         (let ((on (bound-and-true-p global-diff-hl-mode)))
+           (when on (global-diff-hl-mode -1))
+           (set-default var value)
+           (when on (global-diff-hl-mode 1)))))
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -130,7 +140,7 @@
                (if (floatp spacing)
                    (truncate (* (frame-char-height) spacing))
                  spacing)))
-         (w (frame-parameter nil 'left-fringe))
+         (w (frame-parameter nil (intern (format "%s-fringe" diff-hl-side))))
          (middle (make-vector h (expt 2 (1- w))))
          (ones (1- (expt 2 w)))
          (top (copy-sequence middle))
@@ -169,13 +179,16 @@
 
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
-(defun diff-hl-fringe-spec (type pos)
-  (let* ((key (list type pos diff-hl-fringe-bmp-function))
+(defun diff-hl-fringe-spec (type pos side)
+  (let* ((key (list type pos side
+                    diff-hl-fringe-face-function
+                    diff-hl-fringe-bmp-function))
          (val (gethash key diff-hl-spec-cache)))
     (unless val
       (let* ((face-sym (funcall diff-hl-fringe-face-function type pos))
              (bmp-sym (funcall diff-hl-fringe-bmp-function type pos)))
-        (setq val (propertize " " 'display `((left-fringe ,bmp-sym ,face-sym))))
+        (setq val (propertize " " 'display `((,(intern (format "%s-fringe" side))
+                                              ,bmp-sym ,face-sym))))
         (puthash key val diff-hl-spec-cache)))
     val))
 
@@ -285,7 +298,8 @@
     o))
 
 (defun diff-hl-highlight-on-fringe (ovl type shape)
-  (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape)))
+  (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
+                                                       diff-hl-side)))
 
 (defun diff-hl-remove-overlays ()
   (dolist (o (overlays-in (point-min) (point-max)))
