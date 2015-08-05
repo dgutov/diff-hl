@@ -207,6 +207,7 @@
     (t (intern (format "diff-hl-bmp-%s" type)))))
 
 (defvar vc-svn-diff-switches)
+(defvar vc-disable-async-diff)
 
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches nil)
