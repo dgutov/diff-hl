@@ -265,31 +265,33 @@
         (current-line 1))
     (diff-hl-remove-overlays)
     (save-excursion
-      (goto-char (point-min))
-      (dolist (c changes)
-        (cl-destructuring-bind (line len type) c
-          (forward-line (- line current-line))
-          (setq current-line line)
-          (let ((hunk-beg (point)))
-            (while (cl-plusp len)
-              (diff-hl-add-highlighting
-               type
-               (cond
-                ((not diff-hl-draw-borders) 'empty)
-                ((and (= len 1) (= line current-line)) 'single)
-                ((= len 1) 'bottom)
-                ((= line current-line) 'top)
-                (t 'middle)))
-              (forward-line 1)
-              (cl-incf current-line)
-              (cl-decf len))
-            (let ((h (make-overlay hunk-beg (point)))
-                  (hook '(diff-hl-overlay-modified)))
-              (overlay-put h 'diff-hl t)
-              (overlay-put h 'diff-hl-hunk t)
-              (overlay-put h 'modification-hooks hook)
-              (overlay-put h 'insert-in-front-hooks hook)
-              (overlay-put h 'insert-behind-hooks hook))))))))
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (dolist (c changes)
+          (cl-destructuring-bind (line len type) c
+            (forward-line (- line current-line))
+            (setq current-line line)
+            (let ((hunk-beg (point)))
+              (while (cl-plusp len)
+                (diff-hl-add-highlighting
+                  type
+                 (cond
+                  ((not diff-hl-draw-borders) 'empty)
+                  ((and (= len 1) (= line current-line)) 'single)
+                  ((= len 1) 'bottom)
+                  ((= line current-line) 'top)
+                  (t 'middle)))
+                (forward-line 1)
+                (cl-incf current-line)
+                (cl-decf len))
+              (let ((h (make-overlay hunk-beg (point)))
+                    (hook '(diff-hl-overlay-modified)))
+                (overlay-put h 'diff-hl t)
+                (overlay-put h 'diff-hl-hunk t)
+                (overlay-put h 'modification-hooks hook)
+                (overlay-put h 'insert-in-front-hooks hook)
+                (overlay-put h 'insert-behind-hooks hook)))))))))
 
 (defun diff-hl-add-highlighting (type shape)
   (let ((o (make-overlay (point) (point))))
@@ -301,17 +303,17 @@
   (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
                                                        diff-hl-side)))
 
-(defun diff-hl-remove-overlays ()
-  (dolist (o (overlays-in (point-min) (point-max)))
-    (when (overlay-get o 'diff-hl) (delete-overlay o))))
+(defun diff-hl-remove-overlays (&optional beg end)
+  (save-restriction
+    (widen)
+    (dolist (o (overlays-in (or beg (point-min)) (or end (point-max))))
+      (when (overlay-get o 'diff-hl) (delete-overlay o)))))
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
   "Delete the hunk overlay and all our line overlays inside it."
   (unless after-p
     (when (overlay-buffer ov)
-      (save-restriction
-        (narrow-to-region (overlay-start ov) (overlay-end ov))
-        (diff-hl-remove-overlays))
+      (diff-hl-remove-overlays (overlay-start ov) (overlay-end ov))
       (delete-overlay ov))))
 
 (defvar diff-hl-timer nil)
