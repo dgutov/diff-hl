@@ -63,6 +63,9 @@ Notes
 
 * Frame-local and buffer-local values of `line-spacing` are not supported.
 
+* Fringe width up to 16 works best (because we can't define a bitmap
+  with width above that number).
+
 * [emacs-git-gutter](https://github.com/syohex/emacs-git-gutter) shows
   indicators in the margin by default, allows you to customize how the
   indicators look more easily, and has a "stage hunk" command.
