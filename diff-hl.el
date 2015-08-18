@@ -207,6 +207,7 @@
     (t (intern (format "diff-hl-bmp-%s" type)))))
 
 (defvar vc-svn-diff-switches)
+(defvar vc-disable-async-diff)
 
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches nil)
@@ -437,13 +438,13 @@ in the source file, or the last line of the hunk above it."
   (interactive)
   (diff-hl-next-hunk t))
 
-(define-prefix-command 'diff-hl-command-map)
-
-(let ((map diff-hl-command-map))
-  (define-key map "n" 'diff-hl-revert-hunk)
-  (define-key map "[" 'diff-hl-previous-hunk)
-  (define-key map "]" 'diff-hl-next-hunk)
-  map)
+(defvar diff-hl-command-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "n" 'diff-hl-revert-hunk)
+    (define-key map "[" 'diff-hl-previous-hunk)
+    (define-key map "]" 'diff-hl-next-hunk)
+    map))
+(fset 'diff-hl-command-map diff-hl-command-map)
 
 ;;;###autoload
 (define-minor-mode diff-hl-mode
