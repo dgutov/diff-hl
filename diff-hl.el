@@ -213,7 +213,8 @@
          (vc-hg-diff-switches nil)
          (vc-svn-diff-switches nil)
          (vc-diff-switches '("-U0"))
-         (vc-disable-async-diff t))
+         ,@(when (boundp 'vc-disable-async-diff)
+             '((vc-disable-async-diff t))))
      ,body))
 
 (defun diff-hl-changes ()
