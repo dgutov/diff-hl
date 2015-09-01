@@ -20,6 +20,9 @@
 
 ;;; Commentary:
 
+;; This mode enables diffing on-the-fly (i.e. without saving the buffer first)
+;; Toggle in all buffers with M-x diff-hl-flydiff-mode
+
 ;;; Code:
 
 (require 'diff-hl)
