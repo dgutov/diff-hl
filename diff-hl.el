@@ -209,72 +209,11 @@
 
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches nil)
-          (vc-hg-diff-switches nil)
-          (vc-svn-diff-switches nil)
-          (vc-diff-switches '("-U0"))
-          (vc-disable-async-diff t))
+         (vc-hg-diff-switches nil)
+         (vc-svn-diff-switches nil)
+         (vc-diff-switches '("-U0"))
+         (vc-disable-async-diff t))
      ,body))
-
-(defun diff-hl-make-temp-file-name (file rev &optional manual)
-  "Return a backup file name for REV or the current version of FILE.
-If MANUAL is non-nil it means that a name for backups created by
-the user should be returned."
-  (let* ((auto-save-file-name-transforms
-           `((".*" ,temporary-file-directory t))))
-    (expand-file-name
-      (concat (make-auto-save-file-name)
-        ".~" (subst-char-in-string
-               ?/ ?_ rev)
-        (unless manual ".") "~")
-      temporary-file-directory)))
-
-(defun diff-hl-create-revision (file revision)
-  "Read REVISION of FILE into a buffer and return the buffer."
-  (let ((automatic-backup (diff-hl-make-temp-file-name file revision))
-         (filebuf (get-file-buffer file))
-         (filename (diff-hl-make-temp-file-name file revision 'manual)))
-    (unless (file-exists-p filename)
-      (if (file-exists-p automatic-backup)
-        (rename-file automatic-backup filename nil)
-        (with-current-buffer filebuf
-          (let ((failed t)
-                 (coding-system-for-read 'no-conversion)
-                 (coding-system-for-write 'no-conversion))
-            (unwind-protect
-              (with-temp-file filename
-                (let ((outbuf (current-buffer)))
-                  ;; Change buffer to get local value of
-                  ;; vc-checkout-switches.
-                  (with-current-buffer filebuf
-                    (vc-call find-revision file revision outbuf))))
-              (setq failed nil)
-              (when (and failed (file-exists-p filename))
-                (delete-file filename)))))))
-    filename))
-
-(defun diff-hl-diff-buffer-with-revision (revision)
-  "View the differences between BUFFER and its associated file.
-This requires the external program `diff' to be in your `exec-path'."
-  (interactive)
-  (vc-ensure-vc-buffer)
-  (with-current-buffer (get-buffer (current-buffer))
-    (let ((rev (diff-hl-create-revision
-                 buffer-file-name
-                 (or revision
-                   (vc-working-revision buffer-file-name
-                     (vc-responsible-backend buffer-file-name)
-                     t))))
-           (temporary-file-directory
-             (if (file-directory-p "/dev/shm/")
-               "/dev/shm/"
-               temporary-file-directory)))
-      (diff-hl-with-diff-switches
-        (diff-no-select rev (current-buffer) "-U 0" 'noasync
-          (get-buffer-create " *diff-hl-diff*"))))))
-
-(defvar diff-hl-modified-tick 0)
-(defvar diff-hl-flydiff-timer)
-(make-variable-buffer-local 'diff-hl-modified-tick)
 
 (defun diff-hl-changes ()
   (let* ((file buffer-file-name)
@@ -282,82 +221,77 @@ This requires the external program `diff' to be in your `exec-path'."
     (when backend
       (let ((state (vc-state file backend)))
         (cond
-          ((or
-             (and
-               diff-hl-flydiff-mode
-               (buffer-modified-p))
-             (eq state 'edited)
-             (and (eq state 'up-to-date)
-               ;; VC state is stale in after-revert-hook.
-               (or revert-buffer-in-progress-p
-                 ;; Diffing against an older revision.
-                 diff-hl-reference-revision)))
-            (let (diff-auto-refine-mode res)
-              (with-current-buffer (diff-hl-diff-buffer-with-revision
-                                     diff-hl-reference-revision)
-                (goto-char (point-min))
-                (unless (eobp)
-                  (ignore-errors
-                    (diff-beginning-of-hunk t))
-                  (while (looking-at diff-hunk-header-re-unified)
-                    (let ((line (string-to-number (match-string 3)))
-                           (len (let ((m (match-string 4)))
-                                  (if m (string-to-number m) 1)))
-                           (beg (point)))
-                      (diff-end-of-hunk)
-                      (let* ((inserts (diff-count-matches "^\\+" beg (point)))
-                              (deletes (diff-count-matches "^-" beg (point)))
-                              (type (cond ((zerop deletes) 'insert)
-                                      ((zerop inserts) 'delete)
-                                      (t 'change))))
-                        (when (eq type 'delete)
-                          (setq len 1)
-                          (cl-incf line))
-                        (push (list line len type) res))))))
-              (setq diff-hl-modified-tick (buffer-modified-tick))
-              (nreverse res)))
-          ((eq state 'added)
-            `((1 ,(line-number-at-pos (point-max)) insert)))
-          ((eq state 'removed)
-            `((1 ,(line-number-at-pos (point-max)) delete))))))))
+         ((or (eq state 'edited)
+              (and (eq state 'up-to-date)
+                   ;; VC state is stale in after-revert-hook.
+                   (or revert-buffer-in-progress-p
+                       ;; Diffing against an older revision.
+                       diff-hl-reference-revision)))
+          (let* ((buf-name " *diff-hl* ")
+                 diff-auto-refine-mode
+                 res)
+            (diff-hl-with-diff-switches
+             (vc-call-backend backend 'diff (list file)
+                              diff-hl-reference-revision nil
+                              buf-name))
+            (with-current-buffer buf-name
+              (goto-char (point-min))
+              (unless (eobp)
+                (ignore-errors
+                  (diff-beginning-of-hunk t))
+                (while (looking-at diff-hunk-header-re-unified)
+                  (let ((line (string-to-number (match-string 3)))
+                        (len (let ((m (match-string 4)))
+                               (if m (string-to-number m) 1)))
+                        (beg (point)))
+                    (diff-end-of-hunk)
+                    (let* ((inserts (diff-count-matches "^\\+" beg (point)))
+                           (deletes (diff-count-matches "^-" beg (point)))
+                           (type (cond ((zerop deletes) 'insert)
+                                       ((zerop inserts) 'delete)
+                                       (t 'change))))
+                      (when (eq type 'delete)
+                        (setq len 1)
+                        (cl-incf line))
+                      (push (list line len type) res))))))
+            (nreverse res)))
+         ((eq state 'added)
+          `((1 ,(line-number-at-pos (point-max)) insert)))
+         ((eq state 'removed)
+          `((1 ,(line-number-at-pos (point-max)) delete))))))))
 
-(defun diff-hl-update (&optional auto)
-  (unless (and auto
-            (or
-              (= diff-hl-modified-tick (buffer-modified-tick))
-              (file-remote-p default-directory)
-              (not (buffer-modified-p))))
-    (let ((changes (diff-hl-changes))
-           (current-line 1))
-      (diff-hl-remove-overlays)
-      (save-excursion
-        (save-restriction
-          (widen)
-          (goto-char (point-min))
-          (dolist (c changes)
-            (cl-destructuring-bind (line len type) c
-              (forward-line (- line current-line))
-              (setq current-line line)
-              (let ((hunk-beg (point)))
-                (while (cl-plusp len)
-                  (diff-hl-add-highlighting
-                    type
-                    (cond
-                      ((not diff-hl-draw-borders) 'empty)
-                      ((and (= len 1) (= line current-line)) 'single)
-                      ((= len 1) 'bottom)
-                      ((= line current-line) 'top)
-                      (t 'middle)))
-                  (forward-line 1)
-                  (cl-incf current-line)
-                  (cl-decf len))
-                (let ((h (make-overlay hunk-beg (point)))
-                       (hook '(diff-hl-overlay-modified)))
-                  (overlay-put h 'diff-hl t)
-                  (overlay-put h 'diff-hl-hunk t)
-                  (overlay-put h 'modification-hooks hook)
-                  (overlay-put h 'insert-in-front-hooks hook)
-                  (overlay-put h 'insert-behind-hooks hook))))))))))
+(defun diff-hl-update ()
+  (let ((changes (diff-hl-changes))
+        (current-line 1))
+    (diff-hl-remove-overlays)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (dolist (c changes)
+          (cl-destructuring-bind (line len type) c
+            (forward-line (- line current-line))
+            (setq current-line line)
+            (let ((hunk-beg (point)))
+              (while (cl-plusp len)
+                (diff-hl-add-highlighting
+                  type
+                 (cond
+                  ((not diff-hl-draw-borders) 'empty)
+                  ((and (= len 1) (= line current-line)) 'single)
+                  ((= len 1) 'bottom)
+                  ((= line current-line) 'top)
+                  (t 'middle)))
+                (forward-line 1)
+                (cl-incf current-line)
+                (cl-decf len))
+              (let ((h (make-overlay hunk-beg (point)))
+                    (hook '(diff-hl-overlay-modified)))
+                (overlay-put h 'diff-hl t)
+                (overlay-put h 'diff-hl-hunk t)
+                (overlay-put h 'modification-hooks hook)
+                (overlay-put h 'insert-in-front-hooks hook)
+                (overlay-put h 'insert-behind-hooks hook)))))))))
 
 (defun diff-hl-add-highlighting (type shape)
   (let ((o (make-overlay (point) (point))))
@@ -377,9 +311,7 @@ This requires the external program `diff' to be in your `exec-path'."
 
 (defun diff-hl-overlay-modified (ov after-p _beg _end &optional _length)
   "Delete the hunk overlay and all our line overlays inside it."
-  (unless (or
-            diff-hl-flydiff-mode
-            after-p)
+  (unless after-p
     (when (overlay-buffer ov)
       (diff-hl-remove-overlays (overlay-start ov) (overlay-end ov))
       (delete-overlay ov))))
@@ -543,8 +475,6 @@ in the source file, or the last line of the hunk above it."
         (add-hook 'magit-not-reverted-hook 'diff-hl-update nil t)
         (add-hook 'auto-revert-mode-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps nil t))
-
-    (diff-hl-flydiff-mode -1)
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
@@ -606,20 +536,6 @@ in the source file, or the last line of the hunk above it."
         (when diff-hl-dir-mode
           (diff-hl-dir-mode -1))))))
 
-(define-minor-mode diff-hl-flydiff-mode
-  "Highlight diffs on-the-fly"
-  :lighter ""
-  (if diff-hl-flydiff-mode
-    (progn
-      (unless (or
-                diff-hl-mode
-                diff-hl-dir-mode)
-        (turn-on-diff-hl-mode))
-      (remove-hook 'after-change-functions #'diff-hl-edit t)
-      (setq diff-hl-flydiff-timer
-        (run-with-idle-timer 0.3 t #'diff-hl-update t)))
-    (cancel-timer diff-hl-flydiff-timer)
-    (add-hook 'after-change-functions 'diff-hl-edit nil t)))
-
 (provide 'diff-hl)
+
 ;;; diff-hl.el ends here
