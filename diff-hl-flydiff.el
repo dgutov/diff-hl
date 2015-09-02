@@ -26,6 +26,7 @@
 ;;; Code:
 
 (require 'diff-hl)
+(require 'nadvice)
 
 (defvar diff-hl-flydiff-modified-tick 0)
 (defvar diff-hl-flydiff-timer)
@@ -177,7 +178,6 @@ This requires the external program `diff' to be in your `exec-path'."
   :global t
   (if diff-hl-flydiff-mode
     (progn
-      (require 'nadvice)
       (advice-add 'diff-hl-update :around #'diff-hl-flydiff/update)
       (advice-add 'diff-hl-changes :override #'diff-hl-flydiff/changes)
       (advice-add 'diff-hl-overlay-modified :override #'ignored)
