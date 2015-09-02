@@ -32,7 +32,7 @@
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
 ;; Polyfill concrete revisions for vc-git-working-revision in Emacs 24.4, 24.5
-(when (version<= emacs-version "24.5")
+(when (version<= emacs-version "25.0")
   (with-eval-after-load 'vc-git
     (defun vc-git--symbolic-ref (file)
       (or
