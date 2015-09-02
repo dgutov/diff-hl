@@ -182,7 +182,6 @@ This requires the external program `diff' to be in your `exec-path'."
       (advice-add 'diff-hl-changes :override #'diff-hl-flydiff/changes)
       (advice-add 'diff-hl-overlay-modified :override #'ignored)
 
-      (remove-hook 'after-change-functions #'diff-hl-edit t)
       (setq diff-hl-flydiff-timer
         (run-with-idle-timer 0.3 t #'diff-hl-update t)))
 
@@ -190,8 +189,6 @@ This requires the external program `diff' to be in your `exec-path'."
     (advice-remove 'diff-hl-changes #'diff-hl-flydiff/changes)
     (advice-remove 'diff-hl-overlay-modified #'ignored)
 
-    (cancel-timer diff-hl-flydiff-timer)
-    (when diff-hl-mode
-      (add-hook 'after-change-functions 'diff-hl-edit nil t))))
+    (cancel-timer diff-hl-flydiff-timer)))
 
 (provide 'diff-hl-flydiff)
