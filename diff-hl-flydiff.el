@@ -109,14 +109,15 @@ This requires the external program `diff' to be in your `exec-path'."
   (interactive)
   (vc-ensure-vc-buffer)
   (with-current-buffer (get-buffer (current-buffer))
-    (let ((rev (diff-hl-flydiff-create-revision
-                 buffer-file-name
-                 (vc-working-revision buffer-file-name
-                   (vc-responsible-backend buffer-file-name))))
-           (temporary-file-directory
-             (if (file-directory-p "/dev/shm/")
-               "/dev/shm/"
-               temporary-file-directory)))
+    (let* ((file buffer-file-name)
+            (temporary-file-directory
+              (if (file-directory-p "/dev/shm/")
+                "/dev/shm/"
+                temporary-file-directory))
+            (rev (diff-hl-flydiff-create-revision
+                   file
+                   (vc-working-revision file
+                     (vc-responsible-backend file)))))
       (diff-no-select rev (current-buffer) "-U 0" 'noasync
         (get-buffer-create " *diff-hl-diff*")))))
 
