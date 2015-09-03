@@ -188,7 +188,7 @@ This requires the external program `diff' to be in your `exec-path'."
 
     (advice-remove 'diff-hl-update #'diff-hl-flydiff/update)
     (advice-remove 'diff-hl-changes #'diff-hl-flydiff/changes)
-    (advice-remove 'diff-hl-overlay-modified #'ignored)
+    (advice-remove 'diff-hl-overlay-modified #'ignore)
 
     (cancel-timer diff-hl-flydiff-timer)))
 
