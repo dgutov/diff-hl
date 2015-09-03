@@ -1,4 +1,4 @@
-;; Copyright (C) 2012-2013  Free Software Foundation, Inc.
+;; Copyright (C) 2015 Free Software Foundation, Inc.
 
 ;; Author:   Jonathan Hayase <PythonNut@gmail.com>
 ;; URL:      https://github.com/dgutov/diff-hl
