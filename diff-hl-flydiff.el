@@ -132,14 +132,7 @@ This requires the external program `diff' to be in your `exec-path'."
     (funcall old-fun)))
 
 (defun diff-hl-flydiff/modified-p (state)
-  (or
-    (buffer-modified-p)
-    (eq state 'edited)
-    (and (eq state 'up-to-date)
-      ;; VC state is stale in after-revert-hook.
-      (or revert-buffer-in-progress-p
-        ;; Diffing against an older revision.
-        diff-hl-reference-revision))))
+  (buffer-modified-p))
 
 (defun diff-hl-flydiff/update-modified-tick (&rest args)
   (setq diff-hl-flydiff-modified-tick (buffer-modified-tick)))
@@ -154,7 +147,7 @@ This requires the external program `diff' to be in your `exec-path'."
       (advice-add 'diff-hl-update :around #'diff-hl-flydiff/update)
       (advice-add 'diff-hl-overlay-modified :override #'ignore)
 
-      (advice-add 'diff-hl-modified-p :override
+      (advice-add 'diff-hl-modified-p :before-until
         #'diff-hl-flydiff/modified-p)
       (advice-add 'diff-hl-changes-buffer :override
         #'diff-hl-flydiff-buffer-with-head)
