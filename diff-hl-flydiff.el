@@ -66,6 +66,11 @@
     (advice-add 'vc-git-mode-line-string :override
       #'diff-hl-flydiff/vc-git-mode-line-string)))
 
+(defun diff-hl-flydiff/working-revision (file)
+  "Like vc-working-revision, but always up-to-date"
+  (vc-file-setprop file 'vc-working-revision
+    (vc-call-backend (vc-backend file) 'working-revision file)))
+
 (defun diff-hl-flydiff-make-temp-file-name (file rev &optional manual)
   "Return a backup file name for REV or the current version of FILE.
 If MANUAL is non-nil it means that a name for backups created by
@@ -114,13 +119,10 @@ This requires the external program `diff' to be in your `exec-path'."
               (if (file-directory-p "/dev/shm/")
                 "/dev/shm/"
                 temporary-file-directory))
-            (rev (diff-hl-flydiff-create-revision
-                   file
-                   (vc-working-revision file
-                     (vc-responsible-backend file)))))
+            (rev (diff-hl-flydiff-create-revision file
+                   (diff-hl-flydiff/working-revision file))))
       (diff-no-select rev (current-buffer) "-U 0" 'noasync
         (get-buffer-create " *diff-hl-diff*")))))
-
 
 (defun diff-hl-flydiff/update (old-fun &optional auto)
   (unless (and auto
