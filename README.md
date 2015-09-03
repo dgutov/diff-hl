@@ -15,6 +15,7 @@ The package also contains auxiliary modes:
 * `diff-hl-margin-mode` changes the highlighting function to
   use the margin instead of the fringe.
 * `diff-hl-amend-mode` shifts the reference revision back by one.
+* `diff-hl-flydiff-mode` enables diffing unsaved changes
 
 Check out the Commentary section in each respective file for the usage
 instructions.
@@ -45,11 +46,6 @@ Emacs 24+. On OS X, Emacs 24.3 or higher is recommended.
 
 Notes
 =====
-
-* Since it uses the corresponding VC diff command, it's only accurate when the
-  buffer is in saved state. Highlighting changes "on the fly" might be better,
-  maybe we can do something similar to `highlight-markup-buffers` with a hidden
-  buffer containing the unmodified copy.
 
 * We conflict with other modes when they put indicators on the fringe,
   such as [Flycheck](https://github.com/flycheck/flycheck). This is
