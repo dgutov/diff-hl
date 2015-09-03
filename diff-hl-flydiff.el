@@ -108,17 +108,16 @@ the user should be returned."
                 (delete-file filename)))))))
     filename))
 
-(defun diff-hl-flydiff-buffer-with-head ()
+(defun diff-hl-flydiff-buffer-with-head (file &optional backend)
   "View the differences between BUFFER and its associated file.
 This requires the external program `diff' to be in your `exec-path'."
   (interactive)
   (vc-ensure-vc-buffer)
   (with-current-buffer (get-buffer (current-buffer))
-    (let* ((file buffer-file-name)
-            (temporary-file-directory
-              (if (file-directory-p "/dev/shm/")
-                "/dev/shm/"
-                temporary-file-directory))
+    (let* ((temporary-file-directory
+             (if (file-directory-p "/dev/shm/")
+               "/dev/shm/"
+               temporary-file-directory))
             (rev (diff-hl-flydiff-create-revision file
                    (diff-hl-flydiff/working-revision file))))
       (diff-no-select rev (current-buffer) "-U 0" 'noasync
@@ -132,47 +131,18 @@ This requires the external program `diff' to be in your `exec-path'."
               (not (buffer-modified-p))))
     (funcall old-fun)))
 
-(defun diff-hl-flydiff/changes (&rest args)
-  (let* ((file buffer-file-name)
-          (backend (vc-backend file)))
-    (when backend
-      (let ((state (vc-state file backend)))
-        (cond
-          ((or
-             (buffer-modified-p)
-             (eq state 'edited)
-             (and (eq state 'up-to-date)
-               ;; VC state is stale in after-revert-hook.
-               (or revert-buffer-in-progress-p
-                 ;; Diffing against an older revision.
-                 diff-hl-reference-revision)))
-            (let (diff-auto-refine-mode res)
-              (with-current-buffer (diff-hl-flydiff-buffer-with-head)
-                (goto-char (point-min))
-                (unless (eobp)
-                  (ignore-errors
-                    (diff-beginning-of-hunk t))
-                  (while (looking-at diff-hunk-header-re-unified)
-                    (let ((line (string-to-number (match-string 3)))
-                           (len (let ((m (match-string 4)))
-                                  (if m (string-to-number m) 1)))
-                           (beg (point)))
-                      (diff-end-of-hunk)
-                      (let* ((inserts (diff-count-matches "^\\+" beg (point)))
-                              (deletes (diff-count-matches "^-" beg (point)))
-                              (type (cond ((zerop deletes) 'insert)
-                                      ((zerop inserts) 'delete)
-                                      (t 'change))))
-                        (when (eq type 'delete)
-                          (setq len 1)
-                          (cl-incf line))
-                        (push (list line len type) res))))))
-              (setq diff-hl-flydiff-modified-tick (buffer-modified-tick))
-              (nreverse res)))
-          ((eq state 'added)
-            `((1 ,(line-number-at-pos (point-max)) insert)))
-          ((eq state 'removed)
-            `((1 ,(line-number-at-pos (point-max)) delete))))))))
+(defun diff-hl-flydiff/modified-p (state)
+  (or
+    (buffer-modified-p)
+    (eq state 'edited)
+    (and (eq state 'up-to-date)
+      ;; VC state is stale in after-revert-hook.
+      (or revert-buffer-in-progress-p
+        ;; Diffing against an older revision.
+        diff-hl-reference-revision))))
+
+(defun diff-hl-flydiff/update-modified-tick (&rest args)
+  (setq diff-hl-flydiff-modified-tick (buffer-modified-tick)))
 
 ;;;###autoload
 (define-minor-mode diff-hl-flydiff-mode
@@ -182,15 +152,24 @@ This requires the external program `diff' to be in your `exec-path'."
   (if diff-hl-flydiff-mode
     (progn
       (advice-add 'diff-hl-update :around #'diff-hl-flydiff/update)
-      (advice-add 'diff-hl-changes :override #'diff-hl-flydiff/changes)
       (advice-add 'diff-hl-overlay-modified :override #'ignore)
+
+      (advice-add 'diff-hl-modified-p :override
+        #'diff-hl-flydiff/modified-p)
+      (advice-add 'diff-hl-changes-buffer :override
+        #'diff-hl-flydiff-buffer-with-head)
+      (advice-add 'diff-hl-change :after
+        #'diff-hl-flydiff/update-modified-tick)
 
       (setq diff-hl-flydiff-timer
         (run-with-idle-timer 0.3 t #'diff-hl-update t)))
 
     (advice-remove 'diff-hl-update #'diff-hl-flydiff/update)
-    (advice-remove 'diff-hl-changes #'diff-hl-flydiff/changes)
     (advice-remove 'diff-hl-overlay-modified #'ignore)
+
+    (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
+    (advice-remove 'diff-hl-changes-buffer #'diff-hl-flydiff-buffer-with-head)
+    (advice-remove 'diff-hl-change #'diff-hl-flydiff/update-modified-tick)
 
     (cancel-timer diff-hl-flydiff-timer)))
 

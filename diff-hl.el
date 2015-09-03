@@ -215,26 +215,31 @@
          (vc-disable-async-diff t))
      ,body))
 
+(defun diff-hl-modified-p (state)
+  (or (eq state 'edited)
+    (and (eq state 'up-to-date)
+      ;; VC state is stale in after-revert-hook.
+      (or revert-buffer-in-progress-p
+        ;; Diffing against an older revision.
+        diff-hl-reference-revision))))
+
+(defun diff-hl-changes-buffer (file backend)
+  (let ((buf-name " *diff-hl* "))
+    (diff-hl-with-diff-switches
+      (vc-call-backend backend 'diff (list file)
+        diff-hl-reference-revision nil
+        buf-name))
+    buf-name))
+
 (defun diff-hl-changes ()
   (let* ((file buffer-file-name)
          (backend (vc-backend file)))
     (when backend
       (let ((state (vc-state file backend)))
         (cond
-         ((or (eq state 'edited)
-              (and (eq state 'up-to-date)
-                   ;; VC state is stale in after-revert-hook.
-                   (or revert-buffer-in-progress-p
-                       ;; Diffing against an older revision.
-                       diff-hl-reference-revision)))
-          (let* ((buf-name " *diff-hl* ")
-                 diff-auto-refine-mode
-                 res)
-            (diff-hl-with-diff-switches
-             (vc-call-backend backend 'diff (list file)
-                              diff-hl-reference-revision nil
-                              buf-name))
-            (with-current-buffer buf-name
+         ((diff-hl-modified-p state)
+          (let* (diff-auto-refine-mode res)
+            (with-current-buffer (diff-hl-changes-buffer file backend)
               (goto-char (point-min))
               (unless (eobp)
                 (ignore-errors
