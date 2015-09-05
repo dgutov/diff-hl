@@ -163,13 +163,13 @@ This requires the external program `diff' to be in your `exec-path'."
       (setq diff-hl-flydiff-timer
         (run-with-idle-timer 0.3 t #'diff-hl-update t)))
 
+    (cancel-timer diff-hl-flydiff-timer)
+
     (advice-remove 'diff-hl-update #'diff-hl-flydiff/update)
     (advice-remove 'diff-hl-overlay-modified #'ignore)
 
     (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
     (advice-remove 'diff-hl-changes-buffer #'diff-hl-flydiff-buffer-with-head)
-    (advice-remove 'diff-hl-change #'diff-hl-flydiff/update-modified-tick)
-
-    (cancel-timer diff-hl-flydiff-timer)))
+    (advice-remove 'diff-hl-change #'diff-hl-flydiff/update-modified-tick)))
 
 (provide 'diff-hl-flydiff)
