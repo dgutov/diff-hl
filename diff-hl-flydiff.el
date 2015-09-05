@@ -122,8 +122,12 @@ This requires the external program `diff' to be in your `exec-path'."
                temporary-file-directory))
             (rev (diff-hl-flydiff-create-revision file
                    (diff-hl-flydiff/working-revision file))))
-      (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
-        (get-buffer-create " *diff-hl-diff*")))))
+      (diff-hl-with-diff-switches
+        (diff-no-select rev
+          (current-buffer)
+          "-U 0 --strip-trailing-cr"
+          'noasync
+          (get-buffer-create " *diff-hl-diff*"))))))
 
 (defun diff-hl-flydiff/update (old-fun &optional auto)
   (unless (and auto
