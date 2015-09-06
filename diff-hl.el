@@ -219,18 +219,18 @@
 
 (defun diff-hl-modified-p (state)
   (or (eq state 'edited)
-    (and (eq state 'up-to-date)
-      ;; VC state is stale in after-revert-hook.
-      (or revert-buffer-in-progress-p
-        ;; Diffing against an older revision.
-        diff-hl-reference-revision))))
+      (and (eq state 'up-to-date)
+           ;; VC state is stale in after-revert-hook.
+           (or revert-buffer-in-progress-p
+               ;; Diffing against an older revision.
+               diff-hl-reference-revision))))
 
 (defun diff-hl-changes-buffer (file backend)
   (let ((buf-name " *diff-hl* "))
     (diff-hl-with-diff-switches
-      (vc-call-backend backend 'diff (list file)
-        diff-hl-reference-revision nil
-        buf-name))
+     (vc-call-backend backend 'diff (list file)
+                      diff-hl-reference-revision nil
+                      buf-name))
     buf-name))
 
 (defun diff-hl-changes ()
@@ -282,7 +282,7 @@
             (let ((hunk-beg (point)))
               (while (cl-plusp len)
                 (diff-hl-add-highlighting
-                  type
+                 type
                  (cond
                   ((not diff-hl-draw-borders) 'empty)
                   ((and (= len 1) (= line current-line)) 'single)
