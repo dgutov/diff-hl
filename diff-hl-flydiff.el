@@ -26,47 +26,50 @@
 ;;; Code:
 
 (require 'diff-hl)
-(require 'nadvice)
+(require 'diff)
+(if (version< emacs-version "24.4")
+    (error "`diff-hl-flydiff-mode' requires Emacs 24.4 or newer")
+  (require 'nadvice))
 
 (defvar diff-hl-flydiff-modified-tick 0)
 (defvar diff-hl-flydiff-timer)
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
+(defun diff-hl-flydiff/vc-git--symbolic-ref (file)
+  (or
+   (vc-file-getprop file 'vc-git-symbolic-ref)
+   (let* (process-file-side-effects
+          (str (vc-git--run-command-string nil "symbolic-ref" "HEAD")))
+     (vc-file-setprop file 'vc-git-symbolic-ref
+                      (if str
+                          (if (string-match "^\\(refs/heads/\\)?\\(.+\\)$" str)
+                              (match-string 2 str)
+                            str))))))
+
+(defun diff-hl-flydiff/vc-git-working-revision (_file)
+  "Git-specific version of `vc-working-revision'."
+  (let (process-file-side-effects)
+    (vc-git--rev-parse "HEAD")))
+
+(defun diff-hl-flydiff/vc-git-mode-line-string (file)
+  "Return a string for `vc-mode-line' to put in the mode line for FILE."
+  (let* ((rev (vc-working-revision file))
+         (disp-rev (or (diff-hl-flydiff/vc-git--symbolic-ref file)
+                       (substring rev 0 7)))
+         (def-ml (vc-default-mode-line-string 'Git file))
+         (help-echo (get-text-property 0 'help-echo def-ml))
+         (face   (get-text-property 0 'face def-ml)))
+    (propertize (replace-regexp-in-string (concat rev "\\'") disp-rev def-ml t t)
+                'face face
+                'help-echo (concat help-echo "\nCurrent revision: " rev))))
+
 ;; Polyfill concrete revisions for vc-git-working-revision in Emacs 24.4, 24.5
 (when (version<= emacs-version "25.0")
   (with-eval-after-load 'vc-git
-    (defun vc-git--symbolic-ref (file)
-      (or
-        (vc-file-getprop file 'vc-git-symbolic-ref)
-        (let* (process-file-side-effects
-                (str (vc-git--run-command-string nil "symbolic-ref" "HEAD")))
-          (vc-file-setprop file 'vc-git-symbolic-ref
-            (if str
-              (if (string-match "^\\(refs/heads/\\)?\\(.+\\)$" str)
-                (match-string 2 str)
-                str))))))
-
-    (defun diff-hl-flydiff/vc-git-working-revision (_file)
-      "Git-specific version of `vc-working-revision'."
-      (let (process-file-side-effects)
-        (vc-git--rev-parse "HEAD")))
-
-    (defun diff-hl-flydiff/vc-git-mode-line-string (file)
-      "Return a string for `vc-mode-line' to put in the mode line for FILE."
-      (let* ((rev (vc-working-revision file))
-              (disp-rev (or (vc-git--symbolic-ref file)
-                          (substring rev 0 7)))
-              (def-ml (vc-default-mode-line-string 'Git file))
-              (help-echo (get-text-property 0 'help-echo def-ml))
-              (face   (get-text-property 0 'face def-ml)))
-        (propertize (replace-regexp-in-string (concat rev "\\'") disp-rev def-ml t t)
-                    'face face
-                    'help-echo (concat help-echo "\nCurrent revision: " rev))))
-
     (advice-add 'vc-git-working-revision :override
-      #'diff-hl-flydiff/vc-git-working-revision)
+                #'diff-hl-flydiff/vc-git-working-revision)
     (advice-add 'vc-git-mode-line-string :override
-      #'diff-hl-flydiff/vc-git-mode-line-string)))
+                #'diff-hl-flydiff/vc-git-mode-line-string)))
 
 (defun diff-hl-flydiff/working-revision (file)
   "Like vc-working-revision, but always up-to-date"
