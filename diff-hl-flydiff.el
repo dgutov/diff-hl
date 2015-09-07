@@ -73,40 +73,40 @@
 (defun diff-hl-flydiff/working-revision (file)
   "Like vc-working-revision, but always up-to-date"
   (vc-file-setprop file 'vc-working-revision
-    (vc-call-backend (vc-backend file) 'working-revision file)))
+                   (vc-call-backend (vc-backend file) 'working-revision file)))
 
 (defun diff-hl-flydiff-make-temp-file-name (file rev &optional manual)
   "Return a backup file name for REV or the current version of FILE.
 If MANUAL is non-nil it means that a name for backups created by
 the user should be returned."
   (let* ((auto-save-file-name-transforms
-           `((".*" ,temporary-file-directory t))))
+          `((".*" ,temporary-file-directory t))))
     (expand-file-name
-      (concat (make-auto-save-file-name)
-        ".~" (subst-char-in-string
-               ?/ ?_ rev)
-        (unless manual ".") "~")
-      temporary-file-directory)))
+     (concat (make-auto-save-file-name)
+             ".~" (subst-char-in-string
+                   ?/ ?_ rev)
+             (unless manual ".") "~")
+     temporary-file-directory)))
 
 (defun diff-hl-flydiff-create-revision (file revision)
   "Read REVISION of FILE into a buffer and return the buffer."
   (let ((automatic-backup (diff-hl-flydiff-make-temp-file-name file revision))
-         (filebuf (get-file-buffer file))
-         (filename (diff-hl-flydiff-make-temp-file-name file revision 'manual)))
+        (filebuf (get-file-buffer file))
+        (filename (diff-hl-flydiff-make-temp-file-name file revision 'manual)))
     (unless (file-exists-p filename)
       (if (file-exists-p automatic-backup)
-        (rename-file automatic-backup filename nil)
+          (rename-file automatic-backup filename nil)
         (with-current-buffer filebuf
           (let ((failed t)
-                 (coding-system-for-read 'no-conversion)
-                 (coding-system-for-write 'no-conversion))
+                (coding-system-for-read 'no-conversion)
+                (coding-system-for-write 'no-conversion))
             (unwind-protect
-              (with-temp-file filename
-                (let ((outbuf (current-buffer)))
-                  ;; Change buffer to get local value of
-                  ;; vc-checkout-switches.
-                  (with-current-buffer filebuf
-                    (vc-call find-revision file revision outbuf))))
+                (with-temp-file filename
+                  (let ((outbuf (current-buffer)))
+                    ;; Change buffer to get local value of
+                    ;; vc-checkout-switches.
+                    (with-current-buffer filebuf
+                      (vc-call find-revision file revision outbuf))))
               (setq failed nil)
               (when (and failed (file-exists-p filename))
                 (delete-file filename)))))))
@@ -119,20 +119,21 @@ This requires the external program `diff' to be in your `exec-path'."
   (vc-ensure-vc-buffer)
   (with-current-buffer (get-buffer (current-buffer))
     (let* ((temporary-file-directory
-             (if (file-directory-p "/dev/shm/")
-               "/dev/shm/"
-               temporary-file-directory))
-            (rev (diff-hl-flydiff-create-revision file
-                   (diff-hl-flydiff/working-revision file))))
+            (if (file-directory-p "/dev/shm/")
+                "/dev/shm/"
+              temporary-file-directory))
+           (rev (diff-hl-flydiff-create-revision
+                 file
+                 (diff-hl-flydiff/working-revision file))))
       (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
-        (get-buffer-create " *diff-hl-diff*")))))
+                      (get-buffer-create " *diff-hl-diff*")))))
 
 (defun diff-hl-flydiff/update (old-fun &optional auto)
   (unless (and auto
-            (or
-              (= diff-hl-flydiff-modified-tick (buffer-modified-tick))
-              (file-remote-p default-directory)
-              (not (buffer-modified-p))))
+               (or
+                (= diff-hl-flydiff-modified-tick (buffer-modified-tick))
+                (file-remote-p default-directory)
+                (not (buffer-modified-p))))
     (funcall old-fun)))
 
 (defun diff-hl-flydiff/modified-p (state)
@@ -147,19 +148,19 @@ This requires the external program `diff' to be in your `exec-path'."
   :lighter ""
   :global t
   (if diff-hl-flydiff-mode
-    (progn
-      (advice-add 'diff-hl-update :around #'diff-hl-flydiff/update)
-      (advice-add 'diff-hl-overlay-modified :override #'ignore)
+      (progn
+        (advice-add 'diff-hl-update :around #'diff-hl-flydiff/update)
+        (advice-add 'diff-hl-overlay-modified :override #'ignore)
 
-      (advice-add 'diff-hl-modified-p :before-until
-        #'diff-hl-flydiff/modified-p)
-      (advice-add 'diff-hl-changes-buffer :override
-        #'diff-hl-flydiff-buffer-with-head)
-      (advice-add 'diff-hl-change :after
-        #'diff-hl-flydiff/update-modified-tick)
+        (advice-add 'diff-hl-modified-p :before-until
+                    #'diff-hl-flydiff/modified-p)
+        (advice-add 'diff-hl-changes-buffer :override
+                    #'diff-hl-flydiff-buffer-with-head)
+        (advice-add 'diff-hl-change :after
+                    #'diff-hl-flydiff/update-modified-tick)
 
-      (setq diff-hl-flydiff-timer
-        (run-with-idle-timer 0.3 t #'diff-hl-update t)))
+        (setq diff-hl-flydiff-timer
+              (run-with-idle-timer 0.3 t #'diff-hl-update t)))
 
     (advice-remove 'diff-hl-update #'diff-hl-flydiff/update)
     (advice-remove 'diff-hl-overlay-modified #'ignore)
