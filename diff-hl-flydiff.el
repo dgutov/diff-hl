@@ -27,9 +27,8 @@
 
 (require 'diff-hl)
 (require 'diff)
-(if (version< emacs-version "24.4")
-    (error "`diff-hl-flydiff-mode' requires Emacs 24.4 or newer")
-  (require 'nadvice))
+(unless (require 'nadvice nil t)
+  (error "`diff-hl-flydiff-mode' requires Emacs 24.4 or newer"))
 
 (defvar diff-hl-flydiff-modified-tick 0)
 (defvar diff-hl-flydiff-timer)
