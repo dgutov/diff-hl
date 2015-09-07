@@ -30,6 +30,14 @@
 (unless (require 'nadvice nil t)
   (error "`diff-hl-flydiff-mode' requires Emacs 24.4 or newer"))
 
+(defgroup diff-hl-flydiff nil
+  "Highlight changes on the fly"
+  :group 'diff-hl)
+
+(defcustom diff-hl-flydiff-delay 0.3
+  "The idle delay in seconds before highlighting is updated."
+  :type 'number)
+
 (defvar diff-hl-flydiff-modified-tick 0)
 (defvar diff-hl-flydiff-timer)
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
@@ -160,7 +168,7 @@ This requires the external program `diff' to be in your `exec-path'."
                     #'diff-hl-flydiff/update-modified-tick)
 
         (setq diff-hl-flydiff-timer
-              (run-with-idle-timer 0.3 t #'diff-hl-update t)))
+              (run-with-idle-timer diff-hl-flydiff-delay t #'diff-hl-update t)))
 
     (advice-remove 'diff-hl-update #'diff-hl-flydiff/update)
     (advice-remove 'diff-hl-overlay-modified #'ignore)
