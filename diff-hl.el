@@ -127,6 +127,11 @@
            (set-default var value)
            (when on (global-diff-hl-mode 1)))))
 
+(defcustom diff-hl-kill-revert-buffer-on-quit nil
+  "Non-nil to kill *diff-hl* revert buffer on quit."
+  :group 'diff-hl
+  :type 'boolean)
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -417,7 +422,7 @@ in the source file, or the last line of the hunk above it."
               (with-current-buffer ,buffer
                 (save-buffer))
               (message "Hunk reverted"))))
-      (quit-windows-on diff-buffer))))
+      (quit-windows-on diff-buffer diff-hl-kill-revert-buffer-on-quit))))
 
 (defun diff-hl-hunk-overlay-at (pos)
   (cl-loop for o in (overlays-in pos (1+ pos))
