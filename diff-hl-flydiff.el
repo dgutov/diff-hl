@@ -105,19 +105,18 @@ the user should be returned."
       (if (file-exists-p automatic-backup)
           (rename-file automatic-backup filename nil)
         (with-current-buffer filebuf
-          (let ((failed t)
-                (coding-system-for-read 'no-conversion)
+          (let ((coding-system-for-read 'no-conversion)
                 (coding-system-for-write 'no-conversion))
-            (unwind-protect
+            (condition-case nil
                 (with-temp-file filename
                   (let ((outbuf (current-buffer)))
                     ;; Change buffer to get local value of
                     ;; vc-checkout-switches.
                     (with-current-buffer filebuf
                       (vc-call find-revision file revision outbuf))))
-              (setq failed nil)
-              (when (and failed (file-exists-p filename))
-                (delete-file filename)))))))
+              (error
+               (when (file-exists-p filename)
+                 (delete-file filename))))))))
     filename))
 
 (defun diff-hl-flydiff-buffer-with-head (file &optional backend)
