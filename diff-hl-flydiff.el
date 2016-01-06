@@ -124,6 +124,7 @@ the user should be returned."
 This requires the external program `diff' to be in your `exec-path'."
   (interactive)
   (vc-ensure-vc-buffer)
+  (setq diff-hl-flydiff-modified-tick (buffer-modified-tick))
   (with-current-buffer (get-buffer (current-buffer))
     (let* ((temporary-file-directory
             (if (file-directory-p "/dev/shm/")
@@ -139,15 +140,11 @@ This requires the external program `diff' to be in your `exec-path'."
   (unless (and auto
                (or
                 (= diff-hl-flydiff-modified-tick (buffer-modified-tick))
-                (file-remote-p default-directory)
-                (not (buffer-modified-p))))
+                (file-remote-p default-directory)))
     (funcall old-fun)))
 
 (defun diff-hl-flydiff/modified-p (state)
   (buffer-modified-p))
-
-(defun diff-hl-flydiff/update-modified-tick (&rest args)
-  (setq diff-hl-flydiff-modified-tick (buffer-modified-tick)))
 
 ;;;###autoload
 (define-minor-mode diff-hl-flydiff-mode
@@ -163,9 +160,6 @@ This requires the external program `diff' to be in your `exec-path'."
                     #'diff-hl-flydiff/modified-p)
         (advice-add 'diff-hl-changes-buffer :override
                     #'diff-hl-flydiff-buffer-with-head)
-        (advice-add 'diff-hl-change :after
-                    #'diff-hl-flydiff/update-modified-tick)
-
         (setq diff-hl-flydiff-timer
               (run-with-idle-timer diff-hl-flydiff-delay t #'diff-hl-update t)))
 
@@ -174,7 +168,6 @@ This requires the external program `diff' to be in your `exec-path'."
 
     (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
     (advice-remove 'diff-hl-changes-buffer #'diff-hl-flydiff-buffer-with-head)
-    (advice-remove 'diff-hl-change #'diff-hl-flydiff/update-modified-tick)
 
     (cancel-timer diff-hl-flydiff-timer)))
 
