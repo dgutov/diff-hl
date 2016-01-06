@@ -136,12 +136,11 @@ This requires the external program `diff' to be in your `exec-path'."
       (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
                       (get-buffer-create " *diff-hl-diff*")))))
 
-(defun diff-hl-flydiff/update (old-fun &optional auto)
-  (unless (and auto
-               (or
-                (= diff-hl-flydiff-modified-tick (buffer-modified-tick))
-                (file-remote-p default-directory)))
-    (funcall old-fun)))
+(defun diff-hl-flydiff-update ()
+  (unless (or
+           (= diff-hl-flydiff-modified-tick (buffer-modified-tick))
+           (file-remote-p default-directory))
+    (diff-hl-update)))
 
 (defun diff-hl-flydiff/modified-p (state)
   (buffer-modified-p))
@@ -153,7 +152,6 @@ This requires the external program `diff' to be in your `exec-path'."
   :global t
   (if diff-hl-flydiff-mode
       (progn
-        (advice-add 'diff-hl-update :around #'diff-hl-flydiff/update)
         (advice-add 'diff-hl-overlay-modified :override #'ignore)
 
         (advice-add 'diff-hl-modified-p :before-until
@@ -161,9 +159,8 @@ This requires the external program `diff' to be in your `exec-path'."
         (advice-add 'diff-hl-changes-buffer :override
                     #'diff-hl-flydiff-buffer-with-head)
         (setq diff-hl-flydiff-timer
-              (run-with-idle-timer diff-hl-flydiff-delay t #'diff-hl-update t)))
+              (run-with-idle-timer diff-hl-flydiff-delay t #'diff-hl-flydiff-update)))
 
-    (advice-remove 'diff-hl-update #'diff-hl-flydiff/update)
     (advice-remove 'diff-hl-overlay-modified #'ignore)
 
     (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
