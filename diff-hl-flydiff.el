@@ -125,7 +125,7 @@ This requires the external program `diff' to be in your `exec-path'."
   (interactive)
   (vc-ensure-vc-buffer)
   (setq diff-hl-flydiff-modified-tick (buffer-modified-tick))
-  (with-current-buffer (get-buffer (current-buffer))
+  (save-current-buffer
     (let* ((temporary-file-directory
             (if (file-directory-p "/dev/shm/")
                 "/dev/shm/"
