@@ -1,4 +1,4 @@
-;;; diff-hl.el --- Highlight uncommitted changes -*- lexical-binding: t -*-
+;;; diff-hl.el --- Highlight uncommitted changes using VC -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2012-2016  Free Software Foundation, Inc.
 
