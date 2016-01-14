@@ -33,6 +33,7 @@
 
 (require 'diff-hl)
 (require 'dired)
+(require 'vc-hooks)
 
 (defvar diff-hl-dired-process-buffer nil)
 
@@ -62,8 +63,16 @@
 
 (defcustom diff-hl-dired-extra-indicators t
   "Non-nil to indicate ignored files."
-  :group 'diff-hl
   :type 'boolean)
+
+(defcustom diff-hl-dired-ignored-backends '(RCS)
+  "VC backends to ignore.
+The directories registered to one of these backends won't have
+status indicators."
+  :type `(repeat (choice ,@(mapcar
+                            (lambda (name)
+                              `(const :tag ,(symbol-name name) ,name))
+                            vc-handled-backends))))
 
 ;;;###autoload
 (define-minor-mode diff-hl-dired-mode
@@ -83,7 +92,7 @@
         (def-dir default-directory)
         (buffer (current-buffer))
         dirs-alist files-alist)
-    (when backend
+    (when (and backend (not (memq backend diff-hl-dired-ignored-backends)))
       (diff-hl-dired-clear)
       (if (buffer-live-p diff-hl-dired-process-buffer)
           (let ((proc (get-buffer-process diff-hl-dired-process-buffer)))
