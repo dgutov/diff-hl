@@ -445,6 +445,14 @@ in the source file, or the last line of the hunk above it."
   (interactive)
   (diff-hl-next-hunk t))
 
+(defun diff-hl-mark-hunk ()
+  (interactive)
+  (let ((hunk (diff-hl-hunk-overlay-at (point))))
+    (unless hunk
+      (error "No hunk at point"))
+    (goto-char (overlay-start hunk))
+    (push-mark (overlay-end hunk) nil t)))
+
 (defvar diff-hl-command-map
   (let ((map (make-sparse-keymap)))
     (define-key map "n" 'diff-hl-revert-hunk)
