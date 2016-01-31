@@ -96,5 +96,5 @@ If you're using a version before 2.4.0, it defines `magit-revert-buffer-hook`
 When using Magit 2.4 or newer, add this to your init script:
 
 ```lisp
-(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh t)
+(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh)
 ```
