@@ -90,5 +90,11 @@ psvn
 Magit
 -----
 
-If you have a recent enough version installed, it defines
-`magit-revert-buffer-hook` (or `magit-not-reverted-hook`), which we use.
+If you're using a version before 2.4.0, it defines `magit-revert-buffer-hook`
+(or `magit-not-reverted-hook`), which we use.
+
+When using Magit 2.4 or newer, add this to your init script:
+
+```lisp
+(add-hook 'magit-post-refresh-hook 'diff-hl-magit-post-refresh t)
+```
