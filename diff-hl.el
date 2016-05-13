@@ -209,7 +209,8 @@
 (defvar vc-svn-diff-switches)
 
 (defmacro diff-hl-with-diff-switches (body)
-  `(let ((vc-git-diff-switches nil)
+  ;; https://github.com/dgutov/diff-hl/issues/67
+  `(let ((vc-git-diff-switches '("-U0"))
          (vc-hg-diff-switches nil)
          (vc-svn-diff-switches nil)
          (vc-diff-switches '("-U0"))
