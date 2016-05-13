@@ -39,7 +39,7 @@
   :type 'number)
 
 (defvar diff-hl-flydiff-modified-tick 0)
-(defvar diff-hl-flydiff-timer)
+(defvar diff-hl-flydiff-timer nil)
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
 (defun diff-hl-flydiff/vc-git--symbolic-ref (file)
@@ -167,6 +167,7 @@ This requires the external program `diff' to be in your `exec-path'."
     (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
     (advice-remove 'diff-hl-changes-buffer #'diff-hl-flydiff-buffer-with-head)
 
-    (cancel-timer diff-hl-flydiff-timer)))
+    (and diff-hl-flydiff-timer
+         (cancel-timer diff-hl-flydiff-timer))))
 
 (provide 'diff-hl-flydiff)
