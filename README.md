@@ -52,6 +52,16 @@ Notes
   it's only accurate when the buffer is in saved state. Check out
   `diff-hl-flydiff-mode`, it aims to handle unsaved buffers as well.
 
+* To use an
+  [alternative diff algorithm](http://stackoverflow.com/questions/32365271/whats-the-difference-between-git-diff-patience-and-git-diff-histogram)
+  with Git, add a corresponding argument to `vc-git-diff-switches`,
+  e.g. `(setq vc-git-diff-switches '("--histogram"))`. Using the
+  `diff.algorithm` option doesn't work
+  [because](http://article.gmane.org/gmane.comp.version-control.git/294622)
+  `vc-git-diff` calls `git diff-index`. `diff-hl-flydiff-mode` does
+  not support alternative algorithms, because it uses the external
+  `diff` program.
+
 * We conflict with other modes when they put indicators on the fringe,
   such as [Flycheck](https://github.com/flycheck/flycheck). This is
   rarely a significant problem, since if you're using such a mode,
