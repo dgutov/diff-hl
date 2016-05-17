@@ -213,7 +213,8 @@
           ;; https://github.com/dgutov/diff-hl/issues/67
           (cons "-U0"
                 ;; https://github.com/dgutov/diff-hl/issues/9
-                (and (listp vc-git-diff-switches)
+                (and (boundp 'vc-git-diff-switches)
+                     (listp vc-git-diff-switches)
                      (cl-remove-if-not
                       (lambda (arg)
                         (member arg '("--histogram" "--patience" "--minimal")))
