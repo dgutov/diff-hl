@@ -31,7 +31,7 @@
 (define-minor-mode diff-hl-amend-mode
   "Show changes against the second-last revision in `diff-hl-mode'.
 Most useful with backends that support rewriting local commits,
-and most importantly, 'amending' the most recent one.
+and most importantly, \"amending\" the most recent one.
 Currently only supports Git, Mercurial and Bazaar."
   :lighter " Amend"
   (if diff-hl-amend-mode
