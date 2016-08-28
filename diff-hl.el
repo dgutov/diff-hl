@@ -538,6 +538,10 @@ in the source file, or the last line of the hunk above it."
     (dolist (buf (buffer-list))
       (when (and (buffer-local-value 'diff-hl-mode buf)
                  (not (buffer-modified-p buf))
+                 ;; Solve the "cloned indirect buffer" problem
+                 ;; (diff-hl-mode could be non-nil there, even if
+                 ;; buffer-file-name is nil):
+                 (buffer-file-name buf)
                  (file-in-directory-p (buffer-file-name buf) topdir))
         (with-current-buffer buf
           (let* ((file buffer-file-name)
