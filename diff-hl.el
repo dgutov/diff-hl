@@ -418,7 +418,7 @@ in the source file, or the last line of the hunk above it."
                   (recenter 1)))
               (when diff-auto-refine-mode
                 (diff-refine-hunk))
-              (unless (yes-or-no-p (format "Revert current hunk in %s?"
+              (unless (yes-or-no-p (format "Revert current hunk in %s? "
                                            ,(cl-caadr fileset)))
                 (error "Revert canceled"))
               (let ((diff-advance-after-apply-hunk nil))
