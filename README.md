@@ -43,7 +43,7 @@ diff-hl-margin-mode
 Requirements
 =====
 
-Emacs 24+. On OS X, Emacs 24.3 or higher is recommended.
+Emacs 24.3+.
 
 Notes
 =====
