@@ -132,7 +132,9 @@ status indicators."
                        (push (cons file type) files-alist)))))
                (unless more-to-come
                  (diff-hl-dired-highlight-items
-                  (append dirs-alist files-alist))))))
+                  (append dirs-alist files-alist))))
+             (unless more-to-come
+               (kill-buffer diff-hl-dired-process-buffer))))
          )))))
 
 (defun diff-hl-dired-status-files (backend dir files update-function)
