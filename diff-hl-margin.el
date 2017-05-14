@@ -1,6 +1,6 @@
 ;;; diff-hl-margin.el --- Highlight buffer changes on margins -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2015  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2017  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -43,6 +43,18 @@
 (defgroup diff-hl-margin nil
   "Highlight buffer changes on margin"
   :group 'diff-hl)
+
+(defface diff-hl-margin-insert
+  '((default :inherit diff-hl-insert))
+  "Face used to highlight inserted lines on the margin.")
+
+(defface diff-hl-margin-delete
+  '((default :inherit diff-hl-delete))
+  "Face used to highlight deleted lines on the margin.")
+
+(defface diff-hl-margin-change
+  '((default :inherit diff-hl-change))
+  "Face used to highlight changed lines on the margin.")
 
 (defcustom diff-hl-margin-symbols-alist
   '((insert . "+") (delete . "-") (change . "!")
@@ -121,7 +133,7 @@ You probably shouldn't use this function directly."
                       " " 'display
                       `((margin ,(intern (format "%s-margin" side)))
                         ,(propertize char 'face
-                                     (intern (format "diff-hl-%s" type)))))))))
+                                     (intern (format "diff-hl-margin-%s" type)))))))))
 
 (defun diff-hl-highlight-on-margin (ovl type _shape)
   (let ((spec (cdr (assoc (cons type diff-hl-side)
