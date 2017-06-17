@@ -470,11 +470,18 @@ in the source file, or the last line of the hunk above it."
     map))
 (fset 'diff-hl-command-map diff-hl-command-map)
 
+(defvar diff-hl-lighter ""
+  "Mode line lighter for Diff Hl.
+
+The value of this variable is a mode line template as in
+`mode-line-format'.")
+
 ;;;###autoload
 (define-minor-mode diff-hl-mode
   "Toggle VC diff highlighting."
-  :lighter "" :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
-                        (,diff-hl-command-prefix . diff-hl-command-map))
+  :lighter diff-hl-lighter
+  :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
+            (,diff-hl-command-prefix . diff-hl-command-map))
   (if diff-hl-mode
       (progn
         (diff-hl-maybe-define-bitmaps)
