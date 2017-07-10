@@ -56,6 +56,14 @@
   '((default :inherit diff-hl-change))
   "Face used to highlight changed lines on the margin.")
 
+(defface diff-hl-margin-ignored
+  '((default :inherit dired-ignored))
+  "Face used to highlight changed lines on the margin.")
+
+(defface diff-hl-margin-unknown
+  '((default :inherit dired-ignored))
+  "Face used to highlight changed lines on the margin.")
+
 (defcustom diff-hl-margin-symbols-alist
   '((insert . "+") (delete . "-") (change . "!")
     (unknown . "?") (ignored . "i"))
