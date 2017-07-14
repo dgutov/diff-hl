@@ -549,7 +549,8 @@ The value of this variable is a mode line template as in
                  ;; (diff-hl-mode could be non-nil there, even if
                  ;; buffer-file-name is nil):
                  (buffer-file-name buf)
-                 (file-in-directory-p (buffer-file-name buf) topdir))
+                 (file-in-directory-p (buffer-file-name buf) topdir)
+                 (file-exists-p (buffer-file-name buf)))
         (with-current-buffer buf
           (let* ((file buffer-file-name)
                  (backend (vc-backend file)))
