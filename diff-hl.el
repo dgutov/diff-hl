@@ -350,7 +350,7 @@
 (defun diff-hl-diff-goto-hunk ()
   "Run VC diff command and go to the line corresponding to the current."
   (interactive)
-  (vc-buffer-sync)
+  (and vc-mode (vc-buffer-sync))
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer)))
     (vc-diff-internal t (vc-deduce-fileset) diff-hl-reference-revision nil t)
@@ -383,7 +383,7 @@ in the source file, or the last line of the hunk above it."
 (defun diff-hl-revert-hunk ()
   "Revert the diff hunk with changes at or above the point."
   (interactive)
-  (vc-buffer-sync)
+  (and vc-mode (vc-buffer-sync))
   (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
         (buffer (current-buffer))
         (line (save-excursion
