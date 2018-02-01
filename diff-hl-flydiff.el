@@ -140,7 +140,8 @@ This requires the external program `diff' to be in your `exec-path'."
   (unless (or
            (not diff-hl-mode)
            (= diff-hl-flydiff-modified-tick (buffer-modified-tick))
-           (not (file-exists-p (buffer-file-name)))
+           (not buffer-file-name)
+           (not (file-exists-p buffer-file-name))
            (file-remote-p default-directory))
     (diff-hl-update)))
 
