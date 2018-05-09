@@ -22,9 +22,14 @@
 
 ;; Toggle in the current buffer with `M-x diff-hl-amend-mode'.
 ;; Toggle in all buffers with `M-x global-diff-hl-amend-mode'.
+;;
+;; To extend ‘diff-hl-amend-mode’ to other VC backends, provide a
+;; backend-specific implementation of the generic function
+;; ‘diff-hl-amend-revision’.
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'diff-hl)
 
 ;;;###autoload
@@ -47,13 +52,7 @@ Currently only supports Git, Mercurial and Bazaar."
   (let ((backend (vc-backend buffer-file-name)))
     (when backend
       (setq-local diff-hl-reference-revision
-                  (cl-case backend
-                    (Git
-                     "HEAD^")
-                    (Hg
-                     "-2")
-                    (Bzr
-                     "revno:-2"))))))
+                  (diff-hl-amend-revision backend)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-amend-mode diff-hl-amend-mode
@@ -62,6 +61,20 @@ Currently only supports Git, Mercurial and Bazaar."
 (defun turn-on-diff-hl-amend-mode ()
   "Turn on `diff-hl-amend-mode' in a buffer if appropriate."
   (and buffer-file-name (diff-hl-amend-mode 1)))
+
+(cl-defgeneric diff-hl-amend-revision (backend)
+  "Return the parent revision for ‘diff-hl-amend-mode’.
+BACKEND is a VC backend symbol."
+  nil)
+
+(cl-defmethod diff-hl-amend-revision ((_backend (eql Git)))
+  "HEAD^")
+
+(cl-defmethod diff-hl-amend-revision ((_backend (eql Hg)))
+  "-2")
+
+(cl-defmethod diff-hl-amend-revision ((_backend (eql Bzr)))
+  "revno:-2")
 
 (provide 'diff-hl-amend)
 
