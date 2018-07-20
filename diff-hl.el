@@ -418,6 +418,11 @@ in the source file, or the last line of the hunk above it."
                   (recenter 1)))
               (when diff-auto-refine-mode
                 (diff-refine-hunk))
+              ;; highlight the hunk being reverted by removing fontification outside of it
+              (let ((hunk-bounds (diff-bounds-of-hunk)))
+                (redisplay)
+                (font-lock-unfontify-buffer)
+                (apply #'font-lock-fontify-region hunk-bounds))
               (unless (yes-or-no-p (format "Revert current hunk in %s? "
                                            ,(cl-caadr fileset)))
                 (user-error "Revert canceled"))
