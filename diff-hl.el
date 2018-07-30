@@ -292,12 +292,13 @@ the end position as its only argument."
                       (when (eq type 'delete)
                         (setq len 1)
                         (cl-incf line))
-                      (push (list line len type) res))))))
+                      (push (list line len type
+				  (buffer-substring beg (point))) res))))))
             (nreverse res)))
          ((eq state 'added)
-          `((1 ,(line-number-at-pos (point-max)) insert)))
+          `((1 ,(line-number-at-pos (point-max)) insert nil)))
          ((eq state 'removed)
-          `((1 ,(line-number-at-pos (point-max)) delete))))))))
+          `((1 ,(line-number-at-pos (point-max)) delete nil))))))))
 
 (defun diff-hl-update ()
   (let ((changes (diff-hl-changes))
@@ -308,7 +309,7 @@ the end position as its only argument."
         (widen)
         (goto-char (point-min))
         (dolist (c changes)
-          (cl-destructuring-bind (line len type) c
+          (cl-destructuring-bind (line len type diff) c
             (forward-line (- line current-line))
             (setq current-line line)
             (let ((hunk-beg (point)))
@@ -328,6 +329,8 @@ the end position as its only argument."
                     (hook '(diff-hl-overlay-modified)))
                 (overlay-put h 'diff-hl t)
                 (overlay-put h 'diff-hl-hunk t)
+		(overlay-put h 'diff-content diff)
+		(overlay-put h 'diff-type type)
                 (overlay-put h 'modification-hooks hook)
                 (overlay-put h 'insert-in-front-hooks hook)
                 (overlay-put h 'insert-behind-hooks hook)))))))))
