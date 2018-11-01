@@ -381,6 +381,11 @@ in the source file, or the last line of the hunk above it."
                 (unless (looking-at "^-")
                   (cl-decf to-go))))))))))
 
+(defface diff-hl-reverted-hunk-highlight
+  '((default :inverse-video t))
+  "Face used to highlight the first characters of each line.
+Each line of the hunk to be reverted.")
+
 (defun diff-hl-revert-hunk ()
   "Revert the diff hunk with changes at or above the point."
   (interactive)
@@ -397,7 +402,7 @@ in the source file, or the last line of the hunk above it."
           (vc-diff-internal nil fileset diff-hl-reference-revision nil
                             nil diff-buffer)
           (vc-exec-after
-           `(let (beg-line end-line)
+           `(let (beg-line end-line m-end)
               (when (eobp)
                 (with-current-buffer ,buffer (diff-hl-remove-overlays))
                 (user-error "Buffer is up-to-date"))
@@ -406,6 +411,7 @@ in the source file, or the last line of the hunk above it."
               (save-excursion
                 (while (looking-at "[-+]") (forward-line 1))
                 (setq end-line (line-number-at-pos (point)))
+                (setq m-end (point-marker))
                 (unless (eobp) (diff-split-hunk)))
               (unless (looking-at "[-+]") (forward-line -1))
               (while (looking-at "[-+]") (forward-line -1))
@@ -413,6 +419,12 @@ in the source file, or the last line of the hunk above it."
               (unless (looking-at "@")
                 (forward-line 1)
                 (diff-split-hunk))
+              (let ((inhibit-read-only t))
+                (save-excursion
+                  (while (< (point) m-end)
+                    (font-lock-prepend-text-property (point) (1+ (point)) 'font-lock-face
+                                                    'diff-hl-reverted-hunk-highlight)
+                    (forward-line 1))))
               (let ((wbh (window-body-height)))
                 (if (>= wbh (- end-line beg-line))
                     (recenter (/ (+ wbh (- beg-line end-line) 2) 2))
