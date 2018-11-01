@@ -133,6 +133,7 @@ This requires the external program `diff' to be in your `exec-path'."
            (rev (diff-hl-flydiff-create-revision
                  file
                  (diff-hl-flydiff/working-revision file))))
+      ;; FIXME: When against staging, do it differently!
       (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
                       (get-buffer-create " *diff-hl-diff*")))))
 

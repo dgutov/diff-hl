@@ -1,6 +1,6 @@
 ;;; diff-hl.el --- Highlight uncommitted changes using VC -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2016  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2018  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -237,6 +237,7 @@
 (defun diff-hl-changes-buffer (file backend)
   (let ((buf-name " *diff-hl* "))
     (diff-hl-with-diff-switches
+     ;; FIXME: To diff against the staging area, call 'git diff-files -p'.
      (vc-call-backend backend 'diff (list file)
                       diff-hl-reference-revision nil
                       buf-name))
