@@ -127,6 +127,15 @@
            (set-default var value)
            (when on (global-diff-hl-mode 1)))))
 
+(defcustom diff-hl-highlight-revert-hunk-function
+  #'diff-hl-revert-highlight-first-column
+  "Function to highlight the current hunk in `diff-hl-revert-hunk'.
+The function is called at the beginning of the hunk and passed
+the end position as its only argument."
+  :type '(choice (const :tag "Do nothing" ignore)
+                 (const :tag "Highlight the first column"
+                        diff-hl-revert-highlight-first-column)))
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -383,8 +392,15 @@ in the source file, or the last line of the hunk above it."
 
 (defface diff-hl-reverted-hunk-highlight
   '((default :inverse-video t))
-  "Face used to highlight the first characters of each line.
-Each line of the hunk to be reverted.")
+  "Face used to highlight the first column of the hunk to be reverted.")
+
+(defun diff-hl-revert-highlight-first-column (end)
+  (let ((inhibit-read-only t))
+    (save-excursion
+      (while (< (point) end)
+        (font-lock-prepend-text-property (point) (1+ (point)) 'font-lock-face
+                                         'diff-hl-reverted-hunk-highlight)
+        (forward-line 1)))))
 
 (defun diff-hl-revert-hunk ()
   "Revert the diff hunk with changes at or above the point."
@@ -419,12 +435,7 @@ Each line of the hunk to be reverted.")
               (unless (looking-at "@")
                 (forward-line 1)
                 (diff-split-hunk))
-              (let ((inhibit-read-only t))
-                (save-excursion
-                  (while (< (point) m-end)
-                    (font-lock-prepend-text-property (point) (1+ (point)) 'font-lock-face
-                                                    'diff-hl-reverted-hunk-highlight)
-                    (forward-line 1))))
+              (funcall diff-hl-highlight-revert-hunk-function m-end)
               (let ((wbh (window-body-height)))
                 (if (>= wbh (- end-line beg-line))
                     (recenter (/ (+ wbh (- beg-line end-line) 2) 2))
