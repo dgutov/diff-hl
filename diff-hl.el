@@ -405,52 +405,54 @@ in the source file, or the last line of the hunk above it."
 (defun diff-hl-revert-hunk ()
   "Revert the diff hunk with changes at or above the point."
   (interactive)
-  (vc-buffer-sync)
-  (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
-        (buffer (current-buffer))
-        (line (save-excursion
-                (unless (diff-hl-hunk-overlay-at (point))
-                  (diff-hl-previous-hunk))
-                (line-number-at-pos)))
-        (fileset (vc-deduce-fileset)))
-    (unwind-protect
-        (progn
-          (vc-diff-internal nil fileset diff-hl-reference-revision nil
-                            nil diff-buffer)
-          (vc-exec-after
-           `(let (beg-line end-line m-end)
-              (when (eobp)
-                (with-current-buffer ,buffer (diff-hl-remove-overlays))
-                (user-error "Buffer is up-to-date"))
-              (let (diff-auto-refine-mode)
-                (diff-hl-diff-skip-to ,line))
-              (save-excursion
-                (while (looking-at "[-+]") (forward-line 1))
-                (setq end-line (line-number-at-pos (point)))
-                (setq m-end (point-marker))
-                (unless (eobp) (diff-split-hunk)))
-              (unless (looking-at "[-+]") (forward-line -1))
-              (while (looking-at "[-+]") (forward-line -1))
-              (setq beg-line (line-number-at-pos (point)))
-              (unless (looking-at "@")
-                (forward-line 1)
-                (diff-split-hunk))
-              (funcall diff-hl-highlight-revert-hunk-function m-end)
-              (let ((wbh (window-body-height)))
-                (if (>= wbh (- end-line beg-line))
-                    (recenter (/ (+ wbh (- beg-line end-line) 2) 2))
-                  (recenter 1)))
-              (when diff-auto-refine-mode
-                (diff-refine-hunk))
-              (unless (yes-or-no-p (format "Revert current hunk in %s? "
-                                           ,(cl-caadr fileset)))
-                (user-error "Revert canceled"))
-              (let ((diff-advance-after-apply-hunk nil))
-                (diff-apply-hunk t))
-              (with-current-buffer ,buffer
-                (save-buffer))
-              (message "Hunk reverted"))))
-      (quit-windows-on diff-buffer t))))
+  (save-restriction
+    (widen)
+    (vc-buffer-sync)
+    (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
+          (buffer (current-buffer))
+          (line (save-excursion
+                  (unless (diff-hl-hunk-overlay-at (point))
+                    (diff-hl-previous-hunk))
+                  (line-number-at-pos)))
+          (fileset (vc-deduce-fileset)))
+      (unwind-protect
+          (progn
+            (vc-diff-internal nil fileset diff-hl-reference-revision nil
+                              nil diff-buffer)
+            (vc-exec-after
+             `(let (beg-line end-line m-end)
+                (when (eobp)
+                  (with-current-buffer ,buffer (diff-hl-remove-overlays))
+                  (user-error "Buffer is up-to-date"))
+                (let (diff-auto-refine-mode)
+                  (diff-hl-diff-skip-to ,line))
+                (save-excursion
+                  (while (looking-at "[-+]") (forward-line 1))
+                  (setq end-line (line-number-at-pos (point)))
+                  (setq m-end (point-marker))
+                  (unless (eobp) (diff-split-hunk)))
+                (unless (looking-at "[-+]") (forward-line -1))
+                (while (looking-at "[-+]") (forward-line -1))
+                (setq beg-line (line-number-at-pos (point)))
+                (unless (looking-at "@")
+                  (forward-line 1)
+                  (diff-split-hunk))
+                (funcall diff-hl-highlight-revert-hunk-function m-end)
+                (let ((wbh (window-body-height)))
+                  (if (>= wbh (- end-line beg-line))
+                      (recenter (/ (+ wbh (- beg-line end-line) 2) 2))
+                    (recenter 1)))
+                (when diff-auto-refine-mode
+                  (diff-refine-hunk))
+                (unless (yes-or-no-p (format "Revert current hunk in %s? "
+                                             ,(cl-caadr fileset)))
+                  (user-error "Revert canceled"))
+                (let ((diff-advance-after-apply-hunk nil))
+                  (diff-apply-hunk t))
+                (with-current-buffer ,buffer
+                  (save-buffer))
+                (message "Hunk reverted"))))
+        (quit-windows-on diff-buffer t)))))
 
 (defun diff-hl-hunk-overlay-at (pos)
   (cl-loop for o in (overlays-in pos (1+ pos))
