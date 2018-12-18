@@ -38,7 +38,7 @@
   "The idle delay in seconds before highlighting is updated."
   :type 'number)
 
-(defvar diff-hl-flydiff-modified-tick 0)
+(defvar diff-hl-flydiff-modified-tick nil)
 (defvar diff-hl-flydiff-timer nil)
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
@@ -124,7 +124,7 @@ the user should be returned."
 This requires the external program `diff' to be in your `exec-path'."
   (interactive)
   (vc-ensure-vc-buffer)
-  (setq diff-hl-flydiff-modified-tick (buffer-modified-tick))
+  (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
   (save-current-buffer
     (let* ((temporary-file-directory
             (if (file-directory-p "/dev/shm/")
@@ -140,7 +140,7 @@ This requires the external program `diff' to be in your `exec-path'."
 (defun diff-hl-flydiff-update ()
   (unless (or
            (not diff-hl-mode)
-           (= diff-hl-flydiff-modified-tick (buffer-modified-tick))
+           (= diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
            (not buffer-file-name)
            (not (file-exists-p buffer-file-name))
            (file-remote-p default-directory))
