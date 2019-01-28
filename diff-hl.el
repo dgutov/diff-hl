@@ -187,6 +187,10 @@ the end position as its only argument."
       (diff-hl-define-bitmaps)
       (define-fringe-bitmap 'diff-hl-bmp-empty [0] 1 1 'center))))
 
+(defun diff-hl-maybe-redefine-bitmaps ()
+  (when (window-system)
+    (diff-hl-define-bitmaps)))
+
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
 (defun diff-hl-fringe-spec (type pos side)
@@ -534,7 +538,7 @@ The value of this variable is a mode line template as in
         ;; instead, but only when they dosn't call `revert-buffer':
         (add-hook 'magit-not-reverted-hook 'diff-hl-update nil t)
         (add-hook 'auto-revert-mode-hook 'diff-hl-update nil t)
-        (add-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps nil t))
+        (add-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
@@ -543,7 +547,7 @@ The value of this variable is a mode line template as in
     (remove-hook 'magit-revert-buffer-hook 'diff-hl-update t)
     (remove-hook 'magit-not-reverted-hook 'diff-hl-update t)
     (remove-hook 'auto-revert-mode-hook 'diff-hl-update t)
-    (remove-hook 'text-scale-mode-hook 'diff-hl-define-bitmaps t)
+    (remove-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps t)
     (diff-hl-remove-overlays)))
 
 (when (require 'smartrep nil t)
