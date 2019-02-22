@@ -102,8 +102,7 @@ psvn
 -----
 
 ```lisp
-(defadvice svn-status-update-modeline (after svn-update-diff-hl activate)
-  (diff-hl-update))
+(advice-add 'svn-status-update-modeline :after #'diff-hl-update)
 ```
 
 Magit
