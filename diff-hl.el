@@ -1,11 +1,11 @@
 ;;; diff-hl.el --- Highlight uncommitted changes using VC -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2018  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2019  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.8.5
+;; Version:  1.8.6
 ;; Package-Requires: ((cl-lib "0.2") (emacs "24.3"))
 
 ;; This file is part of GNU Emacs.
@@ -249,11 +249,20 @@ the end position as its only argument."
 
 (defun diff-hl-changes-buffer (file backend)
   (let ((buf-name " *diff-hl* "))
-    (diff-hl-with-diff-switches
-     ;; FIXME: To diff against the staging area, call 'git diff-files -p'.
-     (vc-call-backend backend 'diff (list file)
-                      diff-hl-reference-revision nil
-                      buf-name))
+    (condition-case err
+        (diff-hl-with-diff-switches
+         ;; FIXME: To diff against the staging area, call 'git diff-files -p'.
+         (vc-call-backend backend 'diff (list file)
+                          diff-hl-reference-revision nil
+                          buf-name))
+      (error
+       (when (string-match-p "\\`Failed (status 128)" (error-message-string err))
+         (diff-hl-with-diff-switches
+          ;; FIXME: To diff against the staging area, call 'git diff-files -p'.
+          (vc-call-backend backend 'diff (list file)
+                           "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+                           nil
+                           buf-name)))))
     buf-name))
 
 (defun diff-hl-changes ()
