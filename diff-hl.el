@@ -248,17 +248,17 @@ the end position as its only argument."
                diff-hl-reference-revision))))
 
 (defun diff-hl-changes-buffer (file backend)
+  ;; FIXME: To diff against the staging area, call 'git diff-files -p'.
   (let ((buf-name " *diff-hl* "))
     (condition-case err
         (diff-hl-with-diff-switches
-         ;; FIXME: To diff against the staging area, call 'git diff-files -p'.
          (vc-call-backend backend 'diff (list file)
                           diff-hl-reference-revision nil
                           buf-name))
       (error
+       ;; https://github.com/dgutov/diff-hl/issues/117
        (when (string-match-p "\\`Failed (status 128)" (error-message-string err))
          (diff-hl-with-diff-switches
-          ;; FIXME: To diff against the staging area, call 'git diff-files -p'.
           (vc-call-backend backend 'diff (list file)
                            "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
                            nil
