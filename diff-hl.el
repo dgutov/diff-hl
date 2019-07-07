@@ -546,7 +546,6 @@ The value of this variable is a mode line template as in
         ;; Magit versions 2.0-2.3 don't do the above and call this
         ;; instead, but only when they dosn't call `revert-buffer':
         (add-hook 'magit-not-reverted-hook 'diff-hl-update nil t)
-        (add-hook 'auto-revert-mode-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps nil t))
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
@@ -555,7 +554,6 @@ The value of this variable is a mode line template as in
     (remove-hook 'after-revert-hook 'diff-hl-update t)
     (remove-hook 'magit-revert-buffer-hook 'diff-hl-update t)
     (remove-hook 'magit-not-reverted-hook 'diff-hl-update t)
-    (remove-hook 'auto-revert-mode-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps t)
     (diff-hl-remove-overlays)))
 
