@@ -112,8 +112,9 @@ You probably shouldn't use this function directly."
           (set (make-local-variable 'diff-hl-highlight-function)
                'diff-hl-highlight-on-margin)
           (set width-var 1))
-      (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
-            diff-hl-margin-old-highlight-function nil)
+      (when diff-hl-margin-old-highlight-function
+        (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
+              diff-hl-margin-old-highlight-function nil))
       (set width-var 0)))
   (dolist (win (get-buffer-window-list))
     (set-window-buffer win (current-buffer))))
