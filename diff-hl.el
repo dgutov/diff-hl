@@ -461,7 +461,8 @@ in the source file, or the last line of the hunk above it."
                                              ,(cl-caadr fileset)))
                   (user-error "Revert canceled"))
                 (let ((diff-advance-after-apply-hunk nil))
-                  (diff-apply-hunk t))
+                  (save-window-excursion
+                    (diff-apply-hunk t)))
                 (with-current-buffer ,buffer
                   (save-buffer))
                 (message "Hunk reverted"))))
