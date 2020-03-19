@@ -151,6 +151,7 @@ the end position as its only argument."
                  spacing)))
          (w (min (frame-parameter nil (intern (format "%s-fringe" diff-hl-side)))
                  16))
+         (_ (when (zerop w) (setq w 16)))
          (middle (make-vector h (expt 2 (1- w))))
          (ones (1- (expt 2 w)))
          (top (copy-sequence middle))
