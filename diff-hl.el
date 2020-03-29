@@ -97,6 +97,11 @@
   :group 'diff-hl
   :type 'boolean)
 
+(defcustom diff-hl-ask-before-revert-hunk t
+  "Non-nil to ask for confirmation before revert a hunk."
+  :group 'diff-hl
+  :type 'boolean)
+
 (defcustom diff-hl-highlight-function 'diff-hl-highlight-on-fringe
   "Function to highlight the current line. Its arguments are
   overlay, change type and position within a hunk."
@@ -458,9 +463,10 @@ in the source file, or the last line of the hunk above it."
                     (recenter 1)))
                 (when diff-auto-refine-mode
                   (diff-refine-hunk))
-                (unless (yes-or-no-p (format "Revert current hunk in %s? "
-                                             ,(cl-caadr fileset)))
-                  (user-error "Revert canceled"))
+                (if diff-hl-ask-before-revert-hunk
+                    (unless (yes-or-no-p (format "Revert current hunk in %s? "
+                                                 ,(cl-caadr fileset)))
+                      (user-error "Revert canceled")))
                 (let ((diff-advance-after-apply-hunk nil))
                   (save-window-excursion
                     (diff-apply-hunk t)))
