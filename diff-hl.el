@@ -1,6 +1,6 @@
 ;;; diff-hl.el --- Highlight uncommitted changes using VC -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2019  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2020  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -376,9 +376,7 @@ the end position as its only argument."
     (unless (buffer-modified-p)
       (diff-hl-update))))
 
-(defun diff-hl-diff-goto-hunk ()
-  "Run VC diff command and go to the line corresponding to the current."
-  (interactive)
+(defun diff-hl-diff-goto-hunk-1 ()
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer)))
@@ -387,6 +385,12 @@ the end position as its only argument."
                         (with-current-buffer ,buffer (diff-hl-remove-overlays))
                       (diff-hl-diff-skip-to ,line)
                       (setq vc-sentinel-movepoint (point))))))
+
+(defun diff-hl-diff-goto-hunk ()
+  "Run VC diff command and go to the line corresponding to the current."
+  (interactive)
+  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+    (diff-hl-diff-goto-hunk-1)))
 
 (defun diff-hl-diff-skip-to (line)
   "In `diff-mode', skip to the hunk and line corresponding to LINE
@@ -421,9 +425,7 @@ in the source file, or the last line of the hunk above it."
                                          'diff-hl-reverted-hunk-highlight)
         (forward-line 1)))))
 
-(defun diff-hl-revert-hunk ()
-  "Revert the diff hunk with changes at or above the point."
-  (interactive)
+(defun diff-hl-revert-hunk-1 ()
   (save-restriction
     (widen)
     (vc-buffer-sync)
@@ -474,6 +476,12 @@ in the source file, or the last line of the hunk above it."
                   (save-buffer))
                 (message "Hunk reverted"))))
         (quit-windows-on diff-buffer t)))))
+
+(defun diff-hl-revert-hunk ()
+  "Revert the diff hunk with changes at or above the point."
+  (interactive)
+  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+    (diff-hl-revert-hunk-1)))
 
 (defun diff-hl-hunk-overlay-at (pos)
   (cl-loop for o in (overlays-in pos (1+ pos))
