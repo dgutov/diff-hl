@@ -246,7 +246,7 @@ the end position as its only argument."
      ,body))
 
 (defun diff-hl-modified-p (state)
-  (or (eq state 'edited)
+  (or (memq state '(edited conflict))
       (and (eq state 'up-to-date)
            ;; VC state is stale in after-revert-hook.
            (or revert-buffer-in-progress-p
