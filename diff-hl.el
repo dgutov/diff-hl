@@ -141,6 +141,28 @@ the end position as its only argument."
                  (const :tag "Highlight the first column"
                         diff-hl-revert-highlight-first-column)))
 
+(defcustom diff-hl-global-modes '(not image-mode)
+  "Modes for which `diff-hl-mode' is automagically turned on.
+This is taken directly from `font-lock-global-modes'.
+If nil, no modes have diff-hl mode automatically turned on.
+If t, all modes have diff-hl enabled.
+If a list, it should be a list of `major-mode' symbol names for which diff-hl
+mode should be automatically turned on.  The sense of the list is negated if it
+begins with `not'.  For example:
+ (not c-mode c++-mode)
+means that `diff-hl-mode' is turned on for all modes except for C and C++ mode.
+The default value disables `diff-hl' in `image-mode' buffers. Without this images
+loads slower because `diff-hl' has to look through the image data for
+possible changes. And because images are displayed on a single line in Emacs
+there is little reason to want this behavior."
+  :type '(choice (const :tag "none" nil)
+		 (const :tag "all" t)
+		 (set :menu-tag "mode specific" :tag "modes"
+		      :value (not)
+		      (const :tag "Except" not)
+		      (repeat :inline t (symbol :tag "mode"))))
+  :group 'diff-hl)
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -654,8 +676,18 @@ The value of this variable is a mode line template as in
     (diff-hl-dir-mode 1))))
 
 ;;;###autoload
+(defun diff-hl--global-turn-on ()
+  "Run `turn-on-diff-hl-mode' in applicable major modes."
+  (when (cond ((eq diff-hl-global-modes t)
+	       t)
+	      ((eq (car-safe diff-hl-global-modes) 'not)
+	       (not (memq major-mode (cdr diff-hl-global-modes))))
+	      (t (memq major-mode diff-hl-global-modes)))
+    (turn-on-diff-hl-mode)))
+
+;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
-  turn-on-diff-hl-mode :after-hook (diff-hl-global-mode-change))
+  diff-hl--global-turn-on :after-hook (diff-hl-global-mode-change))
 
 (defun diff-hl-global-mode-change ()
   (unless global-diff-hl-mode
