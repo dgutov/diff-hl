@@ -143,24 +143,22 @@ the end position as its only argument."
 
 (defcustom diff-hl-global-modes '(not image-mode)
   "Modes for which `diff-hl-mode' is automagically turned on.
-This is taken directly from `font-lock-global-modes'.
-If nil, no modes have diff-hl mode automatically turned on.
-If t, all modes have diff-hl enabled.
-If a list, it should be a list of `major-mode' symbol names for which diff-hl
-mode should be automatically turned on.  The sense of the list is negated if it
-begins with `not'.  For example:
- (not c-mode c++-mode)
-means that `diff-hl-mode' is turned on for all modes except for C and C++ mode.
-The default value disables `diff-hl' in `image-mode' buffers. Without this images
-loads slower because `diff-hl' has to look through the image data for
-possible changes. And because images are displayed on a single line in Emacs
-there is little reason to want this behavior."
+This affects the behavior of `global-diff-hl-mode'.
+If nil, no modes have `diff-hl-mode' automatically turned on.
+If t, all modes have `diff-hl-mode' enabled.
+If a list, it should be a list of `major-mode' symbol names for
+which it should be automatically turned on. The sense of the list
+is negated if it begins with `not'. As such, the default value
+ (not image-mode)
+means that `diff-hl-mode' is turned on in all modes except for
+`image-mode' buffers. Previously, `diff-hl-mode' caused worse
+performance when viewing such files in certain conditions."
   :type '(choice (const :tag "none" nil)
-		 (const :tag "all" t)
-		 (set :menu-tag "mode specific" :tag "modes"
-		      :value (not)
-		      (const :tag "Except" not)
-		      (repeat :inline t (symbol :tag "mode"))))
+                 (const :tag "all" t)
+                 (set :menu-tag "mode specific" :tag "modes"
+                      :value (not)
+                      (const :tag "Except" not)
+                      (repeat :inline t (symbol :tag "mode"))))
   :group 'diff-hl)
 
 (defvar diff-hl-reference-revision nil
@@ -677,12 +675,12 @@ The value of this variable is a mode line template as in
 
 ;;;###autoload
 (defun diff-hl--global-turn-on ()
-  "Run `turn-on-diff-hl-mode' in applicable major modes."
+  "Call `turn-on-diff-hl-mode' if the current major mode is applicable."
   (when (cond ((eq diff-hl-global-modes t)
-	       t)
-	      ((eq (car-safe diff-hl-global-modes) 'not)
-	       (not (memq major-mode (cdr diff-hl-global-modes))))
-	      (t (memq major-mode diff-hl-global-modes)))
+               t)
+              ((eq (car-safe diff-hl-global-modes) 'not)
+               (not (memq major-mode (cdr diff-hl-global-modes))))
+              (t (memq major-mode diff-hl-global-modes)))
     (turn-on-diff-hl-mode)))
 
 ;;;###autoload
