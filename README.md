@@ -17,6 +17,7 @@ The package also contains auxiliary modes:
 * `diff-hl-amend-mode` shifts the reference revision back by one.
 * `diff-hl-flydiff-mode` implements highlighting changes on the fly.
   It requires Emacs 24.4 or newer.
+* `diff-hl-posframe-mode` shows a posframe with the diffs of the current hunk when left clicking on the fringe or margin.
 
 Usage
 =====
@@ -25,6 +26,13 @@ Put this into your init script:
 
 ```lisp
 (global-diff-hl-mode)
+```
+
+For the auxiliary modes:
+
+```lisp
+(global-diff-hl-posframe-mode)
+(add-hook 'dired-mode-hook 'diff-hl-dired-mode)
 ```
 
 Check out the Commentary section in each file for more detailed usage
@@ -48,6 +56,12 @@ diff-hl-margin-mode
 -----
 
 ![screenie](screenshot-margin.png)
+
+
+diff-hl-posframe-mode
+-----
+
+![screenie](screenshot-posframe.png)
 
 Requirements
 =====
