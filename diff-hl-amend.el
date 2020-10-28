@@ -57,7 +57,8 @@ Currently only supports Git, Mercurial and Bazaar."
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-amend-mode diff-hl-amend-mode
-  turn-on-diff-hl-amend-mode)
+  turn-on-diff-hl-amend-mode
+  :group 'diff-hl)
 
 (defun turn-on-diff-hl-amend-mode ()
   "Turn on `diff-hl-amend-mode' in a buffer if appropriate."
