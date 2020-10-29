@@ -55,6 +55,8 @@
 (require 'diff-mode)
 (require 'vc)
 (require 'vc-dir)
+(require 'log-view)
+
 (eval-when-compile
   (require 'cl-lib)
   (require 'vc-git)
@@ -682,6 +684,90 @@ The value of this variable is a mode line template as in
                (not (memq major-mode (cdr diff-hl-global-modes))))
               (t (memq major-mode diff-hl-global-modes)))
     (turn-on-diff-hl-mode)))
+
+;;;###autoload
+(defun diff-hl-log-view-set-reference-rev-for-fileset ()
+  "In *vc-change-log* buffer, set current as reference revision.
+Call `vc-print-log' first, then use this command on a revision,
+`diff-hl' will show changes against this revision for this file."
+  (interactive)
+  ;; For some reason `log-view-current-tag' has to be called before
+  ;; `vc-deduce-fileset'.
+  (let* ((rev (log-view-current-tag))
+         (fileset (nth 1 (vc-deduce-fileset)))
+         (bufs (mapcar #'get-file-buffer fileset))
+         (bufs (cl-delete nil bufs)))
+    (unless rev
+      (user-error "Not in a change log buffer"))
+    (unless bufs
+      (user-error "Files in the fileset are all closed"))
+    (dolist (buf bufs)
+      (with-current-buffer buf
+        (setq-local diff-hl-reference-revision rev)))))
+
+;;;###autoload
+(defun diff-hl-reset-reference-rev-for-fileset ()
+  "Use most recent revision as reference for current fileset."
+  (interactive)
+  "Use most recent revision as reference for current fileset."
+  (let* ((fileset (nth 1 (vc-deduce-fileset)))
+         (bufs (mapcar #'get-file-buffer fileset))
+         (bufs (cl-delete nil bufs)))
+    (unless bufs
+      (user-error "Files in the fileset are all closed"))
+    (dolist (buf bufs)
+      (with-current-buffer buf
+        (setq-local diff-hl-reference-revision nil)))))
+
+;;;###autoload
+(defun diff-hl-log-view-set-reference-rev-for-repo ()
+  "In *vc-change-log* buffer, set current as reference revision.
+Call `vc-print-root-log' first, then use this command on a
+revision, `diff-hl' will show changes against this revision for
+all files in the repo."
+  (interactive)
+  (let* ((rev (log-view-current-tag))
+         (repo (vc-root-dir))
+         bufs)
+    (unless rev
+      (user-error "Not in a change log buffer"))
+    ;; If we are in a change log buffer, `repo' would not be nil, so it's safe
+    ;; to run `expand-file-name' on it.
+    (setq repo (expand-file-name repo))
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (let* ((filename (buffer-file-name))
+               (filename (when (stringp filename)
+                           (expand-file-name filename))))
+          (when (and filename (string-prefix-p repo filename))
+            (push buf bufs)))))
+    (unless bufs
+      (user-error "Files in the repo are all closed"))
+    (dolist (buf bufs)
+      (with-current-buffer buf
+        (setq-local diff-hl-reference-revision rev)))))
+
+;;;###autoload
+(defun diff-hl-reset-reference-rev-for-repo ()
+  "Use most recent revision as reference for current repo."
+  (interactive)
+  (let* ((repo (vc-root-dir))
+         bufs)
+    (unless repo
+      (user-error "Not in a repo"))
+    (setq repo (expand-file-name repo))
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (let* ((filename (buffer-file-name))
+               (filename (when (stringp filename)
+                           (expand-file-name filename))))
+          (when (and filename (string-prefix-p repo filename))
+            (push buf bufs)))))
+    (unless bufs
+      (user-error "Files in the repo are all closed"))
+    (dolist (buf bufs)
+      (with-current-buffer buf
+        (setq-local diff-hl-reference-revision nil)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
