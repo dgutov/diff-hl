@@ -17,6 +17,8 @@ The package also contains auxiliary modes:
 * `diff-hl-amend-mode` shifts the reference revision back by one.
 * `diff-hl-flydiff-mode` implements highlighting changes on the fly.
   It requires Emacs 24.4 or newer.
+* `diff-hl-show-hunk-mode` enables fringe and margin to show the
+  hunk at that point.
 
 Usage
 =====
@@ -48,6 +50,17 @@ diff-hl-margin-mode
 -----
 
 ![screenie](screenshot-margin.png)
+
+
+diff-hl-show-hunk-mode with popup backend
+-----
+![screenie](diff-hl-popup.gif)
+
+
+diff-hl-show-hunk-mode with posframe backend
+-----
+![screenie](diff-hl-posframe.gif)
+
 
 Requirements
 =====
