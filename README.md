@@ -103,6 +103,12 @@ Notes
 * [emacs-git-gutter](https://github.com/syohex/emacs-git-gutter) shows
   indicators in the margin by default, allows you to customize how the
   indicators look more easily, and has a "stage hunk" command.
+  
+* `diff-hl-show-hunk-*` commands need
+  [`posframe`](https://github.com/tumashu/posframe) or
+  [`popup`](https://github.com/auto-complete/popup-el) package. They
+  are not included in dependencies, so they should be installed
+  separately.
 
 Integration
 =====
