@@ -34,12 +34,12 @@
 (defun diff-hl-show-hunk-popup-height ()
   "Desired size of the displayed popup."
   (let ((magic-adjust-working-in-my-pc 3))
-    (min diff-hl-show-hunk-popup-default-height (- (window-body-height) magic-adjust-working-in-my-pc)))
-  
+    (min diff-hl-show-hunk-popup-default-height (- (window-body-height) magic-adjust-working-in-my-pc))))
+
 (defun diff-hl-show-hunk-popup-width ()
   "Desired size of the displayed popup."
   (let ((magic-adjust-working-in-my-pc 6))
-    (min diff-hl-show-hunk-popup-default-width (- (window-body-width) magic-adjust-working-in-my-pc)))
+    (min diff-hl-show-hunk-popup-default-width (- (window-body-width) magic-adjust-working-in-my-pc))))
 
 (defun diff-hl-show-hunk--popup-up ()
   "Used in `diff-hl-show-hunk--popup-transient-mode-map'."

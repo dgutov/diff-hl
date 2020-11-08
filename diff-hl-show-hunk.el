@@ -31,15 +31,21 @@
 
 (defvar diff-hl-show-hunk-mode-map
   (let ((map (make-sparse-keymap)))
+    (define-key map (concat diff-hl-command-prefix  "*") #'diff-hl-show-hunk)
+    (define-key map (concat diff-hl-command-prefix  "{") #'diff-hl-show-hunk-previous)
+    (define-key map (concat diff-hl-command-prefix  "}") #'diff-hl-show-hunk-next)
+    map)
+  "Keymap for command `diff-hl-show-hunk-mode'.")
+
+(defvar diff-hl-show-hunk-mouse-mode-map
+  (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<left-margin> <mouse-1>") 'diff-hl-show-hunk--click)
     (define-key map (kbd "<right-margin> <mouse-1>") 'diff-hl-show-hunk--click)
     (define-key map (kbd "<left-fringe> <mouse-1>") 'diff-hl-show-hunk--click)
     (define-key map (kbd "<right-fringe> <mouse-1>") 'diff-hl-show-hunk--click)
-    (define-key map (kbd "C-x v *") #'diff-hl-show-hunk)
-    (define-key map (kbd "C-x v {") #'diff-hl-show-hunk-previous)
-    (define-key map (kbd "C-x v }") #'diff-hl-show-hunk-next)
+    (set-keymap-parent map diff-hl-show-hunk-mode-map)
     map)
-  "Keymap for command `diff-hl-show-hunk-mode'.")
+  "Keymap for command `diff-hl-show-hunk-mouse-mode'.")
 
 (defvar diff-hl-show-hunk-buffer-name "*diff-hl-show-hunk-buffer*" "Name of the posframe used by diff-hl-show-hunk.")
 (defvar diff-hl-show-hunk--original-window nil "The vc window of which the hunk is shown.")
@@ -184,6 +190,7 @@ Returns a list with the buffer and the line number of the clicked line."
       (save-excursion
         (diff-hl-next-hunk)))))
 
+;;;###autoload
 (defun diff-hl-show-hunk-previous ()
   "Go to previous hunk/change and show it."
   (interactive)
@@ -195,8 +202,10 @@ Returns a list with the buffer and the line number of the clicked line."
     (progn
       (diff-hl-show-hunk-hide)
       (diff-hl-previous-hunk)
-      (run-with-timer 0 nil #'diff-hl-show-hunk))))
+      ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
+      (diff-hl-show-hunk))))
 
+;;;###autoload
 (defun diff-hl-show-hunk-next ()
   "Go to next hunk/change and show it."
   (interactive)
@@ -208,7 +217,8 @@ Returns a list with the buffer and the line number of the clicked line."
     (progn
       (diff-hl-show-hunk-hide)
       (diff-hl-next-hunk)
-      (run-with-timer 0 nil #'diff-hl-show-hunk))))
+      ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
+      (diff-hl-show-hunk))))
 
 
 
@@ -246,11 +256,27 @@ If not, it fallbacks to `diff-hl-diff-goto-hunk`."
 
 
 ;;;###autoload
+(define-minor-mode diff-hl-show-hunk-mouse-mode
+  "Enables the margin and fringe to show a posframe/popup with vc diffs when clicked.
+By default, the posframe/popup shows only the current hunk, and
+the line of the hunk that matches the current position is
+highlighted.  The face, border and other visual preferences are
+customizable.  It can be also invoked with the command
+`diff-hl-show-hunk'
+\\{diff-hl-show-hunk-mouse-mode-map}"
+  :group 'diff-hl-show-hunk-group)
+
+;;;###autoload
+(define-globalized-minor-mode global-diff-hl-show-hunk-mouse-mode
+  diff-hl-show-hunk-mouse-mode
+  diff-hl-show-hunk-mouse-mode)
+
+
+;;;###autoload
 (define-minor-mode diff-hl-show-hunk-mode
-  "Enables the margin and fringe to show a posframe with vc diffs when clicked.
-By default, the posframe shows only the current hunk, and the line of the hunk that matches the current position is highlighted.
-The posframe face, border and other visual preferences are customizable.
-The posframe can be also invoked with the command `diff-hl-show-hunk`"
+  "Enables a keymap with some commands of the `diff-hl-show-hunk' package
+\\{diff-hl-show-hunk-mode-map}"
+
   :group 'diff-hl-show-hunk-group)
 
 ;;;###autoload
