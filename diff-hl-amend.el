@@ -39,7 +39,7 @@ Currently only supports Git, Mercurial and Bazaar."
         (diff-hl-amend-setup)
         (add-hook 'after-revert-hook 'diff-hl-amend-setup nil t))
     (remove-hook 'after-revert-hook 'diff-hl-amend-setup t)
-    (setq-local diff-hl-reference-revision nil))
+    (kill-local-variable 'diff-hl-reference-revision))
   (when diff-hl-mode
     (diff-hl-update)))
 
