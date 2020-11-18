@@ -159,6 +159,9 @@ to scroll in the posframe")
 
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-internal-border t)
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-with-header-line t)
+
+  ;; Dedicate window
+  (set-window-dedicated-p (window-main-window diff-hl-show-hunk--frame) t)
   
   ;; Recenter arround point
   (with-selected-frame diff-hl-show-hunk--frame
