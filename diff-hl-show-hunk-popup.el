@@ -1,9 +1,49 @@
 ;;; diff-hl-show-hunk-popup.el --- popup backend for diff-hl-show-hunk -*- lexical-binding: t -*-
 
+;; Copyright (C) 2020  Free Software Foundation, Inc.
+
+;; Author:   Dmitry Gutov <dgutov@yandex.ru>
+;;           Álvaro González <alvarogonzalezsotillo@gmail.com>
+;; URL:      https://github.com/dgutov/diff-hl
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 ;; Provides `diff-hl-show-hunk-popup' than can be used as `diff-hl-show-hunk-function'
 
 ;;; Code:
+
+;; This package uses some runtime dependencies, so we need to declare
+;; the external functions and variables
+(declare-function popup-scroll-up "popup")
+(declare-function popup-height "popup")
+(declare-function popup-scroll-down "popup")
+(declare-function popup-hide "popup")
+(declare-function popup-hide "popup")
+(declare-function popup-create "popup")
+(declare-function popup-set-list "popup")
+(declare-function popup-select "popup")
+(declare-function popup-draw "popup")
+(eval-when-compile
+  (defvar diff-hl-show-hunk--hide-function))
+
+; REMOVE BEFORE RELEASE
+(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
+
+(require 'diff-hl-show-hunk)
 
 (defvar diff-hl-show-hunk--popup nil "Popup where show the current hunk.")
 
@@ -72,7 +112,6 @@
   (when diff-hl-show-hunk--popup
     (popup-hide diff-hl-show-hunk--popup)
     (setq diff-hl-show-hunk--popup nil)))
-
 
 (defvar diff-hl-show-hunk--popup-transient-mode-map
   (let ((map (make-sparse-keymap)))

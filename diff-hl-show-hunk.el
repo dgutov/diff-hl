@@ -1,5 +1,25 @@
 ;;; diff-hl-show-hunk.el --- Integrate popup/posframe and diff-hl-diff-goto-hunk -*- lexical-binding: t -*-
 
+;; Copyright (C) 2020  Free Software Foundation, Inc.
+
+;; Author:   Dmitry Gutov <dgutov@yandex.ru>
+;;           Álvaro González <alvarogonzalezsotillo@gmail.com>
+;; URL:      https://github.com/dgutov/diff-hl
+
+;; This file is part of GNU Emacs.
+
+;; GNU Emacs is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; GNU Emacs is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -22,12 +42,16 @@
 
 ;;; Code:
 
+; REMOVE BEFORE RELEASE, necesary for flycheck-compile
+(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
 
 (require 'diff-hl)
-(require 'diff-hl-show-hunk-posframe)
-(require 'diff-hl-show-hunk-popup)
 
-
+;; This package some runtime dependencies, so we need to declare
+;; the external functions and variables
+(declare-function posframe-workable-p "posframe")
+(declare-function diff-hl-show-hunk-popup "diff-hl-show-hunk-popup")
+(declare-function diff-hl-show-hunk-posframe "diff-hl-show-hunk-posframe")
 
 (defvar diff-hl-show-hunk-mode-map
   (let ((map (make-sparse-keymap)))
@@ -60,12 +84,12 @@
   :type 'string)
 
 (defcustom diff-hl-show-hunk-narrow t
-  "Narrow the differences to the current hunk.")
+  "Narrow the differences to the current hunk."
+  :type 'boolean)
 
 (defcustom diff-hl-show-hunk-posframe-show-head-line t
   "Show some useful buttons at the top of the diff-hl posframe."
   :type 'boolean)
-
 
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-function-default
   "The function used to reder the hunk.
@@ -107,7 +131,6 @@ and `diff-hl-show-hunk-posframe'"
   "Decide if COMMAND is a command allowed while showing a posframe or a popup."
   (member command '(ignore diff-hl-show-hunk handle-switch-frame diff-hl-show-hunk--click)))
 
-
 (defun diff-hl-show-hunk-buffer ()
   "Create the buffer with the contents of the hunk at point.
 The buffer has the point in the corresponding line of the hunk.
@@ -119,7 +142,6 @@ Returns a list with the buffer and the line number of the clicked line."
         (line-overlay)
         (inhibit-redisplay t) ;;https://emacs.stackexchange.com/questions/35680/stop-emacs-from-updating-display
         (buffer (get-buffer-create diff-hl-show-hunk-buffer-name)))
-    
 
     ;; Get differences
     (save-window-excursion
@@ -144,8 +166,6 @@ Returns a list with the buffer and the line number of the clicked line."
       (highlight-regexp diff-hl-show-hunk-boundary)
       (read-only-mode 1)
 
-      
-
       ;; Change face size
       (buffer-face-set 'diff-hl-show-hunk-face)
 
@@ -159,14 +179,10 @@ Returns a list with the buffer and the line number of the clicked line."
           (narrow-to-region start (point)))
         ;; Come back to the clicked line
         (goto-char (overlay-start line-overlay)))
-      
 
       (setq line (line-number-at-pos)))
     
     (list buffer line)))
-
-
-
 
 (defun diff-hl-show-hunk--click (event)
   "Called when user clicks on margins.  EVENT is click information."
@@ -220,8 +236,6 @@ Returns a list with the buffer and the line number of the clicked line."
       ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
       (diff-hl-show-hunk))))
 
-
-
 (defun diff-hl-show-hunk-function-default (buffer line)
   "Show a posframe or a popup with the hunk in BUFFER, at  LINE."
   (let* ((posframe-used (when (featurep 'posframe)
@@ -253,8 +267,6 @@ If not, it fallbacks to `diff-hl-diff-goto-hunk`."
                 (apply diff-hl-show-hunk-function buffer-and-line)))
          (diff-hl-diff-goto-hunk))))
 
-
-
 ;;;###autoload
 (define-minor-mode diff-hl-show-hunk-mouse-mode
   "Enables the margin and fringe to show a posframe/popup with vc diffs when clicked.
@@ -270,7 +282,6 @@ customizable.  It can be also invoked with the command
 (define-globalized-minor-mode global-diff-hl-show-hunk-mouse-mode
   diff-hl-show-hunk-mouse-mode
   diff-hl-show-hunk-mouse-mode)
-
 
 ;;;###autoload
 (define-minor-mode diff-hl-show-hunk-mode
