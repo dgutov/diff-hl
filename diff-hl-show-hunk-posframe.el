@@ -2,9 +2,7 @@
 
 ;; Copyright (C) 2020  Free Software Foundation, Inc.
 
-;; Author:   Dmitry Gutov <dgutov@yandex.ru>
-;;           Álvaro González <alvarogonzalezsotillo@gmail.com>
-;; URL:      https://github.com/dgutov/diff-hl
+;; Author:   Álvaro González <alvarogonzalezsotillo@gmail.com>
 
 ;; This file is part of GNU Emacs.
 
@@ -26,8 +24,8 @@
 
 ;;; Code:
 
-; REMOVE BEFORE COMMIT
-(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
+; REMOVE BEFORE RELEASE, USED FOR FLYCHECK
+; (eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
 
 (require 'diff-hl)
 (require 'diff-hl-show-hunk)
@@ -36,9 +34,8 @@
 ;; the external functions and variables
 (declare-function posframe-workable-p "posframe")
 (declare-function posframe-show "posframe")
-(eval-when-compile
-  (defvar diff-hl-show-hunk--hide-function)
-  (defvar posframe-mouse-banish))
+(defvar diff-hl-show-hunk--hide-function)
+(defvar posframe-mouse-banish)
 
 (defgroup diff-hl-show-hunk-posframe-group nil
   "Show vc diffs in a posframe."

@@ -2,9 +2,7 @@
 
 ;; Copyright (C) 2020  Free Software Foundation, Inc.
 
-;; Author:   Dmitry Gutov <dgutov@yandex.ru>
-;;           Álvaro González <alvarogonzalezsotillo@gmail.com>
-;; URL:      https://github.com/dgutov/diff-hl
+;; Author: Álvaro González <alvarogonzalezsotillo@gmail.com>
 
 ;; This file is part of GNU Emacs.
 
@@ -42,8 +40,8 @@
 
 ;;; Code:
 
-; REMOVE BEFORE RELEASE, necesary for flycheck-compile
-(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
+; REMOVE BEFORE RELEASE, USED FOR FLYCHECK
+; (eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
 
 (require 'diff-hl)
 

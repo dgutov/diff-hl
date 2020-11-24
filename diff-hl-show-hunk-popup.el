@@ -2,9 +2,7 @@
 
 ;; Copyright (C) 2020  Free Software Foundation, Inc.
 
-;; Author:   Dmitry Gutov <dgutov@yandex.ru>
-;;           Álvaro González <alvarogonzalezsotillo@gmail.com>
-;; URL:      https://github.com/dgutov/diff-hl
+;; Author: Álvaro González <alvarogonzalezsotillo@gmail.com>
 
 ;; This file is part of GNU Emacs.
 
@@ -26,6 +24,10 @@
 
 ;;; Code:
 
+; REMOVE BEFORE RELEASE, USED FOR FLYCHECK
+; (eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
+
+
 ;; This package uses some runtime dependencies, so we need to declare
 ;; the external functions and variables
 (declare-function popup-scroll-up "popup")
@@ -37,12 +39,9 @@
 (declare-function popup-set-list "popup")
 (declare-function popup-select "popup")
 (declare-function popup-draw "popup")
-(eval-when-compile
-  (defvar diff-hl-show-hunk--hide-function))
+(defvar diff-hl-show-hunk--hide-function)
 
-; REMOVE BEFORE RELEASE
-(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
-
+(require 'diff-hl)
 (require 'diff-hl-show-hunk)
 
 (defvar diff-hl-show-hunk--popup nil "Popup where show the current hunk.")
@@ -51,11 +50,6 @@
   "Show vc diffs in a posframe."
   :group 'diff-hl-show-hunk-group)
 
-(defcustom diff-hl-show-hunk-popup-default-width
-  120
-  "Width of the popup."
-  :type 'integer)
-
 (defcustom diff-hl-show-hunk-popup-default-height
   20
   "Height of the popup."
@@ -63,7 +57,7 @@
 
 (defcustom diff-hl-show-hunk-popup-width-function
   #'diff-hl-show-hunk-popup-width
-  "Function to compute the width of the popup.  By default, it returns the min of `diff-hl-show-hunk-popup-width' and thee available width."
+  "Function to compute the width of the popup.  By default, it is `diff-hl-show-hunk-popup-width'."
   :type 'function)
 
 (defcustom diff-hl-show-hunk-popup-height-function
@@ -77,9 +71,9 @@
     (min diff-hl-show-hunk-popup-default-height (- (window-body-height) magic-adjust-working-in-my-pc))))
 
 (defun diff-hl-show-hunk-popup-width ()
-  "Desired size of the displayed popup."
+  "Return the available width."
   (let ((magic-adjust-working-in-my-pc 6))
-    (min diff-hl-show-hunk-popup-default-width (- (window-body-width) magic-adjust-working-in-my-pc))))
+    (- (window-body-width) magic-adjust-working-in-my-pc)))
 
 (defun diff-hl-show-hunk--popup-up ()
   "Used in `diff-hl-show-hunk--popup-transient-mode-map'."
@@ -171,7 +165,7 @@ to scroll in the popup")
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
          (width (funcall diff-hl-show-hunk-popup-width-function))
          (height (funcall diff-hl-show-hunk-popup-height-function))
-         (popup (popup-create (point) width height :around t :scroll-bar t))
+         (popup (popup-create (point-at-bol) width height :around t :scroll-bar t))
          (line (max 0 (- line 1)))
          (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
     (setq diff-hl-show-hunk--popup popup)
