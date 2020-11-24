@@ -38,10 +38,12 @@
 ;;    ```
 ;;
 ;; Two hunks can overlap due to the contex of the diff algorithm.  To
-;; avoid this overlap, set 0 contex lines in `vc-diff'.  For example,
-;; if git is used, set `vc-git-diff-switches' to '--unified=0'.  If
-;; subversion is used, try to set `vc-svn-diff-switches' to
-;; '--diff-cmd=\"diff -x -U0\"'"
+;; avoid this overlap, set 0 contex lines in `vc-diff'.
+;; - GIT: set `vc-git-diff-switches' to '--unified=0'.
+;; - Subversion: set `vc-svn-diff-switches' to '--diff-cmd="diff -x -U0"'
+;; - Bazaar: set `vc-bzr-diff-switches' to '--context=0'
+;; - Mercurial: set `vc-hg-diff-switches' to '--unified=0'
+
 
 ;;; Code:
 
