@@ -37,6 +37,11 @@
 ;;      (global-diff-hl-show-hunk-mode)
 ;;    ```
 ;;
+;; Two hunks can overlap due to the contex of the diff algorithm.  To
+;; avoid this overlap, set 0 contex lines in `vc-diff'.  For example,
+;; if git is used, set `vc-git-diff-switches' to '--unified=0'.  If
+;; subversion is used, try to set `vc-svn-diff-switches' to
+;; '--diff-cmd=\"diff -x -U0\"'"
 
 ;;; Code:
 
@@ -251,7 +256,12 @@ Returns a list with the buffer and the line number of the clicked line."
 ;;;###autoload
 (defun diff-hl-show-hunk ()
   "Show a the diffs with vc last version in a posframe, if available.
-If not, it fallbacks to `diff-hl-diff-goto-hunk`."
+If not, it fallbacks to `diff-hl-diff-goto-hunk'.  Two hunks can
+overlap due to the contex of the diff algorithm.  To avoid this
+overlap, set 0 contex lines in `vc-diff'.  For example, if git is
+used, set `vc-git-diff-switches' to '--unified=0'.  If subversion
+is used, try to set `vc-svn-diff-switches' to '--diff-cmd=\"diff
+-x -U0\"'"
   (interactive)
   (cond ((not (vc-backend buffer-file-name))
          (user-error "The buffer is not under version control"))
