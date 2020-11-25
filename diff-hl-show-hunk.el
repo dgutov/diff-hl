@@ -38,11 +38,13 @@
 ;;    ```
 ;;
 ;; Two hunks can overlap due to the contex of the diff algorithm.  To
-;; avoid this overlap, set 0 contex lines in `vc-diff'.
-;; - GIT: set `vc-git-diff-switches' to '--unified=0'.
-;; - Subversion: set `vc-svn-diff-switches' to '--diff-cmd="diff -x -U0"'
-;; - Bazaar: set `vc-bzr-diff-switches' to '--context=0'
-;; - Mercurial: set `vc-hg-diff-switches' to '--unified=0'
+;; avoid this overlap, set 0 contex lines in `vc-diff'.  The following
+;; backends are automatically configured:
+;;
+;; - GIT: `vc-git-diff-switches' uses '--unified=0'.
+;; - Subversion: `vc-svn-diff-switches' uses '--diff-cmd="diff -x -U0"'
+;; - Bazaar: `vc-bzr-diff-switches' uses '--context=0'
+;; - Mercurial: `vc-hg-diff-switches' uses '--unified=0'
 
 
 ;;; Code:
@@ -136,6 +138,19 @@ and `diff-hl-show-hunk-posframe'"
   "Decide if COMMAND is a command allowed while showing a posframe or a popup."
   (member command '(ignore diff-hl-show-hunk handle-switch-frame diff-hl-show-hunk--click)))
 
+
+(defun diff-hl-show-hunk--compute-diffs ()
+  "Compute diffs using funcions of diff-hl.
+Then put the differences in *vc-diff* buffer.  In order to not
+overlap hunks it tries to set the context lines of the diff to
+0. Currently, Git, Subversion, Bazaar and Mercurial are
+supported."
+  (let ((vc-git-diff-switches "--unified=0")
+        (vc-svg-diff-switches "--diff-cmd=\"diff -x -U0\"")
+        (vc-bzr-diff-switches "--context=0")
+        (vc-hg-diff-switches "--unified=0"))
+  (diff-hl-diff-goto-hunk)))
+
 (defun diff-hl-show-hunk-buffer ()
   "Create the buffer with the contents of the hunk at point.
 The buffer has the point in the corresponding line of the hunk.
@@ -151,7 +166,7 @@ Returns a list with the buffer and the line number of the clicked line."
     ;; Get differences
     (save-window-excursion
       (save-excursion
-        (diff-hl-diff-goto-hunk)
+        (diff-hl-show-hunk--compute-diffs)
         (with-current-buffer "*vc-diff*"
           (setq content (buffer-substring-no-properties (point-min) (point-max)))
           (setq point-in-buffer (point)))))

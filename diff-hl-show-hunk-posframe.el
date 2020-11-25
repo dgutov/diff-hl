@@ -168,10 +168,13 @@ to scroll in the posframe")
                   :position (point)
                   :poshandler diff-hl-show-hunk-posframe-poshandler
                   :internal-border-width diff-hl-show-hunk-posframe-internal-border-width
-                  :accept-focus  t
+                  :accept-focus t
                   ;; internal-border-color Doesn't always work, if not customize internal-border face
                   :internal-border-color diff-hl-show-hunk-posframe-internal-border-color
                   :hidehandler nil
+                  ;; Sometimes, header-line is not taken into account, so put a min height and a min width
+                  :min-height (when diff-hl-show-hunk-posframe-show-head-line 10)
+                  :min-width (when diff-hl-show-hunk-posframe-show-head-line (length (diff-hl-show-hunk-posframe--header-line)))
                   :respect-header-line diff-hl-show-hunk-posframe-show-header-line
                   :respect-tab-line nil
                   :respect-mode-line nil
