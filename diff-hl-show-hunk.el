@@ -258,38 +258,35 @@ Returns a list with the buffer and the line number of the clicked line."
 
 (defun diff-hl-show-hunk-function-default (buffer line)
   "Show a posframe or a popup with the hunk in BUFFER, at  LINE."
-  (let* ((posframe-used (when (featurep 'posframe)
-                          (require 'posframe)
+  (let* ((posframe-used (when (and (featurep 'posframe) (featurep 'diff-hl-show-hunk-posframe))
                           (when (posframe-workable-p)
                             (diff-hl-show-hunk-posframe buffer line))))
          (popup-used (when (not posframe-used)
-                       (when (featurep 'popup)
+                       (when (and (featurep 'popup) (featurep 'diff-hl-show-hunk-popup))
                          (diff-hl-show-hunk-popup buffer line))))
          (success (or posframe-used popup-used)))
     (when (not success)
-      (warn "diff-hl-show-hunk: Please install posframe or popup, or customize diff-hl-show-hunk-function"))
+      (warn "diff-hl-show-hunk: Please install posframe and diff-hl-show-hunk-posframe, or popup and diff-hl-show-hunk-popup, or customize diff-hl-show-hunk-function"))
     success))
 
 ;;;###autoload
 (defun diff-hl-show-hunk ()
-  "Show a the diffs with vc last version in a posframe, if available.
-If not, it fallbacks to `diff-hl-diff-goto-hunk'.  Two hunks can
-overlap due to the contex of the diff algorithm.  To avoid this
-overlap, set 0 contex lines in `vc-diff'.  For example, if git is
-used, set `vc-git-diff-switches' to '--unified=0'.  If subversion
-is used, try to set `vc-svn-diff-switches' to '--diff-cmd=\"diff
--x -U0\"'"
+  "Show the diffs at point with vc last version.
+The backend is determined by `diff-hl-show-hunk-function'.  If
+not, it fallbacks to `diff-hl-diff-goto-hunk'."
   (interactive)
   (cond ((not (vc-backend buffer-file-name))
          (user-error "The buffer is not under version control"))
         ((not (diff-hl-hunk-overlay-at (point)))
          (user-error "There is no modified hunk at pos %s" (point)))
         ((not diff-hl-show-hunk-function)
+         (message "Please configure diff-hl-show-hunk-function")
          (diff-hl-diff-goto-hunk))
         ((not (let ((buffer-and-line (diff-hl-show-hunk-buffer)))
                 (setq diff-hl-show-hunk--original-buffer (current-buffer))
                 (setq diff-hl-show-hunk--original-window (selected-window))
                 (apply diff-hl-show-hunk-function buffer-and-line)))
+         (message "Current diff-hl-show-hunk-function did not success.  Using diff-hl-diff-goto-hunk as fallback.")
          (diff-hl-diff-goto-hunk))))
 
 ;;;###autoload
