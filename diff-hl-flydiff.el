@@ -119,9 +119,12 @@ the user should be returned."
                  (delete-file filename))))))))
     filename))
 
-(defun diff-hl-flydiff-buffer-with-head (file &optional backend)
-  "View the differences between BUFFER and its associated file.
-This requires the external program `diff' to be in your `exec-path'."
+(defun diff-hl-flydiff-buffer-with-head (file &optional _backend diff-buffer-name diff-params)
+  "View the differences between the buffer FILE and its associated file.
+This requires the external program `diff' to be in your variable
+`exec-path'.  DIFF-BUFFER-NAME is the name of the buffer where
+the diffs are written, by default ' *diff-hl-diff*'.  DIFF-PARAMS
+are extra params in the diff invocation, by default '-U 0 --strip-trailing-cr'."
   (interactive)
   (vc-ensure-vc-buffer)
   (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
@@ -133,10 +136,12 @@ This requires the external program `diff' to be in your `exec-path'."
            (rev (diff-hl-flydiff-create-revision
                  file
                  (or diff-hl-reference-revision
-                     (diff-hl-flydiff/working-revision file)))))
+                     (diff-hl-flydiff/working-revision file))))
+           (buffer-name (or diff-buffer-name " *diff-hl-diff*"))
+           (params (or diff-params "-U 0 --strip-trailing-cr")))
       ;; FIXME: When against staging, do it differently!
-      (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
-                      (get-buffer-create " *diff-hl-diff*")))))
+      (diff-no-select rev (current-buffer) params 'noasync
+                      (get-buffer-create buffer-name)))))
 
 (defun diff-hl-flydiff-update ()
   (unless (or
@@ -149,6 +154,23 @@ This requires the external program `diff' to be in your `exec-path'."
 
 (defun diff-hl-flydiff/modified-p (state)
   (buffer-modified-p))
+
+(defun diff-hl-flydiff-goto-hunk-1 ()
+  (let* ((line (line-number-at-pos))
+         (buffer (current-buffer)))
+    (diff-hl-flydiff-buffer-with-head (buffer-file-name) nil "*vc-diff*" "-U 3 --strip-trailing-cr")
+    (if (< (line-number-at-pos (point-max)) 3)
+        (with-current-buffer buffer (diff-hl-remove-overlays))
+      (switch-to-buffer "*vc-diff*")
+      (diff-hl-diff-skip-to line)
+      (setq vc-sentinel-movepoint (point)))))
+
+(defun diff-hl-flydiff-goto-hunk ()
+  "Run VC diff command and go to the line corresponding to the current."
+  (interactive)
+  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+    (diff-hl-flydiff-goto-hunk-1)))
+
 
 ;;;###autoload
 (define-minor-mode diff-hl-flydiff-mode
@@ -163,6 +185,8 @@ This is a global minor mode.  It alters how `diff-hl-mode' works."
                     #'diff-hl-flydiff/modified-p)
         (advice-add 'diff-hl-changes-buffer :override
                     #'diff-hl-flydiff-buffer-with-head)
+        (advice-add 'diff-hl-diff-goto-hunk :override
+                    #'diff-hl-flydiff-goto-hunk)
         (setq diff-hl-flydiff-timer
               (run-with-idle-timer diff-hl-flydiff-delay t #'diff-hl-flydiff-update)))
 
@@ -170,6 +194,7 @@ This is a global minor mode.  It alters how `diff-hl-mode' works."
 
     (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
     (advice-remove 'diff-hl-changes-buffer #'diff-hl-flydiff-buffer-with-head)
+    (advice-remove 'diff-hl-diff-goto-hunk #'diff-hl-flydiff-goto-hunk)
 
     (and diff-hl-flydiff-timer
          (cancel-timer diff-hl-flydiff-timer))))
