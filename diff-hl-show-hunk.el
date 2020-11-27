@@ -90,10 +90,6 @@
   "Regex that marks the boundary of a hunk in *vc-diff* buffer."
   :type 'string)
 
-(defcustom diff-hl-show-hunk-narrow t
-  "Narrow the differences to the current hunk."
-  :type 'boolean)
-
 (defcustom diff-hl-show-hunk-posframe-show-head-line t
   "Show some useful buttons at the top of the diff-hl posframe."
   :type 'boolean)
@@ -190,15 +186,14 @@ Returns a list with the buffer and the line number of the clicked line."
       (buffer-face-set 'diff-hl-show-hunk-face)
 
       ;;  Find the hunk and narrow to it
-      (when diff-hl-show-hunk-narrow
-        (re-search-backward diff-hl-show-hunk-boundary nil 1)
-        (forward-line 1)
-        (let* ((start (point)))
-          (re-search-forward diff-hl-show-hunk-boundary nil 1)
-          (move-beginning-of-line nil)
-          (narrow-to-region start (point)))
-        ;; Come back to the clicked line
-        (goto-char (overlay-start line-overlay)))
+      (re-search-backward diff-hl-show-hunk-boundary nil 1)
+      (forward-line 1)
+      (let* ((start (point)))
+        (re-search-forward diff-hl-show-hunk-boundary nil 1)
+        (move-beginning-of-line nil)
+        (narrow-to-region start (point)))
+      ;; Come back to the clicked line
+      (goto-char (overlay-start line-overlay))
 
       (setq line (line-number-at-pos)))
     
