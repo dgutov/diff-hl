@@ -158,7 +158,9 @@ are extra params in the diff invocation, by default '-U 0 --strip-trailing-cr'."
 (defun diff-hl-flydiff-goto-hunk-1 ()
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer)))
-    (diff-hl-flydiff-buffer-with-head (buffer-file-name) nil "*vc-diff*" "-U 1 --strip-trailing-cr")
+    ;; TODO: How to let the user configure the number of lines in the unified context?
+    ;; The current value is good for `diff-hl-show-hunk'
+    (diff-hl-flydiff-buffer-with-head (buffer-file-name) nil "*vc-diff*" "-U 0 --strip-trailing-cr")
     (if (< (line-number-at-pos (point-max)) 3)
         (with-current-buffer buffer (diff-hl-remove-overlays))
       (switch-to-buffer "*vc-diff*")
