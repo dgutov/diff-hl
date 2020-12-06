@@ -664,6 +664,75 @@ The value of this variable is a mode line template as in
       (add-hook 'vc-checkin-hook 'diff-hl-dir-update t t)
     (remove-hook 'vc-checkin-hook 'diff-hl-dir-update t)))
 
+;;
+;; FROM diff-hl-flydiiff, remove this comment before release
+;;
+
+(defun diff-hl-make-temp-file-name (buffer rev &optional manual)
+  ;; FROM diff-hl-flydiiff, remove this comment before release
+  "Return a backup file name for REV or the current version of BUFFER.
+If MANUAL is non-nil it means that a name for backups created by
+the user should be returned."
+  (let* ((auto-save-file-name-transforms
+          `((".*" ,temporary-file-directory t))))
+    (expand-file-name
+     (concat (make-auto-save-file-name)
+             ".~" (subst-char-in-string
+                   ?/ ?_ rev)
+             (unless manual ".") "~")
+     temporary-file-directory)))
+
+(defun diff-hl-create-revision (file revision)
+  ;; FROM diff-hl-flydiiff, remove this comment before release
+  "Read REVISION of BUFFER into a buffer and return the buffer."
+  (let ((automatic-backup (diff-hl-make-temp-file-name file revision))
+        (filebuf file)
+        (filename (diff-hl-make-temp-file-name file revision 'manual)))
+    (unless (file-exists-p filename)
+      (if (file-exists-p automatic-backup)
+          (rename-file automatic-backup filename nil)
+        (with-current-buffer filebuf
+          (let ((coding-system-for-read 'no-conversion)
+                (coding-system-for-write 'no-conversion))
+            (condition-case nil
+                (with-temp-file filename
+                  (let ((outbuf (current-buffer)))
+                    ;; Change buffer to get local value of
+                    ;; vc-checkout-switches.
+                    (with-current-buffer filebuf
+                      (vc-call find-revision file revision outbuf))))
+              (error
+               (when (file-exists-p filename)
+                 (delete-file filename))))))))
+    filename))
+
+(defun diff-hl-working-revision (file)
+  ;; FROM diff-hl-flydiiff, remove this comment before release
+  "Like vc-working-revision, but always up-to-date"
+  (vc-file-setprop file 'vc-working-revision
+                   (vc-call-backend (vc-backend file) 'working-revision file)))
+
+(defun diff-hl-diff-buffer-with-head (file &optional dest-buffer)
+  ;; FROM diff-hl-flydiiff, remove this comment before release
+  "Compute the differences between FILE and its associated file
+in head revision. The diffs are computed in the buffer
+DEST-BUFFER. This requires the external program `diff' to be in
+your `exec-path'."
+  (vc-ensure-vc-buffer)
+  (save-current-buffer
+    (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-bufer-with-head*"))
+           (temporary-file-directory
+            (if (file-directory-p "/dev/shm/")
+                "/dev/shm/"
+              temporary-file-directory))
+           (rev (diff-hl-create-revision
+                 file
+                 (or diff-hl-reference-revision
+                     (diff-hl-working-revision file)))))
+      ;; FIXME: When against staging, do it differently!
+      (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
+                      (get-buffer-create dest-buffer)))))
+
 ;;;###autoload
 (defun turn-on-diff-hl-mode ()
   "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."

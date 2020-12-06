@@ -133,19 +133,22 @@ and `diff-hl-show-hunk-posframe'"
 (defun diff-hl-show-hunk-ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing a posframe or a popup."
   (member command '(ignore diff-hl-show-hunk handle-switch-frame diff-hl-show-hunk--click)))
-
+ 
 
 (defun diff-hl-show-hunk--compute-diffs ()
   "Compute diffs using funcions of diff-hl.
-Then put the differences in *vc-diff* buffer.  In order to not
-overlap hunks it tries to set the context lines of the diff to
-0. Currently, Git, Subversion, Bazaar and Mercurial are
-supported."
-  (let ((vc-git-diff-switches "--unified=0")
-        (vc-svg-diff-switches "--diff-cmd=\"diff -x -U0\"")
-        (vc-bzr-diff-switches "--context=0")
-        (vc-hg-diff-switches "--unified=0"))
-  (diff-hl-diff-goto-hunk)))
+Then put the differences in *diff-hl-show-hunk-diff-buffer*
+buffer, and set the point in that buffer to the corresponding
+line of the original buffer."
+  (let* ((buffer (or (buffer-base-buffer) (current-buffer)))
+         (line (line-number-at-pos))
+         (dest-buffer "*diff-hl-show-hunk-diff-buffer*"))
+    (with-current-buffer buffer
+      (diff-hl-diff-buffer-with-head (buffer-file-name buffer) dest-buffer)
+      (switch-to-buffer dest-buffer)
+      (diff-hl-diff-skip-to line)
+      (setq vc-sentinel-movepoint (point)))
+    dest-buffer))
 
 (defun diff-hl-show-hunk-buffer ()
   "Create the buffer with the contents of the hunk at point.
@@ -162,8 +165,7 @@ Returns a list with the buffer and the line number of the clicked line."
     ;; Get differences
     (save-window-excursion
       (save-excursion
-        (diff-hl-show-hunk--compute-diffs)
-        (with-current-buffer "*vc-diff*"
+        (with-current-buffer (diff-hl-show-hunk--compute-diffs)
           (setq content (buffer-substring-no-properties (point-min) (point-max)))
           (setq point-in-buffer (point)))))
 
@@ -233,6 +235,7 @@ Returns a list with the buffer and the line number of the clicked line."
     (progn
       (diff-hl-show-hunk-hide)
       (diff-hl-previous-hunk)
+      (recenter)
       ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
       (diff-hl-show-hunk))))
 
@@ -248,6 +251,7 @@ Returns a list with the buffer and the line number of the clicked line."
     (progn
       (diff-hl-show-hunk-hide)
       (diff-hl-next-hunk)
+      (recenter)
       ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
       (diff-hl-show-hunk))))
 
