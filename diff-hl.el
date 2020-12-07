@@ -686,7 +686,7 @@ the user should be returned."
   ;; FROM diff-hl-flydiiff, remove this comment before release
   "Read REVISION of BUFFER into a buffer and return the buffer."
   (let ((automatic-backup (diff-hl-make-temp-file-name file revision))
-        (filebuf file)
+        (filebuf (get-file-buffer file))
         (filename (diff-hl-make-temp-file-name file revision 'manual)))
     (unless (file-exists-p filename)
       (if (file-exists-p automatic-backup)

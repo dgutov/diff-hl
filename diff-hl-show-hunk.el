@@ -28,6 +28,9 @@
 ;; Other backends (for example pos-tip or phantom overlays) could be
 ;; implemented.
 ;;
+;; It uses the same diff algorithm as `diff-hl-flydiff-mode', so it is
+;; highly recomended to enable `diff-hl-flydiff-mode' before use this package.
+;;
 ;; `diff-hl-show-hunk-mode' shows the posframe/popup when clicking
 ;; in the margin or the fringe.
 ;;
@@ -277,7 +280,10 @@ not, it fallbacks to `diff-hl-diff-goto-hunk'."
   (cond ((not (vc-backend buffer-file-name))
          (user-error "The buffer is not under version control"))
         ((not (diff-hl-hunk-overlay-at (point)))
-         (user-error "There is no modified hunk at pos %s" (point)))
+         (let ((flydiff-msg (if (or diff-hl-flydiff-mode (not (buffer-modified-p)))
+                                ""
+                              "Enable `diff-hl-flydiff-mode' to inspect current changes instead saved changes")))
+           (user-error "There is no modified hunk at pos %s.  %s" (point) flydiff-msg)))
         ((not diff-hl-show-hunk-function)
          (message "Please configure diff-hl-show-hunk-function")
          (diff-hl-diff-goto-hunk))
