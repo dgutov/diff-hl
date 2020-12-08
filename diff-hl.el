@@ -731,7 +731,12 @@ your `exec-path'."
                      (diff-hl-working-revision file)))))
       ;; FIXME: When against staging, do it differently!
       (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
-                      (get-buffer-create dest-buffer)))))
+                      (get-buffer-create dest-buffer))
+      (with-current-buffer dest-buffer
+        (let ((inhibit-read-only t))
+          ;; Function `diff-sentinel' adds a final line, so remove it
+          (delete-matching-lines "^Diff finished.*")))
+      (get-buffer-create dest-buffer))))
 
 ;;;###autoload
 (defun turn-on-diff-hl-mode ()
