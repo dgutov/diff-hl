@@ -5,7 +5,7 @@
 (defvar inlup--current-popup nil "The overlay of the current inline popup.")
 (defvar inlup--current-lines nil)
 (defvar inlup--current-index nil)
-(defvar inlup-window-size 5 "The heigth of the inline popup content.")
+(defvar inlup-window-size 25 "The heigth of the inline popup content.")
 
 (make-variable-buffer-local 'inlup--current-popup)
 (make-variable-buffer-local 'inlup--current-lines)
@@ -24,19 +24,19 @@
          (ret (inlup--splice lines index window-size)))
     ret))
 
-(defun inlup--separator ()
+(defun inlup--separator (&optional sep)
   (let ((ret "")
+        (sep (or sep " "))
         (magic-adjust-working-in-my-pc 6))
     (dotimes (var (- (window-body-width) magic-adjust-working-in-my-pc) ret)
-      (setq ret (concat ret "-")))))
+      (setq ret (concat ret sep)))))
 
 (defun inlup--compute-popup-str (lines index window-size)
-  (let* ((start (concat "\n" (propertize (inlup--separator) 'face '(:background "yellow")) "\n"))
-         (end (concat "\n" (propertize (inlup--separator) 'face '(:background "yellow")) "\n"))
+  (let* ((background "yellow")
          (content-lines (inlup--compute-content-lines lines index window-size))
-         (propertized-content-lines (mapcar
-                                     (lambda (s) (propertize s 'face '(:foreground "pink"))) content-lines )))
-    (concat start (string-join propertized-content-lines "\n") end)))
+         (start (concat "\n" (propertize (inlup--separator) 'face '(:background background :underline t)) "\n"))
+         (end (concat "\n" (propertize (inlup--separator) 'face '(:background background :overline t)))))
+    (concat start (string-join content-lines "\n") end)))
 
 (defun inlup-show (lines &optional point buffer)
   (let* ((the-point (or point (point-at-eol)))
@@ -51,10 +51,8 @@
     overlay))
 
 (defun inlup-scroll (index)
-  (message "scroll:%s" index)
   (when inlup--current-popup
     (setq inlup--current-index (max 0 (min index (- (length inlup--current-lines) inlup-window-size))))
-    (message "scroll: final %s" inlup--current-index)
     (let ((str (inlup--compute-popup-str inlup--current-lines inlup--current-index inlup-window-size)))
       (overlay-put inlup--current-popup 'after-string str))))
 
@@ -84,10 +82,17 @@
   (interactive)
   (inlup-scroll (1+ inlup--current-index) ))
 
-
 (defun inlup--popup-up()
   (interactive)
   (inlup-scroll (1- inlup--current-index) ))
+
+(defun inlup--popup-pagedown()
+  (interactive)
+  (inlup-scroll (+ inlup-window-size inlup--current-index) ))
+
+(defun inlup--popup-pageup()
+  (interactive)
+  (inlup-scroll (- inlup-window-size inlup--current-index) ))
 
 (defvar inlup-transient-mode-map
   (let ((map (make-sparse-keymap)))
@@ -108,10 +113,10 @@
     (define-key map (kbd "<mouse-5>") #'inlup--popup-down)
     (define-key map (kbd "<wheel-down>") #'inlup--popup-down)
     
-    (define-key map (kbd "p") #'inlup-previous)
-    (define-key map (kbd "n") #'inlup-next)
-    (define-key map (kbd "C-x v {") #'inlup-previous)
-    (define-key map (kbd "C-x v }") #'inlup-next)
+    (define-key map (kbd "p") #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "n") #'diff-hl-show-hunk-next)
+    (define-key map (kbd "C-x v {") #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "C-x v }") #'diff-hl-show-hunk-next)
     (define-key map (kbd "<down-mouse-1") #'inlup--check-click-outside-popup)
     (define-key map (kbd "<mouse-1") #'inlup--check-click-outside-popup)
     map)
@@ -123,14 +128,14 @@ to scroll in the popup")
   "Temporal minor mode to control an inline popup"
   :global nil)
 
-
+ 
 (defun diff-hl-show-hunk--inlup-hide ()
   (interactive)
   (inlup-hide))
 
 
-
-(defun diff-hl-show-hunk-inlup (buffer line)
+ (setq diff-hl-show-hunk-function #'diff-hl-show-hunk-inlup)
+ (defun diff-hl-show-hunk-inlup (buffer line)
   "Implementation to show the hunk in a inline popup.  BUFFER is a buffer with the hunk, and the central line should be LINE."
   
   (inlup-hide)
@@ -145,5 +150,5 @@ to scroll in the popup")
 
 (defun inlup--test()
   (interactive)
-  (inlup-show  (list "INICIO Hola" "Que" "Tal" "yo" "bien" "gracias" "y" "usted" "pues" "aqui" "ando" "FIN")))
+  (inlup-show  (list "INICIO" "Hola" "Que" "Tal" "yo" "bien" "gracias" "y" "usted" "pues" "aqui" "ando" "FIN")))
 
