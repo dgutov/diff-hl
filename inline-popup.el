@@ -6,7 +6,7 @@
 (defvar inlup--current-lines nil)
 (defvar inlup--current-index nil)
 (defvar inlup--current-footer nil)
-(defvar inlup-window-size 5 "The heigth of the inline popup content.")
+(defvar inlup-window-size 25 "The heigth of the inline popup content.")
 
 (make-variable-buffer-local 'inlup--current-popup)
 (make-variable-buffer-local 'inlup--current-lines)
@@ -32,25 +32,23 @@
          (width (- width (length header) (length scroll-indicator))))
     (concat (inlup--separator width) header scroll-indicator)))
 
-(defun inlup--compute-footer (width &optional header)
-  (let* ((scroll-indicator (if (eq inlup--current-index (- (length inlup--current-lines) inlup-window-size)) "Bottom" " ⬇ "))
-         (header (or header ""))
-         (width (- width (length header) (length scroll-indicator))))
-    (concat (inlup--separator width) header scroll-indicator)))
+(defun inlup--compute-footer (width &optional footer)
+  (let* ((scroll-indicator (if (>= inlup--current-index (- (length inlup--current-lines) inlup-window-size)) " Bottom" "     ⬇ "))
+         (footer (or footer ""))
+         (width (- width (length footer) (length scroll-indicator))))
+    (concat (inlup--separator width) footer scroll-indicator)))
 
 (defun inlup--separator (width &optional sep)
-  (let ((ret "")
-        (sep (or sep " ")))
-    (dotimes (var width ret)
-      (setq ret (concat ret sep)))))
+  (let ((sep (or sep ?\s)))
+    (make-string width sep)))
 
 (defun inlup--compute-popup-str (lines index window-size)
   (let* ((magic-adjust-that-works-on-my-pc 6)
          (width (- (window-body-width) magic-adjust-that-works-on-my-pc))
-         (background "yellow")
+         (footer "(n)Next  (p)Previous  (q)Close")
          (content-lines (inlup--compute-content-lines lines index window-size))
-         (start (concat "\n" (propertize (inlup--compute-header width) 'face '(:background background :underline t)) "\n"))
-         (end (concat "\n" (propertize  (inlup--compute-footer width) 'face '(:background background :overline t)))))
+         (start (concat "\n" (propertize (inlup--compute-header width) 'face '(:underline t)) "\n"))
+         (end (concat "\n" (propertize  (inlup--compute-footer width footer) 'face '(:overline t)))))
     (concat start (string-join content-lines "\n") end)))
 
 (defun inlup-show (lines &optional footer point buffer)
@@ -69,7 +67,7 @@
 (defun inlup-scroll (index)
   (when inlup--current-popup
     (setq inlup--current-index (max 0 (min index (- (length inlup--current-lines) inlup-window-size))))
-    (let ((str (inlup--compute-popup-str inlup--current-lines inlup--current-index inlup-window-size)))
+    (let* ((str (inlup--compute-popup-str inlup--current-lines inlup--current-index inlup-window-size)))
       (overlay-put inlup--current-popup 'after-string str))))
 
 (defun inlup-hide-all ()
@@ -145,7 +143,7 @@ to scroll in the popup")
   :global nil)
 
  
-(defun diff-hl-show-hunk--inlup-hide ()
+(defun inlup--inlup-hide ()
   (interactive)
   (inlup-hide))
 
@@ -155,7 +153,7 @@ to scroll in the popup")
   "Implementation to show the hunk in a inline popup.  BUFFER is a buffer with the hunk, and the central line should be LINE."
   
   (inlup-hide)
-  (setq diff-hl-show-hunk--hide-function #'diff-hl-show-hunk--inlup-hide)
+  (setq inlup--hide-function #'inlup--inlup-hide)
   
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
          (line (max 0 (- line 1)))
