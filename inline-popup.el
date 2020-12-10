@@ -8,7 +8,11 @@
 (defvar inlup--current-index nil)
 (defvar inlup--invokinkg-command nil)
 (defvar inlup--current-footer nil)
-(defvar inlup-window-size 5 "The heigth of the inline popup content.")
+
+
+(defface diff-hl-show-hunk-added-face  '((t (:foreground "green"))) "Face for added lines" :group 'diff-hl-show-hunk-group)
+(defface diff-hl-show-hunk-deleted-face  '((t (:foreground "red" :strike-through t))) "Face for deleted lines" :group 'diff-hl-show-hunk-group)
+
 
 (make-variable-buffer-local 'inlup--current-popup)
 (make-variable-buffer-local 'inlup--current-lines)
@@ -16,18 +20,19 @@
 (make-variable-buffer-local 'inlup--current-footer)
 (make-variable-buffer-local 'inlup--invokinkg-command)
 
-(defun inlup--splice(list offset length)
-  (let ((ret (butlast
-              (nthcdr offset list)
-              (- (length list) length offset))))
-    ret))
+(defun inl up--splice(list offset length)
+  (butlast
+   (nthcdr offset list)
+   (- (length list) length offset)))
+
+(defun inlup--compute-height ()
+  (/ (window-height) 2))
 
 (defun inlup--compute-content-lines (lines index window-size)
   (let* ((len (length lines))
          (window-size (min window-size len))
-         (index (min index (- len window-size)))
-         (ret (inlup--splice lines index window-size)))
-    ret))
+         (index (min index (- len window-size))))
+    (inlup--splice lines index window-size)))
 
 (defun inlup--compute-header (width &optional header)
   (let* ((scroll-indicator (if (eq inlup--current-index 0) "   " " ⬆ "))
@@ -36,7 +41,7 @@
     (concat (inlup--separator width) header scroll-indicator)))
 
 (defun inlup--compute-footer (width &optional footer)
-  (let* ((scroll-indicator (if (>= inlup--current-index (- (length inlup--current-lines) inlup-window-size)) "   "     " ⬇ "))
+  (let* ((scroll-indicator (if (>= inlup--current-index (- (length inlup--current-lines) (inlup--compute-height))) "   "     " ⬇ "))
          (footer (or footer ""))
          (width (- width (length footer) (length scroll-indicator))))
     (concat (inlup--separator width) footer scroll-indicator)))
@@ -61,7 +66,15 @@
     (overlay-put overlay 'phantom t)
     (overlay-put overlay 'inlup t)
     (setq inlup--current-popup overlay)
-    (setq inlup--current-lines lines)
+
+    (setq inlup--current-lines
+          (mapcar (lambda (l)
+                    (let ((face (cond ((string-prefix-p "+" l) 'diff-hl-show-hunk-added-face)
+                                      ((string-prefix-p "-" l) 'diff-hl-show-hunk-deleted-face))))
+                      (if face
+                          (propertize l 'face face)
+                        l)))
+                  lines))
     (setq inlup--current-footer footer)
     (setq inlup--invokinkg-command this-command)
     (inlup-transient-mode 1)
@@ -70,8 +83,8 @@
 
 (defun inlup-scroll (index)
   (when inlup--current-popup
-    (setq inlup--current-index (max 0 (min index (- (length inlup--current-lines) inlup-window-size))))
-    (let* ((str (inlup--compute-popup-str inlup--current-lines inlup--current-index inlup-window-size)))
+    (setq inlup--current-index (max 0 (min index (- (length inlup--current-lines) (inlup--compute-height)))))
+    (let* ((str (inlup--compute-popup-str inlup--current-lines inlup--current-index (inlup--compute-height))))
       (overlay-put inlup--current-popup 'after-string str))))
 
 (defun inlup--hide-all ()
@@ -106,11 +119,11 @@
 
 (defun inlup--popup-pagedown()
   (interactive)
-  (inlup-scroll (+ inlup-window-size inlup--current-index) ))
+  (inlup-scroll (+ (inlup--compute-height) inlup--current-index) ))
 
 (defun inlup--popup-pageup()
   (interactive)
-  (inlup-scroll (- inlup-window-size inlup--current-index) ))
+  (inlup-scroll (- (inlup--compute-height) inlup--current-index) ))
 
 (defvar inlup-transient-mode-map
   (let ((map (make-sparse-keymap)))
@@ -140,7 +153,7 @@
 Capture all the vertical movement of the point, and converts it
 to scroll in the popup")
 
-(defun inlup-ignorable-command-p (command)
+(defun inlup--ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing an inline popup."
   (member command `(,inlup--invokinkg-command handle-switch-frame)))
 
@@ -149,7 +162,7 @@ to scroll in the popup")
   "Called each time a command is executed."
   (let ((allowed-command (or
                           (string-match-p "inlup-" (symbol-name this-command))
-                          (inlup-ignorable-command-p this-command))))
+                          (inlup--ignorable-command-p this-command))))
     (unless allowed-command
       (inlup-hide))))
 
@@ -160,7 +173,7 @@ to scroll in the popup")
   (when inlup-transient-mode
     (add-hook 'post-command-hook #'inlup--post-command-hook 0 t)))
 
- 
+
 (defun inlup--inlup-hide ()
   (interactive)
   (inlup-hide))
