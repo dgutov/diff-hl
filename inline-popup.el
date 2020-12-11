@@ -1,8 +1,5 @@
 
 
-
-
-
 (defvar inlup--current-popup nil "The overlay of the current inline popup.")
 (defvar inlup--current-lines nil)
 (defvar inlup--current-index nil)
@@ -20,7 +17,7 @@
 (make-variable-buffer-local 'inlup--current-footer)
 (make-variable-buffer-local 'inlup--invokinkg-command)
 
-(defun inl up--splice(list offset length)
+(defun inlup--splice (list offset length)
   (butlast
    (nthcdr offset list)
    (- (length list) length offset)))
@@ -37,14 +34,17 @@
 (defun inlup--compute-header (width &optional header)
   (let* ((scroll-indicator (if (eq inlup--current-index 0) "   " " ⬆ "))
          (header (or header ""))
-         (width (- width (length header) (length scroll-indicator))))
-    (concat (inlup--separator width) header scroll-indicator)))
+         (width (- width (length header) (length scroll-indicator)))
+         (line (propertize (concat (inlup--separator width) header scroll-indicator ) 'face '(:underline t))))
+    (concat "\n" line "\n") ))
 
 (defun inlup--compute-footer (width &optional footer)
   (let* ((scroll-indicator (if (>= inlup--current-index (- (length inlup--current-lines) (inlup--compute-height))) "   "     " ⬇ "))
          (footer (or footer ""))
-         (width (- width (length footer) (length scroll-indicator))))
-    (concat (inlup--separator width) footer scroll-indicator)))
+         (new-width(- width (length footer) (length scroll-indicator)))
+         (blank-line (propertize (inlup--separator width) 'face '(:underline t)))
+         (line (propertize (concat (inlup--separator new-width) footer scroll-indicator))))
+    (concat "\n" blank-line "\n" line)))
 
 (defun inlup--separator (width &optional sep)
   (let ((sep (or sep ?\s)))
@@ -55,11 +55,11 @@
          (width (- (window-body-width) magic-adjust-that-works-on-my-pc))
          (footer "(n)Next  (p)Previous  (q)Close")
          (content-lines (inlup--compute-content-lines lines index window-size))
-         (start (concat "\n" (propertize (inlup--compute-header width) 'face '(:underline t)) "\n"))
-         (end (concat "\n" (propertize  (inlup--compute-footer width footer) 'face '(:overline t)))))
-    (concat start (string-join content-lines  "\n" ) end)))
+         (header (inlup--compute-header width))
+         (footer (inlup--compute-footer width footer)))
+    (concat header (string-join content-lines  "\n" ) footer)))
 
-(defun inlup-show (lines &optional footer point buffer)
+(defun inlup-show (lines &optional footer propertize-line-function point buffer)
   (let* ((the-point (or point (point-at-eol)))
          (the-buffer (or buffer (current-buffer)))
          (overlay (make-overlay the-point the-point the-buffer)))
@@ -67,15 +67,9 @@
     (overlay-put overlay 'inlup t)
     (setq inlup--current-popup overlay)
 
-    (setq inlup--current-lines
-          (mapcar (lambda (l)
-                    (let ((face (cond ((string-prefix-p "+" l) 'diff-hl-show-hunk-added-face)
-                                      ((string-prefix-p "-" l) 'diff-hl-show-hunk-deleted-face))))
-                      (if face
-                          (propertize l 'face face)
-                        l)))
-                  lines))
+    (setq inlup--current-lines lines)
     (setq inlup--current-footer footer)
+    (setq inlup--propertize-line-function propertize-line-function)
     (setq inlup--invokinkg-command this-command)
     (inlup-transient-mode 1)
     (inlup-scroll 0)
@@ -188,9 +182,16 @@ to scroll in the popup")
   
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
          (line (max 0 (- line 1)))
+         (propertized-lines (mapcar (lambda (l)
+                                      (let ((face (cond ((string-prefix-p "+" l) 'diff-hl-show-hunk-added-face)
+                                                        ((string-prefix-p "-" l) 'diff-hl-show-hunk-deleted-face))))
+                                        (if face
+                                            (propertize l 'face face)
+                                          l)))
+                                    lines))
          (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
-    (setcar (nthcdr line lines) clicked-line)
-    (inlup-show lines)
+    (setcar (nthcdr line propertized-lines) clicked-line)
+    (inlup-show propertized-lines nil #'diff-hl-show-hunk-inlup-propertize-function)
     (inlup-scroll line))
   t)
 
