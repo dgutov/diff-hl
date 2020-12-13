@@ -34,7 +34,7 @@
 ;; To use it in all buffers:
 ;;
 ;;    ```
-
+;;      (global-diff-hl-show-hunk-mode)
 ;;    ```
 ;;
 
