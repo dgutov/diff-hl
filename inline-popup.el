@@ -174,7 +174,7 @@ to scroll in the popup")
   
 (defun inlup--post-command-hook ()
   "Called each time a command is executed."
-  (message "terminal-map:%s" overriding-terminal-local-map)
+  ;;(message "terminal-map:%s" overriding-terminal-local-map)
   (let ((allowed-command (or
                           (string-match-p "inlup-" (symbol-name this-command))
                           (inlup--ignorable-command-p this-command))))
