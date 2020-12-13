@@ -219,7 +219,7 @@ Returns a list with the buffer and the line number of the clicked line."
 (defun diff-hl-show-hunk-previous ()
   "Go to previous hunk/change and show it."
   (interactive)
-  (move-beginning-of-line 0)
+  (move-beginning-of-line 1)
   (if (not (diff-hl-show-hunk--previousp (or diff-hl-show-hunk--original-buffer (current-buffer))))
       (progn
         (message "There is no previous change")
