@@ -28,26 +28,15 @@
 ;; Other backends (for example pos-tip or phantom overlays) could be
 ;; implemented.
 ;;
-;; It uses the same diff algorithm as `diff-hl-flydiff-mode', so it is
-;; highly recomended to enable `diff-hl-flydiff-mode' before use this package.
-;;
 ;; `diff-hl-show-hunk-mode' shows the posframe/popup when clicking
 ;; in the margin or the fringe.
 ;;
 ;; To use it in all buffers:
 ;;
 ;;    ```
-;;      (global-diff-hl-show-hunk-mode)
+
 ;;    ```
 ;;
-;; Two hunks can overlap due to the contex of the diff algorithm.  To
-;; avoid this overlap, set 0 contex lines in `vc-diff'.  The following
-;; backends are automatically configured:
-;;
-;; - GIT: `vc-git-diff-switches' uses '--unified=0'.
-;; - Subversion: `vc-svn-diff-switches' uses '--diff-cmd="diff -x -U0"'
-;; - Bazaar: `vc-bzr-diff-switches' uses '--context=0'
-;; - Mercurial: `vc-hg-diff-switches' uses '--unified=0'
 
 
 ;;; Code:
