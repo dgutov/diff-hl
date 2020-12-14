@@ -102,11 +102,11 @@
     (make-string width sep)))
 
 (defun inlup--compute-popup-str (lines index window-size header footer)
-  "Compute the string that represenst the popup, from some
+  "Compute the string that represents the popup, from some
 content LINES starting at INDEX, with a WINDOW-SIZE.  HEADER and
 FOOTER are showed at start and end."
-  (let* ((magic-adjust-that-works-on-my-pc 6)
-         (width (- (window-body-width) magic-adjust-that-works-on-my-pc))
+  (let* ((magic-adjust (+ 2 (line-number-display-width nil)))
+         (width (- (window-body-width) magic-adjust))
          (content-lines (inlup--compute-content-lines lines index window-size))
          (header (inlup--compute-header width header))
          (footer (inlup--compute-footer width footer)))
