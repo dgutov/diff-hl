@@ -43,29 +43,18 @@
 ;; To use it in all buffers:
 ;;
 ;;    ```
-;;      (global-diff-hl-show-hunk-mode)
+;;      (global-diff-hl-show-hunk-mouse-mode)
 ;;    ```
 ;;
-;; As an example, this is a possible configuration using `use-package':
-;;
-;;    ```
-;;      (use-package diff-hl-show-hunk
-;;        :after (diff-hl)
-;;        :config
-;;        (require 'diff-hl-show-hunk-inline-popup)
-;;        (require 'diff-hl-show-hunk-posframe) ;; If posframe is used
-;;        (require 'diff-hl-show-hunk-popup) ;; If popup is used
-;;        (setq diff-hl-show-hunk-function #'diff-hl-show-hunk-inline-popup)
-;;        (global-diff-hl-show-hunk-mouse-mode 1))
-;;   ```
 
 
 
 ;;; Code:
 
 ; REMOVE BEFORE RELEASE, USED FOR FLYCHECK
-;(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
+; (eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
 
+(require 'inline-popup)
 (require 'diff-hl)
 (require 'diff-hl-flydiff)
 
@@ -143,6 +132,9 @@ or 'diff-hl-show-hunk-posframe.el'."
 (defface diff-hl-show-hunk-clicked-line-face
   '((t (:inverse-video t)))
   "Face for the clicked line in the diff output.")
+
+(defface diff-hl-show-hunk-added-face  '((t (:foreground "green"))) "Face for added lines")
+(defface diff-hl-show-hunk-deleted-face  '((t (:foreground "red" :strike-through t))) "Face for deleted lines")
 
 (defface diff-hl-show-hunk-face
   '((t (:height 0.8)))
@@ -256,6 +248,35 @@ Returns a list with the buffer and the line number of the clicked line."
     (with-current-buffer buffer
       (save-excursion
         (diff-hl-next-hunk)))))
+
+
+(defvar diff-hl-show-hunk--inlup-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "p") #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "n") #'diff-hl-show-hunk-next)
+    (define-key map (kbd "r") (lambda ()
+                                (interactive) (diff-hl-show-hunk-hide) (diff-hl-revert-hunk)))
+    (define-key map (kbd "C-x v {") #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "C-x v }") #'diff-hl-show-hunk-next)
+    map))
+
+(defvar diff-hl-show-hunk--hide-function)
+
+;;;###autoload
+(defun diff-hl-show-hunk-inline-popup (buffer line)
+  "Implementation to show the hunk in a inline popup.  BUFFER is a buffer with the hunk, and the central line should be LINE."
+  (inlup-hide)
+  (setq diff-hl-show-hunk--hide-function #'inlup-hide)
+  (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
+         (line (max 0 (- line 1)))
+         (propertize-line (lambda (l) (propertize l 'face (cond ((string-prefix-p "+" l) 'diff-hl-show-hunk-added-face)
+                                                                ((string-prefix-p "-" l) 'diff-hl-show-hunk-deleted-face)))))
+         (propertized-lines (mapcar propertize-line lines))
+         (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
+    (setcar (nthcdr line propertized-lines) clicked-line)
+    (inlup-show propertized-lines "Diff with HEAD" "(q)Quit  (p)Previous  (n)Next  (r)Revert" diff-hl-show-hunk--inlup-map)
+    (inlup-scroll-to line))
+  t)
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
