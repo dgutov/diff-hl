@@ -405,6 +405,11 @@ performance when viewing such files in certain conditions."
     (unless (buffer-modified-p)
       (diff-hl-update))))
 
+(defun diff-hl-after-revert ()
+  (defvar revert-buffer-preserve-modes)
+  (when revert-buffer-preserve-modes
+    (diff-hl-update)))
+
 (defun diff-hl-diff-goto-hunk-1 ()
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
@@ -582,7 +587,7 @@ The value of this variable is a mode line template as in
                     'find-file-hook)
                   'diff-hl-update-once t t)
         (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
-        (add-hook 'after-revert-hook 'diff-hl-update nil t)
+        (add-hook 'after-revert-hook 'diff-hl-after-revert nil t)
         ;; Magit does call `auto-revert-handler', but it usually
         ;; doesn't do much, because `buffer-stale--default-function'
         ;; doesn't care about changed VC state.
