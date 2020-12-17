@@ -20,8 +20,11 @@
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Provides `diff-hl-show-hunk-posframe' than can be used as `diff-hl-show-hunk-function'
-
+;; Provides `diff-hl-show-hunk-posframe' than can be used as
+;;  `diff-hl-show-hunk-function'.  'posframe.el' is a runtime
+;;  dependency, it is not required by this package, but should be
+;;  installed and loaded.
+;;
 ;;; Code:
 
 ; REMOVE BEFORE RELEASE, USED FOR FLYCHECK
