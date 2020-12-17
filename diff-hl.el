@@ -582,9 +582,13 @@ The value of this variable is a mode line template as in
                     'find-file-hook)
                   'diff-hl-update-once t t)
         (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
+        (add-hook 'after-revert-hook 'diff-hl-update nil t)
+        ;; Magit does call `auto-revert-handler', but it usually
+        ;; doesn't do much, because `buffer-stale--default-function'
+        ;; doesn't care about changed VC state.
         ;; https://github.com/magit/magit/issues/603
         (add-hook 'magit-revert-buffer-hook 'diff-hl-update nil t)
-        ;; Magit versions 2.0-2.3 don't use the above and call this
+        ;; Magit versions 2.0-2.3 don't do the above and call this
         ;; instead, but only when they don't call `revert-buffer':
         (add-hook 'magit-not-reverted-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps nil t))
@@ -592,6 +596,7 @@ The value of this variable is a mode line template as in
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
     (remove-hook 'vc-checkin-hook 'diff-hl-update t)
+    (remove-hook 'after-revert-hook 'diff-hl-update t)
     (remove-hook 'magit-revert-buffer-hook 'diff-hl-update t)
     (remove-hook 'magit-not-reverted-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps t)
