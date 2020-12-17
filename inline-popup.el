@@ -67,7 +67,8 @@
       (run-with-timer 0.1 nil #'scroll-up overflow))))
 
 (defun inlup--compute-content-height (&optional content-size)
-  "Compute the height of the inline popup."
+  "Compute the height of the inline popup.
+Default for CONTENT-SIZE is the size of the current lines"
   (let ((content-size (or content-size (length inlup--current-lines)))
         (max-size (- (/(window-height) 2) 3)))
     (min content-size max-size)))
@@ -83,15 +84,19 @@
   "Compute the header of the popup, with some WIDTH, and some optional HEADER text."
   (let* ((scroll-indicator (if (eq inlup--current-index 0) "   " " ⬆ "))
          (header (or header ""))
-         (width (- width (length header) (length scroll-indicator)))
-         (line (propertize (concat (inlup--separator width) header scroll-indicator ) 'face '(:underline t))))
+         (new-width (- width (length header) (length scroll-indicator)))
+         (header (if (< new-width 0) "" header))
+         (new-width (- width (length header) (length scroll-indicator)))
+         (line (propertize (concat (inlup--separator new-width) header scroll-indicator ) 'face '(:underline t))))
     (concat "\n" line "\n") ))
 
 (defun inlup--compute-footer (width &optional footer)
   "Compute the header of the popup, with some WIDTH, and some optional FOOTER text."
   (let* ((scroll-indicator (if (>= inlup--current-index (- (length inlup--current-lines) (inlup--compute-content-height))) "   "     " ⬇ "))
          (footer (or footer ""))
-         (new-width(- width (length footer) (length scroll-indicator)))
+         (new-width (- width (length footer) (length scroll-indicator)))
+         (footer (if (< new-width 0) "" footer))
+         (new-width (- width (length footer) (length scroll-indicator)))
          (blank-line (propertize (inlup--separator width) 'face '(:underline t)))
          (line (propertize (concat (inlup--separator new-width) footer scroll-indicator))))
     (concat "\n" blank-line "\n" line)))
@@ -101,23 +106,41 @@
   (let ((sep (or sep ?\s)))
     (make-string width sep)))
 
+(defun inlup--available-width ()
+  "Compute the available width in chars."
+  (let ((magic-adjust 3))
+    (if (not (display-graphic-p))
+        (let* ((linumber-width (line-number-display-width nil))
+               (width (- (window-body-width) linumber-width magic-adjust)))
+          width)
+      (let* ((font-width (window-font-width))
+             (window-width (window-body-width nil t))
+             (linenumber-width (line-number-display-width t))
+             (available-pixels (- window-width linenumber-width))
+             (width (- (/ available-pixels font-width) magic-adjust)))
+      ;; https://emacs.stackexchange.com/questions/5495/how-can-i-determine-the-width-of-characters-on-the-screen
+      width))))
+
 (defun inlup--compute-popup-str (lines index window-size header footer)
-  "Compute the string that represents the popup, from some
-content LINES starting at INDEX, with a WINDOW-SIZE.  HEADER and
+  "Compute the string that represents the popup.
+There are some content LINES starting at INDEX, with a WINDOW-SIZE.  HEADER and
 FOOTER are showed at start and end."
-  (let* ((magic-adjust (+ 2 (line-number-display-width nil)))
-         (width (- (window-body-width) magic-adjust))
+  (let* ((width (inlup--available-width))
          (content-lines (inlup--compute-content-lines lines index window-size))
          (header (inlup--compute-header width header))
          (footer (inlup--compute-footer width footer)))
     (concat header (string-join content-lines  "\n" ) footer)))
 
-
 (defun inlup-scroll-to (index)
   "Scroll the inline popup to make visible the line at position INDEX."
   (when inlup--current-popup
     (setq inlup--current-index (max 0 (min index (- (length inlup--current-lines) (inlup--compute-content-height)))))
-    (let* ((str (inlup--compute-popup-str inlup--current-lines inlup--current-index (inlup--compute-content-height) inlup--current-header inlup--current-footer)))
+    (let* ((str (inlup--compute-popup-str
+                 inlup--current-lines
+                 inlup--current-index
+                 (inlup--compute-content-height)
+                 inlup--current-header
+                 inlup--current-footer)))
       (overlay-put inlup--current-popup 'after-string str))))
 
 (defun inlup--popup-down()
@@ -158,7 +181,6 @@ FOOTER are showed at start and end."
     (define-key map (kbd "<wheel-up>") #'inlup--popup-up)
     (define-key map (kbd "<mouse-5>") #'inlup--popup-down)
     (define-key map (kbd "<wheel-down>") #'inlup--popup-down)
-    
     map)
   "Keymap for command `inlup-transient-mode'.
 Capture all the vertical movement of the point, and converts it
@@ -169,16 +191,13 @@ to scroll in the popup")
   ;; https://emacs.stackexchange.com/questions/653/how-can-i-find-out-in-which-keymap-a-key-is-bound
   (let ((keys (where-is-internal command (list inlup--current-custom-keymap inlup-transient-mode-map ) t))
         (invoking (eq command inlup--invokinkg-command)))
-    ;;(message "command:%s %s keys:%s" command keys inlup--invokinkg-command)
     (or keys invoking)))
   
 (defun inlup--post-command-hook ()
   "Called each time a command is executed."
-  ;;(message "terminal-map:%s" overriding-terminal-local-map)
   (let ((allowed-command (or
                           (string-match-p "inlup-" (symbol-name this-command))
                           (inlup--ignorable-command-p this-command))))
-    ;;(message "allowed-command:%s" allowed-command)
     (unless allowed-command
       (inlup-hide))))
 

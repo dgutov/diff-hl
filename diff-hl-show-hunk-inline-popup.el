@@ -39,6 +39,7 @@
     (define-key map (kbd "C-x v }") #'diff-hl-show-hunk-next)
     map))
 
+;;;###autoload
 (defun diff-hl-show-hunk-inline-popup (buffer line)
   "Implementation to show the hunk in a inline popup.  BUFFER is a buffer with the hunk, and the central line should be LINE."
   (inlup-hide)
