@@ -358,6 +358,15 @@ performance when viewing such files in certain conditions."
                 (overlay-put h 'insert-in-front-hooks hook)
                 (overlay-put h 'insert-behind-hooks hook)))))))))
 
+(defvar-local diff-hl--modified-tick nil)
+
+(put 'diff-hl--modified-tick 'permanent-local t)
+
+(defun diff-hl-update-once ()
+  (unless (equal diff-hl--modified-tick (buffer-chars-modified-tick))
+    (diff-hl-update)
+    (setq diff-hl--modified-tick (buffer-chars-modified-tick))))
+
 (defun diff-hl-add-highlighting (type shape)
   (let ((o (make-overlay (point) (point))))
     (overlay-put o 'diff-hl t)
@@ -571,7 +580,7 @@ The value of this variable is a mode line template as in
                     ;; let's wait until the state information is
                     ;; saved, in order not to fetch it twice.
                     'find-file-hook)
-                  'diff-hl-update t t)
+                  'diff-hl-update-once t t)
         (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
         ;; https://github.com/magit/magit/issues/603
         (add-hook 'magit-revert-buffer-hook 'diff-hl-update nil t)
