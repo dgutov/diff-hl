@@ -21,15 +21,24 @@
 
 ;;; Commentary:
 
-;; `diff-hl-show-hunk' shows a posframe/popup with the modified hunk at point.
-;; `diff-hl-show-hunk-function' contains the backend used to show the hunk.  Its
-;; default value is `diff-hl-show-hunk-function-default', which tries to use
-;; `diff-hl-show-hunk-posframe' (GUI), and then `diff-hl-show-hunk-popup'.
-;; Other backends (for example pos-tip or phantom overlays) could be
+;; `diff-hl-show-hunk' shows a posframe/popup with the modified hunk
+;; at point.  `diff-hl-show-hunk-function' contains the backend used
+;; to show the hunk.  Its default value is
+;; `diff-hl-show-hunk-inline-popup', that shows diffs in a phantom
+;; overlay.  There are other backends: `diff-hl-show-hunk-posframe'
+;; (based on posframe), and `diff-hl-show-hunk-popup' (based on
+;; popup.el).  Other backends (for example pos-tip) could be
 ;; implemented.
 ;;
-;; `diff-hl-show-hunk-mode' shows the posframe/popup when clicking
-;; in the margin or the fringe.
+;; `diff-hl-show-hunk-mode' adds the following keybindings:
+;;
+;;    - `diff-hl-show-hunk': C-x v *
+;;    - `diff-hl-show-hunk-next': C-x v }
+;;    - `diff-hl-show-hunk-previous': C-x v {
+;;
+;; `diff-hl-show-hunk-mouse-mode' includes all the keybindings of
+;; `diff-hl-show-hunk-mode', and adds `diff-hl-show-hunk' when
+;; clicking in the margin or the fringe.
 ;;
 ;; To use it in all buffers:
 ;;
@@ -37,20 +46,35 @@
 ;;      (global-diff-hl-show-hunk-mode)
 ;;    ```
 ;;
+;; As an example, this is a possible configuration using `use-package':
+;;
+;;    ```
+;;      (use-package diff-hl-show-hunk
+;;        :after (diff-hl)
+;;        :config
+;;        (require 'diff-hl-show-hunk-inline-popup)
+;;        (require 'diff-hl-show-hunk-posframe) ;; If posframe is used
+;;        (require 'diff-hl-show-hunk-popup) ;; If popup is used
+;;        (setq diff-hl-show-hunk-function #'diff-hl-show-hunk-inline-popup)
+;;        (global-diff-hl-show-hunk-mouse-mode 1))
+;;   ```
+
 
 
 ;;; Code:
 
 ; REMOVE BEFORE RELEASE, USED FOR FLYCHECK
-; (eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
+;(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
 
 (require 'diff-hl)
+(require 'diff-hl-flydiff)
 
-;; This package some runtime dependencies, so we need to declare
+;; This package use some runtime dependencies, so we need to declare
 ;; the external functions and variables
 (declare-function posframe-workable-p "posframe")
 (declare-function diff-hl-show-hunk-popup "diff-hl-show-hunk-popup")
 (declare-function diff-hl-show-hunk-posframe "diff-hl-show-hunk-posframe")
+(defvar vc-sentinel-movepoint)
 
 (defvar diff-hl-show-hunk-mode-map
   (let ((map (make-sparse-keymap)))
@@ -86,15 +110,17 @@
   "Show some useful buttons at the top of the diff-hl posframe."
   :type 'boolean)
 
-(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-function-default
+(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
   "The function used to reder the hunk.
 The function receives as first parameter a buffer with the
 contents of the hunk, and as second parameter the line number
 corresponding to the clicked line in the original buffer.  The
 function should return t if the hunk is show, or nil if not.
 There are some built in funcions:
-`diff-hl-show-hunk-function-default', `diff-hl-show-hunk-popup'
-and `diff-hl-show-hunk-posframe'"
+`diff-hl-show-hunk-inline-popup', `diff-hl-show-hunk-popup' and
+`diff-hl-show-hunk-posframe'.  To use the popup and posframe
+versions, it is necessary to require 'diff-hl-show-hunk-popup.el'
+or 'diff-hl-show-hunk-posframe.el'."
   :type 'function)
 
 (defvar diff-hl-show-hunk--hide-function nil "Function to call to close the shown hunk.")
@@ -201,6 +227,22 @@ Returns a list with the buffer and the line number of the clicked line."
   (posn-set-point (event-start event))
   (diff-hl-show-hunk))
 
+
+(defun diff-hl-show-hunk-posframe-or-popup (buffer line)
+  "Show a posframe or a popup with the hunk in BUFFER, at  LINE."
+  (let* ((posframe-used (when (and (featurep 'posframe) (featurep 'diff-hl-show-hunk-posframe))
+                          (when (posframe-workable-p)
+                            (diff-hl-show-hunk-posframe buffer line))))
+         (popup-used (when (not posframe-used)
+                       (when (and (featurep 'popup) (featurep 'diff-hl-show-hunk-popup))
+                         (diff-hl-show-hunk-popup buffer line))))
+         (success (or posframe-used popup-used)))
+    (when (not success)
+      (warn "diff-hl-show-hunk: Please install posframe and diff-hl-show-hunk-posframe, or popup and diff-hl-show-hunk-popup, or customize diff-hl-show-hunk-function"))
+    success))
+
+
+
 (defun diff-hl-show-hunk--previousp (buffer)
   "Decide if the is a previous hunk/change in BUFFER."
   (ignore-errors
@@ -247,19 +289,6 @@ Returns a list with the buffer and the line number of the clicked line."
       (recenter)
       ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
       (diff-hl-show-hunk))))
-
-(defun diff-hl-show-hunk-function-default (buffer line)
-  "Show a posframe or a popup with the hunk in BUFFER, at  LINE."
-  (let* ((posframe-used (when (and (featurep 'posframe) (featurep 'diff-hl-show-hunk-posframe))
-                          (when (posframe-workable-p)
-                            (diff-hl-show-hunk-posframe buffer line))))
-         (popup-used (when (not posframe-used)
-                       (when (and (featurep 'popup) (featurep 'diff-hl-show-hunk-popup))
-                         (diff-hl-show-hunk-popup buffer line))))
-         (success (or posframe-used popup-used)))
-    (when (not success)
-      (warn "diff-hl-show-hunk: Please install posframe and diff-hl-show-hunk-posframe, or popup and diff-hl-show-hunk-popup, or customize diff-hl-show-hunk-function"))
-    success))
 
 ;;;###autoload
 (defun diff-hl-show-hunk ()
