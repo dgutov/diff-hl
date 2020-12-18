@@ -250,7 +250,7 @@ Returns a list with the buffer and the line number of the clicked line."
         (diff-hl-next-hunk)))))
 
 
-(defvar diff-hl-show-hunk--inlup-map
+(defvar diff-hl-show-hunk--inline-popup-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "p") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "n") #'diff-hl-show-hunk-next)
@@ -265,8 +265,8 @@ Returns a list with the buffer and the line number of the clicked line."
 ;;;###autoload
 (defun diff-hl-show-hunk-inline-popup (buffer line)
   "Implementation to show the hunk in a inline popup.  BUFFER is a buffer with the hunk, and the central line should be LINE."
-  (inlup-hide)
-  (setq diff-hl-show-hunk--hide-function #'inlup-hide)
+  (inline-popup-hide)
+  (setq diff-hl-show-hunk--hide-function #'inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
          (line (max 0 (- line 1)))
          (propertize-line (lambda (l) (propertize l 'face (cond ((string-prefix-p "+" l) 'diff-hl-show-hunk-added-face)
@@ -274,8 +274,8 @@ Returns a list with the buffer and the line number of the clicked line."
          (propertized-lines (mapcar propertize-line lines))
          (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
     (setcar (nthcdr line propertized-lines) clicked-line)
-    (inlup-show propertized-lines "Diff with HEAD" "(q)Quit  (p)Previous  (n)Next  (r)Revert" diff-hl-show-hunk--inlup-map)
-    (inlup-scroll-to line))
+    (inline-popup-show propertized-lines "Diff with HEAD" "(q)Quit  (p)Previous  (n)Next  (r)Revert" diff-hl-show-hunk--inline-popup-map)
+    (inline-popup-scroll-to line))
   t)
 
 ;;;###autoload

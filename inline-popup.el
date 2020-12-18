@@ -26,37 +26,37 @@
 
 (require 'subr-x)
 
-(defvar inlup--current-popup nil "The overlay of the current inline popup.")
-(defvar inlup--current-lines nil)
-(defvar inlup--current-index nil)
-(defvar inlup--invokinkg-command nil)
-(defvar inlup--current-footer nil)
-(defvar inlup--current-header nil)
-(defvar inlup--current-custom-keymap-exiter nil)
-(defvar inlup--current-custom-keymap nil)
-(defvar inlup--close-hook nil)
+(defvar inline-popup--current-popup nil "The overlay of the current inline popup.")
+(defvar inline-popup--current-lines nil)
+(defvar inline-popup--current-index nil)
+(defvar inline-popup--invokinkg-command nil)
+(defvar inline-popup--current-footer nil)
+(defvar inline-popup--current-header nil)
+(defvar inline-popup--current-custom-keymap-exiter nil)
+(defvar inline-popup--current-custom-keymap nil)
+(defvar inline-popup--close-hook nil)
 
-(make-variable-buffer-local 'inlup--current-popup)
-(make-variable-buffer-local 'inlup--current-lines)
-(make-variable-buffer-local 'inlup--current-index)
-(make-variable-buffer-local 'inlup--current-header)
-(make-variable-buffer-local 'inlup--current-footer)
-(make-variable-buffer-local 'inlup--invokinkg-command)
-(make-variable-buffer-local 'inlup--current-custom-keymap-exiter)
-(make-variable-buffer-local 'inlup--current-custom-keymap)
-(make-variable-buffer-local 'inlup--close-hook)
+(make-variable-buffer-local 'inline-popup--current-popup)
+(make-variable-buffer-local 'inline-popup--current-lines)
+(make-variable-buffer-local 'inline-popup--current-index)
+(make-variable-buffer-local 'inline-popup--current-header)
+(make-variable-buffer-local 'inline-popup--current-footer)
+(make-variable-buffer-local 'inline-popup--invokinkg-command)
+(make-variable-buffer-local 'inline-popup--current-custom-keymap-exiter)
+(make-variable-buffer-local 'inline-popup--current-custom-keymap)
+(make-variable-buffer-local 'inline-popup--close-hook)
 
-(defun inlup--splice (list offset length)
+(defun inline-popup--splice (list offset length)
   "Compute a sublist of LIST starting at OFFSET, of LENGTH."
   (butlast
    (nthcdr offset list)
    (- (length list) length offset)))
 
-(defun inlup--first-visible-line-in-window ()
+(defun inline-popup--first-visible-line-in-window ()
   "Return first visible line in current window."
   (line-number-at-pos (window-start)))
 
-(defun inlup--ensure-enough-lines (pos content-height)
+(defun inline-popup--ensure-enough-lines (pos content-height)
   "Ensure there is enough lines below POS to show the inline popup with CONTENT-HEIGHT height."
   (let* ((line (line-number-at-pos pos))
          (end (line-number-at-pos (window-end nil t)))
@@ -66,47 +66,47 @@
     (when (< 0 overflow)
       (run-with-timer 0.1 nil #'scroll-up overflow))))
 
-(defun inlup--compute-content-height (&optional content-size)
+(defun inline-popup--compute-content-height (&optional content-size)
   "Compute the height of the inline popup.
 Default for CONTENT-SIZE is the size of the current lines"
-  (let ((content-size (or content-size (length inlup--current-lines)))
+  (let ((content-size (or content-size (length inline-popup--current-lines)))
         (max-size (- (/(window-height) 2) 3)))
     (min content-size max-size)))
 
-(defun inlup--compute-content-lines (lines index window-size)
+(defun inline-popup--compute-content-lines (lines index window-size)
   "Compute the lines to show in the popup, from LINES starting at INDEX with a WINDOW-SIZE."
   (let* ((len (length lines))
          (window-size (min window-size len))
          (index (min index (- len window-size))))
-    (inlup--splice lines index window-size)))
+    (inline-popup--splice lines index window-size)))
 
-(defun inlup--compute-header (width &optional header)
+(defun inline-popup--compute-header (width &optional header)
   "Compute the header of the popup, with some WIDTH, and some optional HEADER text."
-  (let* ((scroll-indicator (if (eq inlup--current-index 0) "   " " ⬆ "))
+  (let* ((scroll-indicator (if (eq inline-popup--current-index 0) "   " " ⬆ "))
          (header (or header ""))
          (new-width (- width (length header) (length scroll-indicator)))
          (header (if (< new-width 0) "" header))
          (new-width (- width (length header) (length scroll-indicator)))
-         (line (propertize (concat (inlup--separator new-width) header scroll-indicator ) 'face '(:underline t))))
+         (line (propertize (concat (inline-popup--separator new-width) header scroll-indicator ) 'face '(:underline t))))
     (concat "\n" line "\n") ))
 
-(defun inlup--compute-footer (width &optional footer)
+(defun inline-popup--compute-footer (width &optional footer)
   "Compute the header of the popup, with some WIDTH, and some optional FOOTER text."
-  (let* ((scroll-indicator (if (>= inlup--current-index (- (length inlup--current-lines) (inlup--compute-content-height))) "   "     " ⬇ "))
+  (let* ((scroll-indicator (if (>= inline-popup--current-index (- (length inline-popup--current-lines) (inline-popup--compute-content-height))) "   "     " ⬇ "))
          (footer (or footer ""))
          (new-width (- width (length footer) (length scroll-indicator)))
          (footer (if (< new-width 0) "" footer))
          (new-width (- width (length footer) (length scroll-indicator)))
-         (blank-line (propertize (inlup--separator width) 'face '(:underline t)))
-         (line (propertize (concat (inlup--separator new-width) footer scroll-indicator))))
+         (blank-line (propertize (inline-popup--separator width) 'face '(:underline t)))
+         (line (propertize (concat (inline-popup--separator new-width) footer scroll-indicator))))
     (concat "\n" blank-line "\n" line)))
 
-(defun inlup--separator (width &optional sep)
+(defun inline-popup--separator (width &optional sep)
   "Return the horizontal separator with character SEP and a WIDTH."
   (let ((sep (or sep ?\s)))
     (make-string width sep)))
 
-(defun inlup--available-width ()
+(defun inline-popup--available-width ()
   "Compute the available width in chars."
   (let ((magic-adjust 3))
     (if (not (display-graphic-p))
@@ -121,151 +121,146 @@ Default for CONTENT-SIZE is the size of the current lines"
       ;; https://emacs.stackexchange.com/questions/5495/how-can-i-determine-the-width-of-characters-on-the-screen
       width))))
 
-(defun inlup--compute-popup-str (lines index window-size header footer)
+(defun inline-popup--compute-popup-str (lines index window-size header footer)
   "Compute the string that represents the popup.
 There are some content LINES starting at INDEX, with a WINDOW-SIZE.  HEADER and
 FOOTER are showed at start and end."
-  (let* ((width (inlup--available-width))
-         (content-lines (inlup--compute-content-lines lines index window-size))
-         (header (inlup--compute-header width header))
-         (footer (inlup--compute-footer width footer)))
+  (let* ((width (inline-popup--available-width))
+         (content-lines (inline-popup--compute-content-lines lines index window-size))
+         (header (inline-popup--compute-header width header))
+         (footer (inline-popup--compute-footer width footer)))
     (concat header (string-join content-lines  "\n" ) footer)))
 
-(defun inlup-scroll-to (index)
+(defun inline-popup-scroll-to (index)
   "Scroll the inline popup to make visible the line at position INDEX."
-  (when inlup--current-popup
-    (setq inlup--current-index (max 0 (min index (- (length inlup--current-lines) (inlup--compute-content-height)))))
-    (let* ((str (inlup--compute-popup-str
-                 inlup--current-lines
-                 inlup--current-index
-                 (inlup--compute-content-height)
-                 inlup--current-header
-                 inlup--current-footer)))
-      (overlay-put inlup--current-popup 'after-string str))))
+  (when inline-popup--current-popup
+    (setq inline-popup--current-index (max 0 (min index (- (length inline-popup--current-lines) (inline-popup--compute-content-height)))))
+    (let* ((str (inline-popup--compute-popup-str
+                 inline-popup--current-lines
+                 inline-popup--current-index
+                 (inline-popup--compute-content-height)
+                 inline-popup--current-header
+                 inline-popup--current-footer)))
+      (overlay-put inline-popup--current-popup 'after-string str))))
 
-(defun inlup--popup-down()
+(defun inline-popup--popup-down()
   "Scrolls one line down."
   (interactive)
-  (inlup-scroll-to (1+ inlup--current-index) ))
+  (inline-popup-scroll-to (1+ inline-popup--current-index) ))
 
-(defun inlup--popup-up()
+(defun inline-popup--popup-up()
   "Scrolls one line up."
   (interactive)
-  (inlup-scroll-to (1- inlup--current-index) ))
+  (inline-popup-scroll-to (1- inline-popup--current-index) ))
 
-(defun inlup--popup-pagedown()
+(defun inline-popup--popup-pagedown()
   "Scrolls one page down."
   (interactive)
-  (inlup-scroll-to (+ inlup--current-index  (inlup--compute-content-height)) ))
+  (inline-popup-scroll-to (+ inline-popup--current-index  (inline-popup--compute-content-height)) ))
 
-(defun inlup--popup-pageup()
+(defun inline-popup--popup-pageup()
   "Scrolls one page up."
   (interactive)
-  (inlup-scroll-to (-  inlup--current-index (inlup--compute-content-height)) ))
+  (inline-popup-scroll-to (-  inline-popup--current-index (inline-popup--compute-content-height)) ))
 
-(defvar inlup-transient-mode-map
+(defvar inline-popup-transient-mode-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<prior>") #'inlup--popup-pageup)
-    (define-key map (kbd "M-v") #'inlup--popup-pageup)
-    (define-key map (kbd "<next>") #'inlup--popup-pagedown)
-    (define-key map (kbd "C-v") #'inlup--popup-pagedown)
-    (define-key map (kbd "<up>") #'inlup--popup-up)
-    (define-key map (kbd "C-p") #'inlup--popup-up)
-    (define-key map (kbd "<down>") #'inlup--popup-down)
-    (define-key map (kbd "C-n") #'inlup--popup-down)
-    (define-key map (kbd "C-g") #'inlup-hide)
-    (define-key map [escape] #'inlup-hide)
-    (define-key map (kbd "q") #'inlup-hide)
+    (define-key map (kbd "<prior>") #'inline-popup--popup-pageup)
+    (define-key map (kbd "M-v") #'inline-popup--popup-pageup)
+    (define-key map (kbd "<next>") #'inline-popup--popup-pagedown)
+    (define-key map (kbd "C-v") #'inline-popup--popup-pagedown)
+    (define-key map (kbd "<up>") #'inline-popup--popup-up)
+    (define-key map (kbd "C-p") #'inline-popup--popup-up)
+    (define-key map (kbd "<down>") #'inline-popup--popup-down)
+    (define-key map (kbd "C-n") #'inline-popup--popup-down)
+    (define-key map (kbd "C-g") #'inline-popup-hide)
+    (define-key map [escape] #'inline-popup-hide)
+    (define-key map (kbd "q") #'inline-popup-hide)
     ;;http://ergoemacs.org/emacs/emacs_mouse_wheel_config.html
-    (define-key map (kbd "<mouse-4>") #'inlup--popup-up)
-    (define-key map (kbd "<wheel-up>") #'inlup--popup-up)
-    (define-key map (kbd "<mouse-5>") #'inlup--popup-down)
-    (define-key map (kbd "<wheel-down>") #'inlup--popup-down)
+    (define-key map (kbd "<mouse-4>") #'inline-popup--popup-up)
+    (define-key map (kbd "<wheel-up>") #'inline-popup--popup-up)
+    (define-key map (kbd "<mouse-5>") #'inline-popup--popup-down)
+    (define-key map (kbd "<wheel-down>") #'inline-popup--popup-down)
     map)
-  "Keymap for command `inlup-transient-mode'.
+  "Keymap for command `inline-popup-transient-mode'.
 Capture all the vertical movement of the point, and converts it
 to scroll in the popup")
 
-(defun inlup--ignorable-command-p (command)
+(defun inline-popup--ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing an inline popup."
   ;; https://emacs.stackexchange.com/questions/653/how-can-i-find-out-in-which-keymap-a-key-is-bound
-  (let ((keys (where-is-internal command (list inlup--current-custom-keymap inlup-transient-mode-map ) t))
-        (invoking (eq command inlup--invokinkg-command)))
+  (let ((keys (where-is-internal command (list inline-popup--current-custom-keymap inline-popup-transient-mode-map ) t))
+        (invoking (eq command inline-popup--invokinkg-command)))
     (or keys invoking)))
   
-(defun inlup--post-command-hook ()
+(defun inline-popup--post-command-hook ()
   "Called each time a command is executed."
   (let ((allowed-command (or
-                          (string-match-p "inlup-" (symbol-name this-command))
-                          (inlup--ignorable-command-p this-command))))
+                          (string-match-p "inline-popup-" (symbol-name this-command))
+                          (inline-popup--ignorable-command-p this-command))))
     (unless allowed-command
-      (inlup-hide))))
+      (inline-popup-hide))))
 
-(define-minor-mode inlup-transient-mode
+(define-minor-mode inline-popup-transient-mode
   "Temporal minor mode to control an inline popup"
   :global nil
-  (remove-hook 'post-command-hook #'inlup--post-command-hook t)
-  (when inlup-transient-mode
-    (set-keymap-parent inlup-transient-mode-map inlup--current-custom-keymap)
-    (add-hook 'post-command-hook #'inlup--post-command-hook 0 t)))
+  (remove-hook 'post-command-hook #'inline-popup--post-command-hook t)
+  (when inline-popup-transient-mode
+    (set-keymap-parent inline-popup-transient-mode-map inline-popup--current-custom-keymap)
+    (add-hook 'post-command-hook #'inline-popup--post-command-hook 0 t)))
 
 ;;;###autoload
-(defun inlup-hide()
+(defun inline-popup-hide()
   "Hide the current inline popup."
   (interactive)
-  (when inlup-transient-mode
-    (inlup-transient-mode -1))
-  (when inlup--current-custom-keymap-exiter
-    (funcall inlup--current-custom-keymap-exiter)
-    (setq inlup--current-custom-keymap-exiter nil))
-  (when inlup--close-hook
-    (funcall inlup--close-hook)
-    (setq inlup--close-hook))
-  (when inlup--current-popup
-    (delete-overlay inlup--current-popup)
-    (setq inlup--current-popup nil)))
+  (when inline-popup-transient-mode
+    (inline-popup-transient-mode -1))
+  (when inline-popup--current-custom-keymap-exiter
+    (funcall inline-popup--current-custom-keymap-exiter)
+    (setq inline-popup--current-custom-keymap-exiter nil))
+  (when inline-popup--close-hook
+    (funcall inline-popup--close-hook)
+    (setq inline-popup--close-hook))
+  (when inline-popup--current-popup
+    (delete-overlay inline-popup--current-popup)
+    (setq inline-popup--current-popup nil)))
 
 ;;;###autoload
-(defun inlup-show (lines &optional header footer keymap close-hook point)
+(defun inline-popup-show (lines &optional header footer keymap close-hook point)
   "Create a phantom overlay to show the inline popup, with some
 content LINES, and a HEADER and a FOOTER, at POINT.  KEYMAP is
 added to the current keymaps.  CLOSE-HOOK is called when the popup
 is closed."
-  (when (< (inlup--compute-content-height 99) 2)
+  (when (< (inline-popup--compute-content-height 99) 2)
     (user-error "There is no enough vertical space to show the inline popup"))
   (let* ((the-point (or point (point-at-eol)))
          (the-buffer (current-buffer))
          (overlay (make-overlay the-point the-point the-buffer)))
     (overlay-put overlay 'phantom t)
-    (overlay-put overlay 'inlup t)
-    (setq inlup--current-popup overlay)
+    (overlay-put overlay 'inline-popup t)
+    (setq inline-popup--current-popup overlay)
 
-    (setq inlup--current-lines lines)
-    (setq inlup--current-header header)
-    (setq inlup--current-footer footer)
-    (setq inlup--invokinkg-command this-command)
-    (setq inlup--current-custom-keymap keymap)
-    (setq inlup--close-hook close-hook)
-    (inlup--ensure-enough-lines point (inlup--compute-content-height))
-    (inlup-transient-mode 1)
-    (inlup-scroll-to 0)
+    (setq inline-popup--current-lines lines)
+    (setq inline-popup--current-header header)
+    (setq inline-popup--current-footer footer)
+    (setq inline-popup--invokinkg-command this-command)
+    (setq inline-popup--current-custom-keymap keymap)
+    (setq inline-popup--close-hook close-hook)
+    (inline-popup--ensure-enough-lines point (inline-popup--compute-content-height))
+    (inline-popup-transient-mode 1)
+    (inline-popup-scroll-to 0)
     overlay))
 
-(defun inlup--hide-all ()
-  "Testing purposes, do not use."
+(defun inline-popup--hide-all ()
+  "Testing purposes, use in case some inline popups get stuck in a buffer."
   (interactive)
-  (when inlup-transient-mode
-    (inlup-transient-mode -1))
-  (setq inlup--current-popup nil)
+  (when inline-popup-transient-mode
+    (inline-popup-transient-mode -1))
+  (setq inline-popup--current-popup nil)
   (let* ((all-overlays (overlays-in (point-min) (point-max)))
-         (overlays (cl-remove-if-not (lambda (o)(overlay-get o 'inlup)) all-overlays)))
+         (overlays (cl-remove-if-not (lambda (o)(overlay-get o 'inline-popup)) all-overlays)))
     (dolist (o overlays)
       (delete-overlay o))))
-
-(defun inlup--test()
-  "Testing purposes, do not use."
-  (interactive)
-  (inlup-show  (list "INICIO" "Hola" "Que" "Tal" "yo" "bien" "gracias" "y" "usted" "pues" "aqui" "ando" "FIN")))
 
 (provide 'inline-popup)
 ;;; inline-popup ends here
