@@ -205,6 +205,8 @@ to scroll in the popup")
   "Temporal minor mode to control an inline popup"
   :global nil
   (remove-hook 'post-command-hook #'inline-popup--post-command-hook t)
+  (set-keymap-parent inline-popup-transient-mode-map nil)
+  
   (when inline-popup-transient-mode
     (set-keymap-parent inline-popup-transient-mode-map inline-popup--current-custom-keymap)
     (add-hook 'post-command-hook #'inline-popup--post-command-hook 0 t)))
