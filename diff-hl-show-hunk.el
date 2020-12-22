@@ -378,7 +378,8 @@ highlighted.  The face, border and other visual preferences are
 customizable.  It can be also invoked with the command
 `diff-hl-show-hunk'
 \\{diff-hl-show-hunk-mouse-mode-map}"
-  :group 'diff-hl-show-hunk-group)
+  :group 'diff-hl-show-hunk-group
+  :lighter "")
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-show-hunk-mouse-mode
@@ -389,8 +390,8 @@ customizable.  It can be also invoked with the command
 (define-minor-mode diff-hl-show-hunk-mode
   "Enables a keymap with some commands of the `diff-hl-show-hunk' package
 \\{diff-hl-show-hunk-mode-map}"
-
-  :group 'diff-hl-show-hunk-group)
+  :group 'diff-hl-show-hunk-group
+  :lighter "")
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-show-hunk-mode

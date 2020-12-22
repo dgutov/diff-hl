@@ -85,7 +85,7 @@
     (define-key map (kbd "C-g") #'diff-hl-show-hunk-hide)
     (define-key map (kbd "n")   #'diff-hl-show-hunk-next)
     (define-key map (kbd "p")   #'diff-hl-show-hunk-previous)
-    (define-key map (kbd "c") #'diff-hl-show-hunk-original-text-to-kill-ring)
+    (define-key map (kbd "c")   #'diff-hl-show-hunk-original-text-to-kill-ring)
     map)
   "Keymap for command `diff-hl-show-hunk-posframe--transient-mode'.
 Capture all the vertical movement of the point, and converts it
@@ -94,6 +94,7 @@ to scroll in the posframe")
 (define-minor-mode diff-hl-show-hunk-posframe--transient-mode
   "Temporal minor mode to control diff-hl posframe."
   :group 'diff-hl-show-hunk-group
+  :lighter ""
   :global t
   
   (remove-hook 'post-command-hook #'diff-hl-show-hunk--posframe-post-command-hook nil)

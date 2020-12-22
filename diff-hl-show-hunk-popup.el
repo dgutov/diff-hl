@@ -142,6 +142,7 @@ to scroll in the popup")
 (define-minor-mode diff-hl-show-hunk--popup-transient-mode
   "Temporal minor mode to control diff-hl popup."
   :global nil
+  :lighter ""
   :group diff-hl-show-hunk-group
   (remove-hook 'post-command-hook #'diff-hl-show-hunk--popup-post-command-hook nil)
   (when diff-hl-show-hunk--popup-transient-mode
