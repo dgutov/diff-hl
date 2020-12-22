@@ -27,14 +27,13 @@
 (require 'subr-x)
 
 (defvar inline-popup--current-popup nil "The overlay of the current inline popup.")
-(defvar inline-popup--current-lines nil)
-(defvar inline-popup--current-index nil)
-(defvar inline-popup--invokinkg-command nil)
-(defvar inline-popup--current-footer nil)
-(defvar inline-popup--current-header nil)
-(defvar inline-popup--current-custom-keymap-exiter nil)
-(defvar inline-popup--current-custom-keymap nil)
-(defvar inline-popup--close-hook nil)
+(defvar inline-popup--current-lines nil "A list of the lines to show in the popup.")
+(defvar inline-popup--current-index nil "First line showed in popup.")
+(defvar inline-popup--invokinkg-command nil "Command that invoked the popup.")
+(defvar inline-popup--current-footer nil "String to be displayed in the footer.")
+(defvar inline-popup--current-header nil "String to be displayed in the header.")
+(defvar inline-popup--current-custom-keymap nil "Keymap to be added to the keymap of the inline popup.")
+(defvar inline-popup--close-hook nil "Function to be called when the popup closes.")
 
 (make-variable-buffer-local 'inline-popup--current-popup)
 (make-variable-buffer-local 'inline-popup--current-lines)
@@ -42,7 +41,6 @@
 (make-variable-buffer-local 'inline-popup--current-header)
 (make-variable-buffer-local 'inline-popup--current-footer)
 (make-variable-buffer-local 'inline-popup--invokinkg-command)
-(make-variable-buffer-local 'inline-popup--current-custom-keymap-exiter)
 (make-variable-buffer-local 'inline-popup--current-custom-keymap)
 (make-variable-buffer-local 'inline-popup--close-hook)
 
@@ -217,12 +215,9 @@ to scroll in the popup")
   (interactive)
   (when inline-popup-transient-mode
     (inline-popup-transient-mode -1))
-  (when inline-popup--current-custom-keymap-exiter
-    (funcall inline-popup--current-custom-keymap-exiter)
-    (setq inline-popup--current-custom-keymap-exiter nil))
   (when inline-popup--close-hook
     (funcall inline-popup--close-hook)
-    (setq inline-popup--close-hook))
+    (setq inline-popup--close-hook nil))
   (when inline-popup--current-popup
     (delete-overlay inline-popup--current-popup)
     (setq inline-popup--current-popup nil)))

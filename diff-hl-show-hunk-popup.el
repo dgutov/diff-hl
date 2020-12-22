@@ -128,7 +128,8 @@
     (define-key map (kbd "<wheel-up>") #'diff-hl-show-hunk--popup-up)
     (define-key map (kbd "<mouse-5>") #'diff-hl-show-hunk--popup-down)
     (define-key map (kbd "<wheel-down>") #'diff-hl-show-hunk--popup-down)
-    
+
+    (define-key map (kbd "c") #'diff-hl-show-hunk-original-text-to-kill-ring)
     (define-key map (kbd "p") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "n") #'diff-hl-show-hunk-next)
     (define-key map (kbd "C-x v {") #'diff-hl-show-hunk-previous)

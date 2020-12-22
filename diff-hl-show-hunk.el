@@ -86,6 +86,7 @@
 (defvar diff-hl-show-hunk-buffer-name "*diff-hl-show-hunk-buffer*" "Name of the posframe used by diff-hl-show-hunk.")
 (defvar diff-hl-show-hunk--original-window nil "The vc window of which the hunk is shown.")
 (defvar diff-hl-show-hunk--original-buffer nil "The vc buffer of which the hunk is shown.")
+(defvar diff-hl-show-hunk--original-content nil "The original content of the hunk.")
 
 (defgroup diff-hl-show-hunk-group nil
   "Show vc diffs in a posframe or popup."
@@ -160,11 +161,20 @@ line of the original buffer."
       (setq vc-sentinel-movepoint (point)))
     dest-buffer))
 
+
+(defun diff-hl-show-hunk--fill-original-content (content)
+  "Extracts the lines starting with '-' from CONTENT and store them in `diff-hl-show-hunk--original-content'."
+  (let* ((lines (split-string content "[\n\r]+" ))
+         (original-lines (remove-if-not (lambda (l) (string-match-p "^-.*" l)) lines))
+         (original-lines (mapcar (lambda (l) (substring l 1)) original-lines))
+         (content (string-join original-lines "\n")))
+    (setq diff-hl-show-hunk--original-content content)))
+
+
 (defun diff-hl-show-hunk-buffer ()
   "Create the buffer with the contents of the hunk at point.
 The buffer has the point in the corresponding line of the hunk.
 Returns a list with the buffer and the line number of the clicked line."
-
   (let ((content)
         (point-in-buffer)
         (line)
@@ -204,6 +214,11 @@ Returns a list with the buffer and the line number of the clicked line."
         (re-search-forward diff-hl-show-hunk-boundary nil 1)
         (move-beginning-of-line nil)
         (narrow-to-region start (point)))
+
+      ;; Store original content
+      (let ((content (buffer-string)))
+        (diff-hl-show-hunk--fill-original-content content))
+
       ;; Come back to the clicked line
       (goto-char (overlay-start line-overlay))
 
@@ -254,6 +269,7 @@ Returns a list with the buffer and the line number of the clicked line."
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "p") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "n") #'diff-hl-show-hunk-next)
+    (define-key map (kbd "c") #'diff-hl-show-hunk-original-text-to-kill-ring)
     (define-key map (kbd "r") (lambda ()
                                 (interactive) (diff-hl-show-hunk-hide) (diff-hl-revert-hunk)))
     (define-key map (kbd "C-x v {") #'diff-hl-show-hunk-previous)
@@ -274,9 +290,16 @@ Returns a list with the buffer and the line number of the clicked line."
          (propertized-lines (mapcar propertize-line lines))
          (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
     (setcar (nthcdr line propertized-lines) clicked-line)
-    (inline-popup-show propertized-lines "Diff with HEAD" "(q)Quit  (p)Previous  (n)Next  (r)Revert" diff-hl-show-hunk--inline-popup-map)
+    (inline-popup-show propertized-lines "Diff with HEAD" "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original" diff-hl-show-hunk--inline-popup-map)
     (inline-popup-scroll-to line))
   t)
+
+
+(defun diff-hl-show-hunk-original-text-to-kill-ring ()
+  "Extracts all the lines from BUFFER starting with '-' and add them to the kill ring."
+  (interactive)
+  (kill-new diff-hl-show-hunk--original-content)
+  (message "Original hunk content added to kill-ring"))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
