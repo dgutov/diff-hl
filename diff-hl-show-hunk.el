@@ -124,7 +124,7 @@ or 'diff-hl-show-hunk-posframe.el'."
   (if diff-hl-show-hunk--original-buffer
       (switch-to-buffer diff-hl-show-hunk--original-buffer))
   (setq diff-hl-show-hunk--original-buffer nil)
-  (with-current-buffer diff-hl-show-hunk-buffer-name
+  (with-current-buffer (get-buffer-create diff-hl-show-hunk-buffer-name)
     (read-only-mode -1)
     (erase-buffer))
   (when diff-hl-show-hunk--hide-function
