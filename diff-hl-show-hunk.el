@@ -121,14 +121,16 @@ or 'diff-hl-show-hunk-posframe.el'."
   (if diff-hl-show-hunk--original-window
       (select-window diff-hl-show-hunk--original-window))
   (setq diff-hl-show-hunk--original-window nil)
-  (if diff-hl-show-hunk--original-buffer
+  (if (buffer-live-p diff-hl-show-hunk--original-buffer)
       (switch-to-buffer diff-hl-show-hunk--original-buffer))
   (setq diff-hl-show-hunk--original-buffer nil)
   (with-current-buffer (get-buffer-create diff-hl-show-hunk-buffer-name)
     (read-only-mode -1)
     (erase-buffer))
   (when diff-hl-show-hunk--hide-function
-    (funcall diff-hl-show-hunk--hide-function)))
+    (let ((hidefunc diff-hl-show-hunk--hide-function))
+      (setq diff-hl-show-hunk--hide-function nil)
+      (funcall hidefunc))))
 
 (defface diff-hl-show-hunk-clicked-line-face
   '((t (:inverse-video t)))
@@ -290,7 +292,11 @@ Returns a list with the buffer and the line number of the clicked line."
          (propertized-lines (mapcar propertize-line lines))
          (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
     (setcar (nthcdr line propertized-lines) clicked-line)
-    (inline-popup-show propertized-lines "Diff with HEAD" "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original" diff-hl-show-hunk--inline-popup-map)
+    (inline-popup-show propertized-lines
+                       "Diff with HEAD"
+                       "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
+                       diff-hl-show-hunk--inline-popup-map
+                       #'diff-hl-show-hunk-hide)
     (inline-popup-scroll-to line))
   t)
 
@@ -306,33 +312,39 @@ Returns a list with the buffer and the line number of the clicked line."
   "Go to previous hunk/change and show it."
   (interactive)
   (move-beginning-of-line 1)
-  (if (not (diff-hl-show-hunk--previousp (or diff-hl-show-hunk--original-buffer (current-buffer))))
+  (let ((buffer (if (buffer-live-p diff-hl-show-hunk--original-buffer)
+                    diff-hl-show-hunk--original-buffer
+                  (current-buffer))))
+    (if (not (diff-hl-show-hunk--previousp buffer))
+        (progn
+          (message "There is no previous change")
+          (if (display-graphic-p)
+              (tooltip-show "There is no previous change")))
       (progn
-        (message "There is no previous change")
-        (if (display-graphic-p)
-            (tooltip-show "There is no previous change")))
-    (progn
-      (diff-hl-show-hunk-hide)
-      (diff-hl-previous-hunk)
-      (recenter)
-      ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
-      (diff-hl-show-hunk))))
+        (diff-hl-show-hunk-hide)
+        (diff-hl-previous-hunk)
+        (recenter)
+        ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
+        (diff-hl-show-hunk)))))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-next ()
   "Go to next hunk/change and show it."
   (interactive)
-  (if (not (diff-hl-show-hunk--nextp (or diff-hl-show-hunk--original-buffer (current-buffer))))
+  (let ((buffer (if (buffer-live-p diff-hl-show-hunk--original-buffer)
+                    diff-hl-show-hunk--original-buffer
+                  (current-buffer))))
+    (if (not (diff-hl-show-hunk--nextp buffer))
+        (progn
+          (message "There is no next change")
+          (if (display-graphic-p)
+              (tooltip-show "There is no next change")))
       (progn
-        (message "There is no next change")
-        (if (display-graphic-p)
-            (tooltip-show "There is no next change")))
-    (progn
-      (diff-hl-show-hunk-hide)
-      (diff-hl-next-hunk)
-      (recenter)
-      ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
-      (diff-hl-show-hunk))))
+        (diff-hl-show-hunk-hide)
+        (diff-hl-next-hunk)
+        (recenter)
+        ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
+        (diff-hl-show-hunk)))))
 
 ;;;###autoload
 (defun diff-hl-show-hunk ()
