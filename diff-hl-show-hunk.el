@@ -306,24 +306,24 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
 The backend is determined by `diff-hl-show-hunk-function'.  If
 not, it falls back to `diff-hl-diff-goto-hunk'."
   (interactive)
-  (cond ((not (vc-backend buffer-file-name))
-         (user-error "The buffer is not under version control"))
-        ((not (diff-hl-hunk-overlay-at (point)))
-         ;; BTW: We could go to the closest hunk above or below point.
-         ;; `diff-hl-goto-hunk' does exactly that.
-         (user-error "There are no uncommited changes at pos %s" (point)))
-        ((not diff-hl-show-hunk-function)
-         (message "Please configure `diff-hl-show-hunk-function'")
-         (diff-hl-diff-goto-hunk))
-        ((let ((buffer-and-line (diff-hl-show-hunk-buffer)))
-           (setq diff-hl-show-hunk--original-buffer (current-buffer))
-           (setq diff-hl-show-hunk--original-window (selected-window))
-           (apply diff-hl-show-hunk-function buffer-and-line))
-         ;; We could fall back to `diff-hl-diff-goto-hunk', but the
-         ;; current default should work in all environments (both GUI
-         ;; and terminal), and if something goes wrong we better show
-         ;; the error to the user.
-         )))
+  (cond
+   ((not (vc-backend buffer-file-name))
+    (user-error "The buffer is not under version control"))
+   ((not (diff-hl-hunk-overlay-at (point)))
+    (diff-hl-previous-hunk)))
+  (cond
+   ((not diff-hl-show-hunk-function)
+    (message "Please configure `diff-hl-show-hunk-function'")
+    (diff-hl-diff-goto-hunk))
+   ((let ((buffer-and-line (diff-hl-show-hunk-buffer)))
+      (setq diff-hl-show-hunk--original-buffer (current-buffer))
+      (setq diff-hl-show-hunk--original-window (selected-window))
+      (apply diff-hl-show-hunk-function buffer-and-line))
+    ;; We could fall back to `diff-hl-diff-goto-hunk', but the
+    ;; current default should work in all environments (both GUI
+    ;; and terminal), and if something goes wrong we better show
+    ;; the error to the user.
+    )))
 
 ;;;###autoload
 (define-minor-mode diff-hl-show-hunk-mouse-mode
