@@ -96,32 +96,36 @@ to scroll in the posframe")
   :group 'diff-hl-show-hunk-group
   :lighter ""
   :global t
-  
-  (remove-hook 'post-command-hook #'diff-hl-show-hunk--posframe-post-command-hook nil)
-  (when diff-hl-show-hunk-posframe--transient-mode
-    (add-hook 'post-command-hook #'diff-hl-show-hunk--posframe-post-command-hook nil)))
+  (if diff-hl-show-hunk-posframe--transient-mode
+      (add-hook 'post-command-hook #'diff-hl-show-hunk--posframe-post-command-hook nil)
+    (remove-hook 'post-command-hook #'diff-hl-show-hunk--posframe-post-command-hook nil)))
 
 (defun diff-hl-show-hunk--posframe-post-command-hook ()
   "Called for each command while in `diff-hl-show-hunk-posframe--transient-mode."
   (let* ((allowed-command (or
                            (diff-hl-show-hunk-ignorable-command-p this-command)
-                           (and (symbolp this-command) (string-match-p "diff-hl-" (symbol-name this-command)))))
+                           (and (symbolp this-command)
+                                (string-match-p "diff-hl-" (symbol-name this-command)))))
          (event-in-frame (eq last-event-frame diff-hl-show-hunk--frame))
-         (has-focus (and (frame-live-p diff-hl-show-hunk--frame)(functionp 'frame-focus-state) (eq (frame-focus-state diff-hl-show-hunk--frame) t)))
+         (has-focus (and (frame-live-p diff-hl-show-hunk--frame)
+                         (functionp 'frame-focus-state)
+                         (eq (frame-focus-state diff-hl-show-hunk--frame) t)))
          (still-visible (or event-in-frame allowed-command has-focus)))
     (unless still-visible
       (diff-hl-show-hunk--posframe-hide))))
 
 (defun diff-hl-show-hunk--posframe-button (text help-echo action)
-  "Make a string implementing a button with TEXT and a HELP-ECHO.  The button calls an ACTION."
+  "Make a string implementing a button with TEXT and a HELP-ECHO.
+The button calls an ACTION."
   (concat
    (propertize (concat " " text " ")
                'help-echo (if action help-echo "Not available")
                'face '(:height 0.7)
                'mouse-face (when action '(:box (:style released-button)))
-               'keymap (when action (let ((map (make-sparse-keymap)))
-                                      (define-key map (kbd "<header-line> <mouse-1>") action)
-                                      map)))
+               'keymap (when action
+                         (let ((map (make-sparse-keymap)))
+                           (define-key map (kbd "<header-line> <mouse-1>") action)
+                           map)))
    " "))
 
 (defun diff-hl-show-hunk-posframe--header-line ()
@@ -135,7 +139,7 @@ to scroll in the posframe")
     "⬆ Previous change"
     "Previous change in hunk (\\[diff-hl-show-hunk-previous])"
     #'diff-hl-show-hunk-previous)
-   
+
    (diff-hl-show-hunk--posframe-button
     "⬇ Next change"
     "Next change in hunk (\\[diff-hl-show-hunk-next])"
@@ -153,14 +157,17 @@ to scroll in the posframe")
       (interactive) (diff-hl-show-hunk-hide) (diff-hl-revert-hunk)))))
 
 (defun diff-hl-show-hunk-posframe (buffer line)
-  "Implementation to show the hunk in a posframe.  BUFFER is a buffer with the hunk, and the central line should be LINE."
+  "Implementation to show the hunk in a posframe."
 
-  (unless (featurep 'posframe)
-    (user-error "Required package for diff-hl-show-hunk-posframe not available: posframe.  Please customize diff-hl-show-hunk-function"))
+  (unless (require 'posframe nil t)
+    (user-error
+     (concat
+      "`diff-hl-show-hunk-posframe' requires the `posframe' package."
+      "  Please install it or customize `diff-hl-show-hunk-function'.")))
 
-  (require 'posframe)
   (unless (posframe-workable-p)
-    (user-error "Package posframe is not workable.  Please customize diff-hl-show-hunk-function"))
+    (user-error
+     "Package `posframe' is not workable.  Please customize diff-hl-show-hunk-function"))
 
   (diff-hl-show-hunk--posframe-hide)
   (setq diff-hl-show-hunk--hide-function #'diff-hl-show-hunk--posframe-hide)
@@ -168,8 +175,9 @@ to scroll in the posframe")
   ;; put an overlay to override read-only-mode keymap
   (with-current-buffer buffer
     (let ((full-overlay (make-overlay 1 (1+ (buffer-size)))))
-      (overlay-put full-overlay 'keymap diff-hl-show-hunk-posframe--transient-mode-map)))
-  
+      (overlay-put full-overlay
+                   'keymap diff-hl-show-hunk-posframe--transient-mode-map)))
+
   (setq posframe-mouse-banish nil)
   (setq diff-hl-show-hunk--original-frame last-event-frame)
   (setq
@@ -183,8 +191,9 @@ to scroll in the posframe")
                   :internal-border-color diff-hl-show-hunk-posframe-internal-border-color
                   :hidehandler nil
                   ;; Sometimes, header-line is not taken into account, so put a min height and a min width
-                  :min-height (when diff-hl-show-hunk-posframe-show-head-line 10)
-                  :min-width (when diff-hl-show-hunk-posframe-show-head-line (length (diff-hl-show-hunk-posframe--header-line)))
+                  :min-height (when diff-hl-show-hunk-posframe-show-header-line 10)
+                  :min-width (when diff-hl-show-hunk-posframe-show-header-line
+                               (length (diff-hl-show-hunk-posframe--header-line)))
                   :respect-header-line diff-hl-show-hunk-posframe-show-header-line
                   :respect-tab-line nil
                   :respect-mode-line nil
