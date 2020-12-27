@@ -53,11 +53,6 @@ diff-hl-margin-mode
 ![screenie](screenshot-margin.png)
 
 
-diff-hl-show-hunk-mode with popup backend
------
-![screenie](diff-hl-popup.gif)
-
-
 diff-hl-show-hunk-mode with posframe backend
 -----
 ![screenie](diff-hl-posframe.gif)
