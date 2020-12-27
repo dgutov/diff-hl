@@ -119,7 +119,7 @@ The button calls an ACTION."
   (concat
    (propertize (concat " " text " ")
                'help-echo (if action help-echo "Not available")
-               'face '(:height 0.7) ; FIXME: Move into a named face?
+               'face '(:height 0.9) ; FIXME: Move into a named face?
                'mouse-face (when action '(:box (:style released-button)))
                'keymap (when action
                          (let ((map (make-sparse-keymap)))
