@@ -39,10 +39,10 @@
 ;; `diff-hl-show-hunk-mode', and adds `diff-hl-show-hunk' when
 ;; clicking in the margin or the fringe.
 ;;
-;; To use it in all buffers:
+;; To use them in all buffers:
 ;;
+;;   (global-diff-hl-show-hunk-mode)
 ;;   (global-diff-hl-show-hunk-mouse-mode)
-;;
 
 ;;; Code:
 
