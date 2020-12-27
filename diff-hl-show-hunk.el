@@ -24,10 +24,9 @@
 ;; `diff-hl-show-hunk' shows a popup with the modified hunk at point.
 ;; `diff-hl-show-hunk-function' contains the backend used to show the
 ;; hunk. Its default value is `diff-hl-show-hunk-inline-popup', that
-;; shows diffs in a phantom overlay. There are other backends:
-;; `diff-hl-show-hunk-posframe' (based on posframe), and
-;; `diff-hl-show-hunk-popup' (based on popup.el). Other backends (for
-;; example pos-tip) could be implemented.
+;; shows diffs inline using overlay. There is another built-in backend:
+;; `diff-hl-show-hunk-posframe' (based on posframe). Other backends (for
+;; example based on `pos-tip') could also be implemented.
 ;;
 ;; `diff-hl-show-hunk-mode' adds the following keybindings:
 ;;
@@ -52,7 +51,6 @@
 ;; This package use some runtime dependencies, so we need to declare
 ;; the external functions and variables
 (declare-function posframe-workable-p "posframe")
-(declare-function diff-hl-show-hunk-popup "diff-hl-show-hunk-popup")
 (declare-function diff-hl-show-hunk-posframe "diff-hl-show-hunk-posframe")
 (defvar vc-sentinel-movepoint)
 
@@ -98,15 +96,10 @@
   "The function used to render the hunk.
 The function receives as first parameter a buffer with the
 contents of the hunk, and as second parameter the line number
-corresponding to the clicked line in the original buffer. The
-function should return t if the hunk is show, or nil if not.
-
-There are some built-in options:
-`diff-hl-show-hunk-inline-popup', `diff-hl-show-hunk-popup' and
-`diff-hl-show-hunk-posframe'.  To use the popup and posframe
-versions, it is necessary to require 'diff-hl-show-hunk-popup.el'
-or 'diff-hl-show-hunk-posframe.el'."
-  :type 'function)
+corresponding to the clicked line in the original buffer."
+  :type '(choice
+          (const :tag "Show inline" diff-hl-show-hunk-inline-popup)
+          (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
 
 (defvar diff-hl-show-hunk--hide-function nil
   "Function to call to close the shown hunk.")
