@@ -119,12 +119,6 @@ corresponding to the clicked line in the original buffer."
   '((t (:inverse-video t)))
   "Face for the clicked line in the diff output.")
 
-(defface diff-hl-show-hunk-added-face  '((t (:foreground "green")))
-  "Face for added lines.")
-
-(defface diff-hl-show-hunk-deleted-face  '((t (:foreground "red" :strike-through t)))
-  "Face for deleted lines")
-
 (defun diff-hl-show-hunk-ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing the current hunk."
   (member command '(ignore diff-hl-show-hunk handle-switch-frame diff-hl-show-hunk--click)))
@@ -251,9 +245,9 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
          (propertize-line (lambda (l)
                             (propertize l 'face
                                         (cond ((string-prefix-p "+" l)
-                                               'diff-hl-show-hunk-added-face)
+                                               'diff-added)
                                               ((string-prefix-p "-" l)
-                                               'diff-hl-show-hunk-deleted-face)))))
+                                               'diff-removed)))))
          (propertized-lines (mapcar propertize-line lines))
          (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
     (setcar (nthcdr line propertized-lines) clicked-line)
