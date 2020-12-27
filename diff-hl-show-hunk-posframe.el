@@ -27,10 +27,6 @@
 ;;
 ;;; Code:
 
-; REMOVE BEFORE RELEASE, USED FOR FLYCHECK
-; (eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
-
-(require 'diff-hl)
 (require 'diff-hl-show-hunk)
 
 ;; This package uses some runtime dependencies, so we need to declare

@@ -44,7 +44,6 @@
 (declare-function popup-draw "popup")
 (defvar diff-hl-show-hunk--hide-function)
 
-(require 'diff-hl)
 (require 'diff-hl-show-hunk)
 
 (defvar diff-hl-show-hunk--popup nil "Popup where show the current hunk.")

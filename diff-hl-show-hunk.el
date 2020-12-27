@@ -48,7 +48,6 @@
 
 (require 'inline-popup)
 (require 'diff-hl)
-(require 'diff-hl-flydiff)
 
 ;; This package use some runtime dependencies, so we need to declare
 ;; the external functions and variables
