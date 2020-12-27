@@ -33,7 +33,6 @@
 ;; the external functions and variables
 (declare-function posframe-workable-p "posframe")
 (declare-function posframe-show "posframe")
-(defvar diff-hl-show-hunk--hide-function)
 (defvar posframe-mouse-banish)
 
 (defgroup diff-hl-show-hunk-posframe nil
@@ -49,6 +48,8 @@
   :type 'integer)
 
 (defcustom diff-hl-show-hunk-posframe-internal-border-color "#00ffff"
+  ;; FIXME: What does the second sentence refer to?
+  ;; This seems to work. Remove the sentence?
   "Internal border color of the posframe.  If it doesn't work, try with `internal-border` face."
   :type 'color)
 
