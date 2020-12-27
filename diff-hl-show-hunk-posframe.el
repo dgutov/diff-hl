@@ -60,6 +60,10 @@
   "The frame parameters used by helm-posframe."
   :type 'string)
 
+(defface diff-hl-show-hunk-posframe '((t nil))
+  "Face for the posframe buffer.
+Customize it to change the base properties of the text.")
+
 (defvar diff-hl-show-hunk--frame nil "The postframe frame used in function `diff-hl-show-hunk-posframe'.")
 (defvar diff-hl-show-hunk--original-frame nil "The frame from which the hunk is shown.")
 
@@ -115,7 +119,7 @@ The button calls an ACTION."
   (concat
    (propertize (concat " " text " ")
                'help-echo (if action help-echo "Not available")
-               'face '(:height 0.7)
+               'face '(:height 0.7) ; FIXME: Move into a named face?
                'mouse-face (when action '(:box (:style released-button)))
                'keymap (when action
                          (let ((map (make-sparse-keymap)))
@@ -151,6 +155,7 @@ The button calls an ACTION."
     (lambda ()
       (interactive) (diff-hl-show-hunk-hide) (diff-hl-revert-hunk)))))
 
+;;;###autoload
 (defun diff-hl-show-hunk-posframe (buffer line)
   "Implementation to show the hunk in a posframe."
 
@@ -169,6 +174,9 @@ The button calls an ACTION."
 
   ;; put an overlay to override read-only-mode keymap
   (with-current-buffer buffer
+    ;; Change face size
+    (buffer-face-set 'diff-hl-show-hunk-posframe)
+
     (let ((full-overlay (make-overlay 1 (1+ (buffer-size)))))
       (overlay-put full-overlay
                    'keymap diff-hl-show-hunk-posframe--transient-mode-map)))

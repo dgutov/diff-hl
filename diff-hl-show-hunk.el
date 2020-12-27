@@ -48,12 +48,6 @@
 (require 'inline-popup)
 (require 'diff-hl)
 
-;; This package use some runtime dependencies, so we need to declare
-;; the external functions and variables
-(declare-function posframe-workable-p "posframe")
-(declare-function diff-hl-show-hunk-posframe "diff-hl-show-hunk-posframe")
-(defvar vc-sentinel-movepoint)
-
 (defvar diff-hl-show-hunk-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (concat diff-hl-command-prefix  "*") #'diff-hl-show-hunk)
@@ -131,10 +125,6 @@ corresponding to the clicked line in the original buffer."
 (defface diff-hl-show-hunk-deleted-face  '((t (:foreground "red" :strike-through t)))
   "Face for deleted lines")
 
-(defface diff-hl-show-hunk-face
-  '((t (:height 0.8)))
-  "Face for the posframe.")
-
 (defun diff-hl-show-hunk-ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing the current hunk."
   (member command '(ignore diff-hl-show-hunk handle-switch-frame diff-hl-show-hunk--click)))
@@ -144,6 +134,7 @@ corresponding to the clicked line in the original buffer."
 Then put the differences in *diff-hl-show-hunk-diff-buffer*
 buffer, and set the point in that buffer to the corresponding
 line of the original buffer."
+  (defvar vc-sentinel-movepoint)
   (let* ((buffer (or (buffer-base-buffer) (current-buffer)))
          (line (line-number-at-pos))
          (dest-buffer "*diff-hl-show-hunk-diff-buffer*"))
@@ -195,9 +186,6 @@ Returns a list with the buffer and the line number of the clicked line."
       (diff-mode)
       (highlight-regexp diff-hl-show-hunk-boundary)
       (read-only-mode 1)
-
-      ;; Change face size
-      (buffer-face-set 'diff-hl-show-hunk-face)
 
       ;; Find the hunk and narrow to it
       (re-search-backward diff-hl-show-hunk-boundary nil 1)
