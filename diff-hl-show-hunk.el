@@ -233,22 +233,6 @@ Returns a list with the buffer and the line number of the clicked line."
   (posn-set-point (event-start event))
   (diff-hl-show-hunk))
 
-(defun diff-hl-show-hunk-posframe-or-popup (buffer line)
-  "Show a posframe or a popup with the hunk in BUFFER, at  LINE."
-  (let* ((posframe-used
-          (when (and (featurep 'posframe)
-                     (featurep 'diff-hl-show-hunk-posframe))
-            (when (posframe-workable-p)
-              (diff-hl-show-hunk-posframe buffer line))))
-         (popup-used (when (not posframe-used)
-                       (when (and (featurep 'popup)
-                                  (featurep 'diff-hl-show-hunk-popup))
-                         (diff-hl-show-hunk-popup buffer line))))
-         (success (or posframe-used popup-used)))
-    (when (not success)
-      (warn "diff-hl-show-hunk: Please install posframe and diff-hl-show-hunk-posframe, or popup and diff-hl-show-hunk-popup, or customize diff-hl-show-hunk-function"))
-    success))
-
 (defun diff-hl-show-hunk--previousp (buffer)
   "Decide if there is a previous hunk/change in BUFFER."
   (ignore-errors
