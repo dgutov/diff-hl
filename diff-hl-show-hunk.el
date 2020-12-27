@@ -87,9 +87,9 @@
 (defvar diff-hl-show-hunk--original-content nil
   "The original content of the hunk.")
 
-(defgroup diff-hl-show-hunk-group nil
+(defgroup diff-hl-show-hunk nil
   "Show vc diffs in a posframe or popup."
-  :group 'convenience)
+  :group 'diff-hl)
 
 (defcustom diff-hl-show-hunk-boundary "^@@.*@@"
   "Regex that marks the boundary of a hunk in *vc-diff* buffer."
@@ -371,7 +371,7 @@ highlighted.  The face, border and other visual preferences are
 customizable.  It can be also invoked with the command
 `diff-hl-show-hunk'
 \\{diff-hl-show-hunk-mouse-mode-map}"
-  :group 'diff-hl-show-hunk-group
+  :group 'diff-hl-show-hunk
   :lighter "")
 
 ;;;###autoload
@@ -383,7 +383,7 @@ customizable.  It can be also invoked with the command
 (define-minor-mode diff-hl-show-hunk-mode
   "Enables a keymap with some commands of the `diff-hl-show-hunk' package
 \\{diff-hl-show-hunk-mode-map}"
-  :group 'diff-hl-show-hunk-group
+  :group 'diff-hl-show-hunk
   :lighter "")
 
 ;;;###autoload

@@ -49,9 +49,9 @@
 
 (defvar diff-hl-show-hunk--popup nil "Popup where show the current hunk.")
 
-(defgroup diff-hl-show-hunk-posframe-group nil
+(defgroup diff-hl-show-hunk-popup nil
   "Show vc diffs in a posframe."
-  :group 'diff-hl-show-hunk-group)
+  :group 'diff-hl-show-hunk)
 
 (defcustom diff-hl-show-hunk-popup-default-height
   20
@@ -143,7 +143,6 @@ to scroll in the popup")
   "Temporal minor mode to control diff-hl popup."
   :global nil
   :lighter ""
-  :group diff-hl-show-hunk-group
   (remove-hook 'post-command-hook #'diff-hl-show-hunk--popup-post-command-hook nil)
   (when diff-hl-show-hunk--popup-transient-mode
     (add-hook 'post-command-hook #'diff-hl-show-hunk--popup-post-command-hook nil)))

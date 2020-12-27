@@ -40,9 +40,9 @@
 (defvar diff-hl-show-hunk--hide-function)
 (defvar posframe-mouse-banish)
 
-(defgroup diff-hl-show-hunk-posframe-group nil
+(defgroup diff-hl-show-hunk-posframe nil
   "Show vc diffs in a posframe."
-  :group 'diff-hl-show-hunk-group)
+  :group 'diff-hl-show-hunk)
 
 (defcustom diff-hl-show-hunk-posframe-show-header-line t
   "Show some useful buttons at the top of the diff-hl posframe."
@@ -93,7 +93,6 @@ to scroll in the posframe")
 
 (define-minor-mode diff-hl-show-hunk-posframe--transient-mode
   "Temporal minor mode to control diff-hl posframe."
-  :group 'diff-hl-show-hunk-group
   :lighter ""
   :global t
   (if diff-hl-show-hunk-posframe--transient-mode
