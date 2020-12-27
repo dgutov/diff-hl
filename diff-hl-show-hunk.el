@@ -232,8 +232,10 @@ Returns a list with the buffer and the line number of the clicked line."
     (define-key map (kbd "n") #'diff-hl-show-hunk-next)
     (define-key map (kbd "c") #'diff-hl-show-hunk-copy-original-text)
     (define-key map (kbd "r") #'diff-hl-show-hunk-revert-hunk)
-    (define-key map (kbd "C-x v {") #'diff-hl-show-hunk-previous)
-    (define-key map (kbd "C-x v }") #'diff-hl-show-hunk-next)
+    (define-key map (kbd "[") #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "]") #'diff-hl-show-hunk-next)
+    (define-key map (kbd "{") #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "}") #'diff-hl-show-hunk-next)
     map))
 
 (defvar diff-hl-show-hunk--hide-function)
