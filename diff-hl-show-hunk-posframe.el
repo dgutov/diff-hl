@@ -87,6 +87,7 @@ Customize it to change the base properties of the text.")
     (define-key map (kbd "n")   #'diff-hl-show-hunk-next)
     (define-key map (kbd "p")   #'diff-hl-show-hunk-previous)
     (define-key map (kbd "c")   #'diff-hl-show-hunk-copy-original-text)
+    (define-key map (kbd "r")   #'diff-hl-show-hunk-revert-hunk)
     map)
   "Keymap for command `diff-hl-show-hunk-posframe--transient-mode'.
 Capture all the vertical movement of the point, and converts it
@@ -152,9 +153,8 @@ The button calls an ACTION."
 
    (diff-hl-show-hunk--posframe-button
     "♻ Revert hunk"
-    nil
-    (lambda ()
-      (interactive) (diff-hl-show-hunk-hide) (diff-hl-revert-hunk)))))
+    "Revert hunk (\\[diff-hl-show-hunk-revert-hunk])"
+    #'diff-hl-show-hunk-revert-hunk)))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-posframe (buffer line)

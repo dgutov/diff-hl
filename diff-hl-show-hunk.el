@@ -231,8 +231,7 @@ Returns a list with the buffer and the line number of the clicked line."
     (define-key map (kbd "p") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "n") #'diff-hl-show-hunk-next)
     (define-key map (kbd "c") #'diff-hl-show-hunk-copy-original-text)
-    (define-key map (kbd "r") (lambda ()
-                                (interactive) (diff-hl-show-hunk-hide) (diff-hl-revert-hunk)))
+    (define-key map (kbd "r") #'diff-hl-show-hunk-revert-hunk)
     (define-key map (kbd "C-x v {") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "C-x v }") #'diff-hl-show-hunk-next)
     map))
@@ -268,6 +267,12 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
   (interactive)
   (kill-new diff-hl-show-hunk--original-content)
   (message "Original hunk content added to kill-ring"))
+
+(defun diff-hl-show-hunk-revert-hunk ()
+  "Dismiss the popup and prompt to revert the current diff hunk."
+  (interactive)
+  (diff-hl-show-hunk-hide)
+  (diff-hl-revert-hunk))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
