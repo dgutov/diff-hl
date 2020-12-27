@@ -20,10 +20,10 @@
 ;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;; Provides `diff-hl-show-hunk-posframe' than can be used as
-;;  `diff-hl-show-hunk-function'.  'posframe.el' is a runtime
-;;  dependency, it is not required by this package, but should be
-;;  installed and loaded.
+;;
+;;  This provides `diff-hl-show-hunk-posframe' than can be used as
+;;  `diff-hl-show-hunk-function'. `posframe' is a runtime dependency,
+;;  it is not required by this package, but it should be installed.
 ;;
 ;;; Code:
 
@@ -85,7 +85,7 @@
     (define-key map (kbd "C-g") #'diff-hl-show-hunk-hide)
     (define-key map (kbd "n")   #'diff-hl-show-hunk-next)
     (define-key map (kbd "p")   #'diff-hl-show-hunk-previous)
-    (define-key map (kbd "c")   #'diff-hl-show-hunk-original-text-to-kill-ring)
+    (define-key map (kbd "c")   #'diff-hl-show-hunk-copy-original-text)
     map)
   "Keymap for command `diff-hl-show-hunk-posframe--transient-mode'.
 Capture all the vertical movement of the point, and converts it
@@ -147,8 +147,8 @@ The button calls an ACTION."
 
    (diff-hl-show-hunk--posframe-button
     "⊚ Copy original"
-    "Copy original (\\[diff-hl-show-hunk-original-text-to-kill-ring])"
-    #'diff-hl-show-hunk-original-text-to-kill-ring)
+    "Copy original (\\[diff-hl-show-hunk-copy-original-text])"
+    #'diff-hl-show-hunk-copy-original-text)
 
    (diff-hl-show-hunk--posframe-button
     "♻ Revert hunk"
@@ -214,8 +214,7 @@ The button calls an ACTION."
       (select-window (window-main-window diff-hl-show-hunk--frame))
       (setq cursor-type 'box)
       (recenter)))
-  (select-frame-set-input-focus diff-hl-show-hunk--frame)
-  t)
+  (select-frame-set-input-focus diff-hl-show-hunk--frame))
 
 (provide 'diff-hl-show-hunk-posframe)
 ;;; diff-hl-show-hunk-posframe.el ends here
