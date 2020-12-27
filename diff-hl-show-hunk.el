@@ -146,7 +146,7 @@ line of the original buffer."
 (defun diff-hl-show-hunk--fill-original-content (content)
   "Extracts the lines starting with '-' from CONTENT and save them."
   (let* ((lines (split-string content "[\n\r]+" ))
-         (original-lines (remove-if-not (lambda (l) (string-match-p "^-.*" l)) lines))
+         (original-lines (cl-remove-if-not (lambda (l) (string-match-p "^-.*" l)) lines))
          (original-lines (mapcar (lambda (l) (substring l 1)) original-lines))
          (content (string-join original-lines "\n")))
     (setq diff-hl-show-hunk--original-content content)))
