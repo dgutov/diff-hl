@@ -85,10 +85,7 @@
   "Show vc diffs in a posframe or popup."
   :group 'diff-hl)
 
-;; FIXME: Should this be a defcustom?
-(defcustom diff-hl-show-hunk-boundary "^@@.*@@"
-  "Regex that marks the boundary of a hunk in *vc-diff* buffer."
-  :type 'string)
+(defconst diff-hl-show-hunk-boundary "^@@.*@@")
 
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
   "The function used to render the hunk.
@@ -180,10 +177,8 @@ Returns a list with the buffer and the line number of the clicked line."
       (setq line-overlay (make-overlay (point-at-bol) (min (point-max) (1+ (point-at-eol)))))
       (overlay-put line-overlay 'face 'diff-hl-show-hunk-clicked-line-face)
 
-      ;; diff-mode, highlight hunks boundaries
+      ;; diff-mode
       (diff-mode)
-      ;; FIXME: I think these are always hidden now?
-      (highlight-regexp diff-hl-show-hunk-boundary)
       (read-only-mode 1)
 
       ;; Find the hunk and narrow to it
