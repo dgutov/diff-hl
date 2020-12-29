@@ -48,9 +48,7 @@
   :type 'integer)
 
 (defcustom diff-hl-show-hunk-posframe-internal-border-color "#00ffff"
-  ;; FIXME: What does the second sentence refer to?
-  ;; This seems to work. Remove the sentence?
-  "Internal border color of the posframe.  If it doesn't work, try with `internal-border` face."
+  "Internal border color of the posframe."
   :type 'color)
 
 (defcustom diff-hl-show-hunk-posframe-poshandler nil
