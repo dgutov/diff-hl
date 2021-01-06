@@ -35,7 +35,7 @@
 ;; `diff-hl-revert-hunk'     C-x v n
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
-;; `diff-hl-log-view-set-reference-rev'
+;; `diff-hl-set-reference-rev'
 ;; `diff-hl-reset-reference-rev'
 ;;
 ;; The mode takes advantage of `smartrep' if it is installed.
@@ -688,26 +688,38 @@ The value of this variable is a mode line template as in
     (turn-on-diff-hl-mode)))
 
 ;;;###autoload
-(defun diff-hl-log-view-set-reference-rev ()
-  "In *vc-change-log* buffer, set the current one as reference revision.
-Call `vc-print-log' or `vc-print-root-log' first, then use this
-command on a revision, `diff-hl-mode' will show changes against
-this revision.
+(defun diff-hl-set-reference-rev (&optional rev)
+  "Set the reference revision globally to REV.
+When called interactively, REV is get from contexts:
+
+- In a log view buffer, it uses the revision of current entry.
+Call `vc-print-log' or `vc-print-root-log' first to open a log
+view buffer.
+- In a VC annotate buffer, it uses the revision of current line.
+- In other situations, get the revision name at point.
 
 Notice that this sets the reference revision globally, so in
 files from other repositories, `diff-hl-mode' will not highlight
 changes correctly, until you run `diff-hl-reset-reference-rev'.
 
-Also notice that `diff-hl-amend-mode' will override this.
-Disable it to reveal the effect of this command."
+Also notice that this will disable `diff-hl-amend-mode' in
+buffers that enables it, since `diff-hl-amend-mode' overrides its
+effect."
   (interactive)
-  (let* ((rev (log-view-current-tag)))
-    (unless rev
-      (user-error "Not in a change log buffer"))
+  (let* ((rev (or rev
+                  (and (equal major-mode 'vc-annotate-mode)
+                       (car (vc-annotate-extract-revision-at-line)))
+                  (log-view-current-tag)
+                  (thing-at-point 'symbol t))))
+    (if rev
+        (message "Set reference rev to %s" rev)
+      (user-error "Can't find a revision around point"))
     (setq diff-hl-reference-revision rev))
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when diff-hl-mode
+        (when diff-hl-amend-mode
+          (diff-hl-amend-mode -1))
         (diff-hl-update)))))
 
 ;;;###autoload
