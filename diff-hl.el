@@ -35,6 +35,8 @@
 ;; `diff-hl-revert-hunk'     C-x v n
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
+;; `diff-hl-set-reference-rev'
+;; `diff-hl-reset-reference-rev'
 ;;
 ;; The mode takes advantage of `smartrep' if it is installed.
 
@@ -55,6 +57,8 @@
 (require 'diff-mode)
 (require 'vc)
 (require 'vc-dir)
+(require 'log-view)
+
 (eval-when-compile
   (require 'cl-lib)
   (require 'vc-git)
@@ -696,6 +700,51 @@ The value of this variable is a mode line template as in
                (not (memq major-mode (cdr diff-hl-global-modes))))
               (t (memq major-mode diff-hl-global-modes)))
     (turn-on-diff-hl-mode)))
+
+;;;###autoload
+(defun diff-hl-set-reference-rev (&optional rev)
+  "Set the reference revision globally to REV.
+When called interactively, REV is get from contexts:
+
+- In a log view buffer, it uses the revision of current entry.
+Call `vc-print-log' or `vc-print-root-log' first to open a log
+view buffer.
+- In a VC annotate buffer, it uses the revision of current line.
+- In other situations, get the revision name at point.
+
+Notice that this sets the reference revision globally, so in
+files from other repositories, `diff-hl-mode' will not highlight
+changes correctly, until you run `diff-hl-reset-reference-rev'.
+
+Also notice that this will disable `diff-hl-amend-mode' in
+buffers that enables it, since `diff-hl-amend-mode' overrides its
+effect."
+  (interactive)
+  (let* ((rev (or rev
+                  (and (equal major-mode 'vc-annotate-mode)
+                       (car (vc-annotate-extract-revision-at-line)))
+                  (log-view-current-tag)
+                  (thing-at-point 'symbol t))))
+    (if rev
+        (message "Set reference rev to %s" rev)
+      (user-error "Can't find a revision around point"))
+    (setq diff-hl-reference-revision rev))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when diff-hl-mode
+        (when diff-hl-amend-mode
+          (diff-hl-amend-mode -1))
+        (diff-hl-update)))))
+
+;;;###autoload
+(defun diff-hl-reset-reference-rev ()
+  "Reset the reference revision globally to the most recent one."
+  (interactive)
+  (setq diff-hl-reference-revision nil)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when diff-hl-mode
+        (diff-hl-update)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
