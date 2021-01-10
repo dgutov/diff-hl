@@ -22,18 +22,17 @@
 ;;; Commentary:
 ;;
 ;;  This provides `diff-hl-show-hunk-quick-peek' than can be used as
-;;  `diff-hl-show-hunk-function'.  `quick-peek' is a runtime dependency,
-;;  it is not required by this package, but it should be installed.
+;;  `diff-hl-show-hunk-function'.  `scrollable-quick-peek' is a
+;;  runtime dependency, it is not required by this package, but it
+;;  should be installed.
 ;;
 ;;; Code:
 
-(eval-when-compile (add-to-list 'load-path "/home/alvaro/github/diff-hl"))
 (require 'diff-hl-show-hunk)
 
 ;; This package uses some runtime dependencies, so we need to declare
 ;; the external functions and variables
-(message "REMOVE OR FULLFILL")
-(declare-function quick-peek-show "quick-peek")
+(declare-function scrollable-quick-peek-show "scrollable-quick-peek")
 (declare-function quick-peek-hide "quick-peek")
 
 (defvar diff-hl-show-hunk-quick-peek--current-custom-keymap nil)
@@ -41,21 +40,35 @@
 
 (defvar diff-hl-show-hunk-quick-peek-transient-mode-map
   (let ((map (make-sparse-keymap)))
+
+    ;; close quick-peek
     (define-key map [escape] #'diff-hl-show-hunk-quick-peek-hide)
     (define-key map (kbd "q") #'diff-hl-show-hunk-quick-peek-hide)
     (define-key map (kbd "C-g") #'diff-hl-show-hunk-quick-peek-hide)
-    (define-key map (kbd "<prior>") #'scroll-down-command)
-    (define-key map (kbd "M-v") #'scroll-down-command)
-    (define-key map (kbd "<next>") #'scroll-up-command)
-    (define-key map (kbd "C-v") #'scroll-up-command)
-    (define-key map (kbd "<up>") #'previous-line)
-    (define-key map (kbd "C-p") #'previous-line)
-    (define-key map (kbd "<down>") #'next-line)
-    (define-key map (kbd "C-n") #'next-line)
-    (define-key map (kbd "<mouse-4>") #'previous-line)
-    (define-key map (kbd "<wheel-up>") #'previous-line)
-    (define-key map (kbd "<mouse-5>") #'next-line)
-    (define-key map (kbd "<wheel-down>") #'next-line)
+
+    ;; buffer scroll
+    (define-key map (kbd "<prior>") #'scrollable-quick-peek-scroll-down)
+    (define-key map (kbd "M-v") #'scrollable-quick-peek-scroll-down)
+    (define-key map (kbd "<next>") #'scrollable-quick-peek-scroll-up)
+    (define-key map (kbd "C-v") #'scrollable-quick-peek-scroll-up)
+    (define-key map (kbd "<up>") #'scrollable-quick-peek-scroll-up)
+    (define-key map (kbd "C-p") #'scrollable-quick-peek-scroll-up)
+    (define-key map (kbd "<down>") #'scrollable-quick-peek-scroll-down)
+    (define-key map (kbd "C-n") #'scrollable-quick-peek-scroll-down)
+    (define-key map (kbd "<mouse-4>") #'scrollable-quick-peek-scroll-up)
+    (define-key map (kbd "<wheel-up>") #'scrollable-quick-peek-scroll-up)
+    (define-key map (kbd "<mouse-5>") #'scrollable-quick-peek-scroll-down)
+    (define-key map (kbd "<wheel-down>") #'scrollable-quick-peek-scroll-down)
+
+    ;; move between hunks
+    (define-key map (kbd "p")   #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "n")   #'diff-hl-show-hunk-next)
+    (define-key map (kbd "c")   #'diff-hl-show-hunk-copy-original-text)
+    (define-key map (kbd "r")   #'diff-hl-show-hunk-revert-hunk)
+    (define-key map (kbd "[")   #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "]")   #'diff-hl-show-hunk-next)
+    (define-key map (kbd "{")   #'diff-hl-show-hunk-previous)
+    (define-key map (kbd "}")   #'diff-hl-show-hunk-next)
     map)
   "Keymap for command `diff-hl-show-hunk-quick-peek-transient-mode'.")
 
@@ -72,8 +85,6 @@
                           (string-match-p "diff-hl-show-hunk-quick-peek-" (symbol-name this-command))
                           (diff-hl-show-hunk-quick-peek--ignorable-command-p this-command))))
     (unless allowed-command
-      (message "this-command:%s" this-command)
-      (message "6")
       (diff-hl-show-hunk-quick-peek-hide))))
 
 (define-minor-mode diff-hl-show-hunk-quick-peek-transient-mode
@@ -87,8 +98,6 @@
       (set-keymap-parent diff-hl-show-hunk-quick-peek-transient-mode-map diff-hl-show-hunk-quick-peek--current-custom-keymap))
     (add-hook 'post-command-hook #'diff-hl-show-hunk-quick-peek--post-command-hook 0 t)))
 
-
-
 ;;;###autoload
 (defun diff-hl-show-hunk-quick-peek-hide ()
   "Hides the quick-peek overlay that displays the hunk."
@@ -99,23 +108,22 @@
 ;;;###autoload
 (defun diff-hl-show-hunk-quick-peek (buffer _line)
   "Implementation to show the hunk in quick-peek."
-  (message "1")
   (unless (require 'quick-peek nil t)
     (user-error
      (concat
       "`diff-hl-show-hunk-quick-peek' requires the `quick-peek' package."
       "  Please install it or customize `diff-hl-show-hunk-function'.")))
 
-  ;;(diff-hl-show-hunk-quick-peek-hide)
-  (message "2")
+  (diff-hl-show-hunk-quick-peek-hide)
   (setq diff-hl-show-hunk--hide-function #'diff-hl-show-hunk-quick-peek-hide)
   (setq diff-hl-show-hunk-quick-peek--invoking-command this-command)
   
-  (let ((str (with-current-buffer buffer (buffer-string))))
-    (quick-peek-show str (point) 3 'none))
-  (message "3")
-  (diff-hl-show-hunk-quick-peek-transient-mode)
-  )
+  (let* ((str (with-current-buffer buffer (buffer-string)))
+         (line-count (with-current-buffer buffer
+                       (line-number-at-pos (point-max))))
+         (max-h (min line-count (/ (window-height) 2))))
+    (scrollable-quick-peek-show str (point) 3 max-h))
+  (diff-hl-show-hunk-quick-peek-transient-mode))
 
 (provide 'diff-hl-show-hunk-quick-peek)
 ;;; diff-hl-show-hunk-quick-peek.el ends here
