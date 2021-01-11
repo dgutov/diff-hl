@@ -87,6 +87,15 @@
 
 (defconst diff-hl-show-hunk-boundary "^@@.*@@")
 
+(defcustom diff-hl-show-hunk-ensure-visible t
+  "If t, tries to show the whole hunk in screen, and move the
+  point to the start of the hunk."
+  :type 'boolean)
+
+(defcustom diff-hl-show-hunk-inline-popup-hide-hunk t
+  "If t, inline-popup is shown over the hunk, hiding it."
+  :type 'boolean)
+
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
   "The function used to render the hunk.
 The function receives as first parameter a buffer with the
@@ -156,7 +165,7 @@ Returns a list with the buffer and the line number of the clicked line."
         (point-in-buffer)
         (line)
         (line-overlay)
-         ;; https://emacs.stackexchange.com/questions/35680/stop-emacs-from-updating-display
+        ;; https://emacs.stackexchange.com/questions/35680/stop-emacs-from-updating-display
         (inhibit-redisplay t)
         (buffer (get-buffer-create diff-hl-show-hunk-buffer-name)))
 
@@ -252,12 +261,30 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
          (propertized-lines (mapcar propertize-line lines))
          (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
     (setcar (nthcdr line propertized-lines) clicked-line)
-    (inline-popup-show propertized-lines
-                       "Diff with HEAD"
-                       "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
-                       diff-hl-show-hunk--inline-popup-map
-                       #'diff-hl-show-hunk-hide)
-    (inline-popup-scroll-to line)))
+
+    (save-excursion
+      ;; Save point in case the hunk is hidden, so next/previous works as expected
+      (when diff-hl-show-hunk-inline-popup-hide-hunk
+        (let* ((overlay (diff-hl-hunk-overlay-at (point)))
+               ;; Make new overlay, since the diff-hl overlay can be changed by diff-hl-flydiff
+               (invisible-overlay (make-overlay (overlay-start overlay) (overlay-end overlay))))
+          (overlay-put invisible-overlay 'invisible t)
+
+          ;; Change default hide popup function, to make the overlay visible
+          (setq diff-hl-show-hunk--hide-function (lambda ()
+                                                   (overlay-put invisible-overlay 'invisible nil)
+                                                   (delete-overlay invisible-overlay)
+                                                   (inline-popup-hide)))
+          (goto-char (overlay-start overlay)))
+        ;; Move to previous line to not make inline-popup invisible
+        (previous-line))
+
+      (inline-popup-show propertized-lines
+                         "Diff with HEAD"
+                         "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
+                         diff-hl-show-hunk--inline-popup-map
+                         #'diff-hl-show-hunk-hide)
+      (inline-popup-scroll-to line))))
 
 (defun diff-hl-show-hunk-copy-original-text ()
   "Extracts all the lines from BUFFER starting with '-' to the kill ring."
@@ -270,6 +297,16 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
   (interactive)
   (diff-hl-show-hunk-hide)
   (diff-hl-revert-hunk))
+
+(defun diff-hl-show-hunk-ensure-hunk-visible (&optional pos)
+  "Ensure that the start of the hunk at POS, and maybe the end, is visible."
+  (let* ((pos (or pos (point)))
+         (overlay (diff-hl-hunk-overlay-at pos)))
+    (when overlay
+      (goto-char (overlay-end overlay))
+      ;; Window scrolls to position only on next redisplay
+      (redisplay t)
+      (goto-char (overlay-start overlay)))))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
@@ -320,6 +357,8 @@ not, it falls back to `diff-hl-diff-goto-hunk'."
    ((let ((buffer-and-line (diff-hl-show-hunk-buffer)))
       (setq diff-hl-show-hunk--original-buffer (current-buffer))
       (setq diff-hl-show-hunk--original-window (selected-window))
+      (when diff-hl-show-hunk-ensure-visible
+        (diff-hl-show-hunk-ensure-hunk-visible))
       (apply diff-hl-show-hunk-function buffer-and-line))
     ;; We could fall back to `diff-hl-diff-goto-hunk', but the
     ;; current default should work in all environments (both GUI
