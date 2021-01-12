@@ -159,7 +159,7 @@ The button calls an ACTION."
     #'diff-hl-show-hunk-revert-hunk)))
 
 ;;;###autoload
-(defun diff-hl-show-hunk-posframe (buffer line)
+(defun diff-hl-show-hunk-posframe (buffer &optional line)
   "Implementation to show the hunk in a posframe."
 
   (unless (require 'posframe nil t)
@@ -208,17 +208,21 @@ The button calls an ACTION."
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-internal-border t)
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-with-header-line t)
 
-  ;; Recenter arround point
   (with-selected-frame diff-hl-show-hunk--frame
     (with-current-buffer buffer
       (diff-hl-show-hunk-posframe--transient-mode 1)
       (when diff-hl-show-hunk-posframe-show-header-line
         (setq header-line-format (diff-hl-show-hunk-posframe--header-line)))
       (goto-char (point-min))
-      (forward-line (1- line))
+      (when line
+        (forward-line (1- line)))
       (setq buffer-quit-function #'diff-hl-show-hunk--posframe-hide)
       (select-window (window-main-window diff-hl-show-hunk--frame))
+
+      ;; Make cursor visible (mainly for selecting text in posframe)
       (setq cursor-type 'box)
+
+      ;; Recenter arround point
       (recenter)))
   (select-frame-set-input-focus diff-hl-show-hunk--frame))
 

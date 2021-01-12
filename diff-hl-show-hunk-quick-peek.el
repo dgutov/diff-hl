@@ -106,7 +106,7 @@
   (quick-peek-hide))
 
 ;;;###autoload
-(defun diff-hl-show-hunk-quick-peek (buffer _line)
+(defun diff-hl-show-hunk-quick-peek (buffer &optional _line)
   "Implementation to show the hunk in quick-peek."
   (unless (require 'quick-peek nil t)
     (user-error

@@ -96,11 +96,18 @@
   "If t, inline-popup is shown over the hunk, hiding it."
   :type 'boolean)
 
+(defcustom diff-hl-show-hunk-highlight-clicked-line nil
+  "If t, backends should highlight the line of the hunk where the
+  popup was invoked.  Usually, it makes sense to have the
+  opposite value of `diff-hl-show-hunk-ensure-visible'.")
+
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
   "The function used to render the hunk.
 The function receives as first parameter a buffer with the
 contents of the hunk, and as second parameter the line number
-corresponding to the clicked line in the original buffer."
+corresponding to the clicked line in the original buffer.  If
+`diff-hl-show-hunk-highlight-clicked-line' is nil, the second
+parameter will be nil."
   :type '(choice
           (const :tag "Show inline" diff-hl-show-hunk-inline-popup)
           (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
@@ -184,7 +191,8 @@ Returns a list with the buffer and the line number of the clicked line."
       ;; Highlight the clicked line
       (goto-char point-in-buffer)
       (setq line-overlay (make-overlay (point-at-bol) (min (point-max) (1+ (point-at-eol)))))
-      (overlay-put line-overlay 'face 'diff-hl-show-hunk-clicked-line-face)
+      (when diff-hl-show-hunk-highlight-clicked-line
+        (overlay-put line-overlay 'face 'diff-hl-show-hunk-clicked-line-face))
 
       ;; diff-mode
       (diff-mode)
@@ -202,10 +210,11 @@ Returns a list with the buffer and the line number of the clicked line."
       (let ((content (buffer-string)))
         (diff-hl-show-hunk--fill-original-content content))
 
-      ;; Come back to the clicked line
-      (goto-char (overlay-start line-overlay))
 
-      (setq line (line-number-at-pos)))
+      (when diff-hl-show-hunk-highlight-clicked-line
+        ;; Come back to the clicked line
+        (goto-char (overlay-start line-overlay))
+        (setq line (line-number-at-pos))))
 
     (list buffer line)))
 
@@ -245,13 +254,13 @@ Returns a list with the buffer and the line number of the clicked line."
 (defvar diff-hl-show-hunk--hide-function)
 
 ;;;###autoload
-(defun diff-hl-show-hunk-inline-popup (buffer line)
+(defun diff-hl-show-hunk-inline-popup (buffer &optional line)
   "Implementation to show the hunk in a inline popup.
 BUFFER is a buffer with the hunk, and the central line should be LINE."
   (inline-popup-hide)
   (setq diff-hl-show-hunk--hide-function #'inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
-         (line (max 0 (- line 1)))
+         (line (and line (max 0 (- line 1))))
          (propertize-line (lambda (l)
                             (propertize l 'face
                                         (cond ((string-prefix-p "+" l)
@@ -259,8 +268,9 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
                                               ((string-prefix-p "-" l)
                                                'diff-removed)))))
          (propertized-lines (mapcar propertize-line lines))
-         (clicked-line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face)))
-    (setcar (nthcdr line propertized-lines) clicked-line)
+         (clicked-line (and line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face))))
+    (when line
+      (setcar (nthcdr line propertized-lines) clicked-line))
 
     (save-excursion
       ;; Save point in case the hunk is hidden, so next/previous works as expected
@@ -284,7 +294,8 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
                          "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
                          diff-hl-show-hunk--inline-popup-map
                          #'diff-hl-show-hunk-hide)
-      (inline-popup-scroll-to line))))
+      (when line
+        (inline-popup-scroll-to line)))))
 
 (defun diff-hl-show-hunk-copy-original-text ()
   "Extracts all the lines from BUFFER starting with '-' to the kill ring."
