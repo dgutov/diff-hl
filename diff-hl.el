@@ -732,7 +732,7 @@ effect."
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when diff-hl-mode
-        (when diff-hl-amend-mode
+        (when (bound-and-true-p diff-hl-amend-mode)
           (diff-hl-amend-mode -1))
         (diff-hl-update)))))
 
