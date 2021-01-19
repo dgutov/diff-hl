@@ -74,7 +74,11 @@ Customize it to change the base properties of the text.")
     (make-frame-invisible diff-hl-show-hunk--frame))
   (when diff-hl-show-hunk--original-frame
     (when (frame-live-p diff-hl-show-hunk--original-frame)
-      (select-frame-set-input-focus diff-hl-show-hunk--original-frame))
+      (let ((frame diff-hl-show-hunk--original-frame))
+        (select-frame-set-input-focus frame)
+        ;; In Gnome, sometimes the input focus is not restored to the
+        ;; original frame, so we try harder in a while
+        (run-with-timer 0.1 nil (lambda () (select-frame-set-input-focus frame)))))
     (setq diff-hl-show-hunk--original-frame nil)))
 
 (defvar diff-hl-show-hunk-posframe--transient-mode-map
