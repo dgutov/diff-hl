@@ -87,19 +87,13 @@
 
 (defconst diff-hl-show-hunk-boundary "^@@.*@@")
 
-(defcustom diff-hl-show-hunk-ensure-visible t
-  "If t, tries to show the whole hunk in screen, and move the
-  point to the start of the hunk."
-  :type 'boolean)
-
 (defcustom diff-hl-show-hunk-inline-popup-hide-hunk t
   "If t, inline-popup is shown over the hunk, hiding it."
   :type 'boolean)
 
 (defcustom diff-hl-show-hunk-highlight-clicked-line nil
   "If t, backends should highlight the line of the hunk where the
-  popup was invoked.  Usually, it makes sense to have the
-  opposite value of `diff-hl-show-hunk-ensure-visible'.")
+  popup was invoked.")
 
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
   "The function used to render the hunk.
@@ -127,6 +121,7 @@ parameter will be nil."
   (with-current-buffer (get-buffer-create diff-hl-show-hunk-buffer-name)
     (read-only-mode -1)
     (erase-buffer))
+  (diff-hl-show-hunk-ensure-hunk-visible)
   (when diff-hl-show-hunk--hide-function
     (let ((hidefunc diff-hl-show-hunk--hide-function))
       (setq diff-hl-show-hunk--hide-function nil)
@@ -282,10 +277,11 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
 
           ;; Change default hide popup function, to make the overlay visible
           (setq diff-hl-show-hunk--hide-function (lambda ()
+                                                   (goto-char (overlay-start invisible-overlay))
                                                    (overlay-put invisible-overlay 'invisible nil)
                                                    (delete-overlay invisible-overlay)
-                                                   (inline-popup-hide)))
-          (goto-char (overlay-start overlay)))
+                                                   (inline-popup-hide))))
+
         ;; Move to previous line to not make inline-popup invisible
         (previous-line))
 
@@ -368,8 +364,7 @@ not, it falls back to `diff-hl-diff-goto-hunk'."
    ((let ((buffer-and-line (diff-hl-show-hunk-buffer)))
       (setq diff-hl-show-hunk--original-buffer (current-buffer))
       (setq diff-hl-show-hunk--original-window (selected-window))
-      (when diff-hl-show-hunk-ensure-visible
-        (diff-hl-show-hunk-ensure-hunk-visible))
+      (diff-hl-show-hunk-ensure-hunk-visible)
       (apply diff-hl-show-hunk-function buffer-and-line))
     ;; We could fall back to `diff-hl-diff-goto-hunk', but the
     ;; current default should work in all environments (both GUI
