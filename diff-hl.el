@@ -414,21 +414,57 @@ performance when viewing such files in certain conditions."
   (when revert-buffer-preserve-modes
     (diff-hl-update)))
 
-(defun diff-hl-diff-goto-hunk-1 ()
+(defun diff-hl-diff-goto-hunk-1 (historic)
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
-         (buffer (current-buffer)))
-    (vc-diff-internal t (vc-deduce-fileset) diff-hl-reference-revision nil t)
+         (buffer (current-buffer))
+         (rev1 diff-hl-reference-revision)
+         rev2)
+    (when historic
+      (let ((revs (diff-hl-diff-read-revisions rev1)))
+        (setq rev1 (car revs)
+              rev2 (cdr revs))))
+    (vc-diff-internal t (vc-deduce-fileset) rev1 rev2 t)
     (vc-exec-after `(if (< (line-number-at-pos (point-max)) 3)
                         (with-current-buffer ,buffer (diff-hl-remove-overlays))
-                      (diff-hl-diff-skip-to ,line)
+                      (unless ,rev2
+                        (diff-hl-diff-skip-to ,line))
                       (setq vc-sentinel-movepoint (point))))))
 
-(defun diff-hl-diff-goto-hunk ()
+(defun diff-hl-diff-goto-hunk (&optional historic)
   "Run VC diff command and go to the line corresponding to the current."
-  (interactive)
+  (interactive (list current-prefix-arg))
   (with-current-buffer (or (buffer-base-buffer) (current-buffer))
-    (diff-hl-diff-goto-hunk-1)))
+    (diff-hl-diff-goto-hunk-1 historic)))
+
+(defun diff-hl-diff-read-revisions (rev1-default)
+  (let* ((file buffer-file-name)
+         (files (list file))
+         (backend (vc-backend file))
+         (rev2-default nil))
+    (cond
+     ;; if the file is not up-to-date, use working revision as older revision
+     ((not (vc-up-to-date-p file))
+      (setq rev1-default
+            (or rev1-default
+                (vc-working-revision file))))
+     ((not rev1-default)
+      (setq rev1-default (ignore-errors ;If `previous-revision' doesn't work.
+                           (vc-call-backend backend 'previous-revision file
+                                            (vc-working-revision file))))
+      (when (string= rev1-default "") (setq rev1-default nil))))
+    ;; finally read the revisions
+    (let* ((rev1-prompt (if rev1-default
+                            (concat "Older revision (default "
+                                    rev1-default "): ")
+                          "Older revision: "))
+           (rev2-prompt (concat "Newer revision (default "
+                                (or rev2-default "current source") "): "))
+           (rev1 (vc-read-revision rev1-prompt files backend rev1-default))
+           (rev2 (vc-read-revision rev2-prompt files backend rev2-default)))
+      (when (string= rev1 "") (setq rev1 nil))
+      (when (string= rev2 "") (setq rev2 nil))
+      (cons rev1 rev2))))
 
 (defun diff-hl-diff-skip-to (line)
   "In `diff-mode', skip to the hunk and line corresponding to LINE
