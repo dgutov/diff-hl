@@ -81,6 +81,9 @@
 (defvar diff-hl-show-hunk--original-content nil
   "The original content of the hunk.")
 
+(defvar diff-hl-show-hunk--original-overlay nil
+  "Copy of the diff-hl hunk overlay.")
+
 (defgroup diff-hl-show-hunk nil
   "Show vc diffs in a posframe or popup."
   :group 'diff-hl)
@@ -91,17 +94,17 @@
   "If t, inline-popup is shown over the hunk, hiding it."
   :type 'boolean)
 
-(defcustom diff-hl-show-hunk-highlight-clicked-line nil
-  "If t, backends should highlight the line of the hunk where the
-  popup was invoked.")
+(defcustom diff-hl-show-hunk-inline-popup-smart-lines t
+  "If t, inline-popup tries to show only the deleted lines of the
+hunk.  The added lines are shown when scrolling the popup.  If
+the hunk consist only on added lines, then it is shown entirely"
+  :type 'boolean)
 
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
   "The function used to render the hunk.
 The function receives as first parameter a buffer with the
 contents of the hunk, and as second parameter the line number
-corresponding to the clicked line in the original buffer.  If
-`diff-hl-show-hunk-highlight-clicked-line' is nil, the second
-parameter will be nil."
+corresponding to the clicked line in the original buffer."
   :type '(choice
           (const :tag "Show inline" diff-hl-show-hunk-inline-popup)
           (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
@@ -121,15 +124,15 @@ parameter will be nil."
   (with-current-buffer (get-buffer-create diff-hl-show-hunk-buffer-name)
     (read-only-mode -1)
     (erase-buffer))
-  (diff-hl-show-hunk-ensure-hunk-visible)
+  (when diff-hl-show-hunk--original-overlay
+    (goto-char (overlay-start diff-hl-show-hunk--original-overlay)))
   (when diff-hl-show-hunk--hide-function
     (let ((hidefunc diff-hl-show-hunk--hide-function))
       (setq diff-hl-show-hunk--hide-function nil)
-      (funcall hidefunc))))
-
-(defface diff-hl-show-hunk-clicked-line-face
-  '((t (:inverse-video t)))
-  "Face for the clicked line in the diff output.")
+      (funcall hidefunc)))
+  (when diff-hl-show-hunk--original-overlay
+    (delete-overlay diff-hl-show-hunk--original-overlay))
+  (setq diff-hl-show-hunk--original-overlay nil))
 
 (defun diff-hl-show-hunk-ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing the current hunk."
@@ -151,10 +154,14 @@ line of the original buffer."
       (setq vc-sentinel-movepoint (point)))
     dest-buffer))
 
+(defun diff-hl-show-hunk--get-original-lines (content)
+  "Extracts the lines starting with '-' from CONTENT and save them."
+  (let* ((lines (split-string content "[\n\r]+" )))
+    (cl-remove-if-not (lambda (l) (string-match-p "^-.*" l)) lines)))
+
 (defun diff-hl-show-hunk--fill-original-content (content)
   "Extracts the lines starting with '-' from CONTENT and save them."
-  (let* ((lines (split-string content "[\n\r]+" ))
-         (original-lines (cl-remove-if-not (lambda (l) (string-match-p "^-.*" l)) lines))
+  (let* ((original-lines (diff-hl-show-hunk--get-original-lines content))
          (original-lines (mapcar (lambda (l) (substring l 1)) original-lines))
          (content (string-join original-lines "\n")))
     (setq diff-hl-show-hunk--original-content content)))
@@ -186,8 +193,6 @@ Returns a list with the buffer and the line number of the clicked line."
       ;; Highlight the clicked line
       (goto-char point-in-buffer)
       (setq line-overlay (make-overlay (point-at-bol) (min (point-max) (1+ (point-at-eol)))))
-      (when diff-hl-show-hunk-highlight-clicked-line
-        (overlay-put line-overlay 'face 'diff-hl-show-hunk-clicked-line-face))
 
       ;; diff-mode
       (diff-mode)
@@ -205,11 +210,9 @@ Returns a list with the buffer and the line number of the clicked line."
       (let ((content (buffer-string)))
         (diff-hl-show-hunk--fill-original-content content))
 
-
-      (when diff-hl-show-hunk-highlight-clicked-line
-        ;; Come back to the clicked line
-        (goto-char (overlay-start line-overlay))
-        (setq line (line-number-at-pos))))
+      ;; Come back to the clicked line
+      (goto-char (overlay-start line-overlay))
+      (setq line (line-number-at-pos)))
 
     (list buffer line)))
 
@@ -249,32 +252,30 @@ Returns a list with the buffer and the line number of the clicked line."
 (defvar diff-hl-show-hunk--hide-function)
 
 ;;;###autoload
-(defun diff-hl-show-hunk-inline-popup (buffer &optional line)
+(defun diff-hl-show-hunk-inline-popup (buffer &optional _ignored-line)
   "Implementation to show the hunk in a inline popup.
-BUFFER is a buffer with the hunk, and the central line should be LINE."
+BUFFER is a buffer with the hunk."
   (inline-popup-hide)
   (setq diff-hl-show-hunk--hide-function #'inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
-         (line (and line (max 0 (- line 1))))
+         (original-lines-number (cl-count-if (lambda (s) (string-prefix-p "-" s)) lines))
+         (lines (if (string= (car (last lines)) "" ) (butlast lines) lines))
+         (overlay diff-hl-show-hunk--original-overlay)
+         (point (overlay-end overlay))
          (propertize-line (lambda (l)
                             (propertize l 'face
                                         (cond ((string-prefix-p "+" l)
                                                'diff-added)
                                               ((string-prefix-p "-" l)
                                                'diff-removed)))))
-         (propertized-lines (mapcar propertize-line lines))
-         (clicked-line (and line (propertize (nth line lines) 'face 'diff-hl-show-hunk-clicked-line-face))))
-    (when line
-      (setcar (nthcdr line propertized-lines) clicked-line))
+         (propertized-lines (mapcar propertize-line lines)))
 
     (save-excursion
       ;; Save point in case the hunk is hidden, so next/previous works as expected
       (when diff-hl-show-hunk-inline-popup-hide-hunk
-        (let* ((overlay (diff-hl-hunk-overlay-at (point)))
-               ;; Make new overlay, since the diff-hl overlay can be changed by diff-hl-flydiff
-               (invisible-overlay (make-overlay (overlay-start overlay) (overlay-end overlay))))
+        (let* ((invisible-overlay (make-overlay (overlay-start overlay) (overlay-end overlay))))
+          ;; Make new overlay, since the diff-hl overlay can be changed by diff-hl-flydiff
           (overlay-put invisible-overlay 'invisible t)
-
           ;; Change default hide popup function, to make the overlay visible
           (setq diff-hl-show-hunk--hide-function (lambda ()
                                                    (goto-char (overlay-start invisible-overlay))
@@ -284,14 +285,20 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
 
         ;; Move to previous line to not make inline-popup invisible
         (previous-line))
+      (goto-char (overlay-end overlay))
+      (let ((height
+             (when diff-hl-show-hunk-inline-popup-smart-lines
+               (when (not (eq 0 original-lines-number))
+                 ;; hunk is
+                 original-lines-number))))
+        (inline-popup-show propertized-lines
+                           "Diff with HEAD"
+                           "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
+                           diff-hl-show-hunk--inline-popup-map
+                           #'diff-hl-show-hunk-hide
+                           point
+                           height)))))
 
-      (inline-popup-show propertized-lines
-                         "Diff with HEAD"
-                         "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
-                         diff-hl-show-hunk--inline-popup-map
-                         #'diff-hl-show-hunk-hide)
-      (when line
-        (inline-popup-scroll-to line)))))
 
 (defun diff-hl-show-hunk-copy-original-text ()
   "Extracts all the lines from BUFFER starting with '-' to the kill ring."
@@ -305,15 +312,16 @@ BUFFER is a buffer with the hunk, and the central line should be LINE."
   (diff-hl-show-hunk-hide)
   (diff-hl-revert-hunk))
 
-(defun diff-hl-show-hunk-ensure-hunk-visible (&optional pos)
+(defun diff-hl-show-hunk-ensure-hunk-visible (&optional goto-start)
   "Ensure that the start of the hunk at POS, and maybe the end, is visible."
-  (let* ((pos (or pos (point)))
-         (overlay (diff-hl-hunk-overlay-at pos)))
+  (let* ((overlay diff-hl-show-hunk--original-overlay))
     (when overlay
-      (goto-char (overlay-end overlay))
+      (goto-char (1- (overlay-end overlay)))
       ;; Window scrolls to position only on next redisplay
       (redisplay t)
-      (goto-char (overlay-start overlay)))))
+      (when goto-start
+        (goto-char (overlay-start overlay)))
+      )))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
@@ -357,6 +365,16 @@ not, it falls back to `diff-hl-diff-goto-hunk'."
     (user-error "The buffer is not under version control"))
    ((not (diff-hl-hunk-overlay-at (point)))
     (diff-hl-previous-hunk)))
+
+  (setq diff-hl-show-hunk--original-overlay nil)
+
+  ;; Store begining and end of hunk overlay
+  (let ((overlay (diff-hl-hunk-overlay-at (point))))
+    (when overlay
+      (let ((start (overlay-start overlay))
+            (end (overlay-end overlay)))
+        (setq diff-hl-show-hunk--original-overlay (make-overlay start end)))))
+  
   (cond
    ((not diff-hl-show-hunk-function)
     (message "Please configure `diff-hl-show-hunk-function'")

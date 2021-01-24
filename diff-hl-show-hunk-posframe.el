@@ -163,7 +163,7 @@ The button calls an ACTION."
     #'diff-hl-show-hunk-revert-hunk)))
 
 ;;;###autoload
-(defun diff-hl-show-hunk-posframe (buffer &optional line)
+(defun diff-hl-show-hunk-posframe (buffer &optional _line)
   "Implementation to show the hunk in a posframe."
 
   (unless (require 'posframe nil t)
@@ -190,24 +190,27 @@ The button calls an ACTION."
 
   (setq posframe-mouse-banish nil)
   (setq diff-hl-show-hunk--original-frame last-event-frame)
-  (setq
-   diff-hl-show-hunk--frame
-   (posframe-show buffer
-                  :position (point)
-                  :poshandler diff-hl-show-hunk-posframe-poshandler
-                  :internal-border-width diff-hl-show-hunk-posframe-internal-border-width
-                  :accept-focus t
-                  ;; internal-border-color Doesn't always work, if not customize internal-border face
-                  :internal-border-color diff-hl-show-hunk-posframe-internal-border-color
-                  :hidehandler nil
-                  ;; Sometimes, header-line is not taken into account, so put a min height and a min width
-                  :min-height (when diff-hl-show-hunk-posframe-show-header-line 10)
-                  :min-width (when diff-hl-show-hunk-posframe-show-header-line
-                               (length (diff-hl-show-hunk-posframe--header-line)))
-                  :respect-header-line diff-hl-show-hunk-posframe-show-header-line
-                  :respect-tab-line nil
-                  :respect-mode-line nil
-                  :override-parameters diff-hl-show-hunk-posframe-parameters))
+
+  (let* ((hunk-overlay (diff-hl-hunk-overlay-at (point)))
+         (position (overlay-end hunk-overlay)))
+    (setq
+     diff-hl-show-hunk--frame
+     (posframe-show buffer
+                    :position (point-at-bol)
+                    :poshandler diff-hl-show-hunk-posframe-poshandler
+                    :internal-border-width diff-hl-show-hunk-posframe-internal-border-width
+                    :accept-focus t
+                    ;; internal-border-color Doesn't always work, if not customize internal-border face
+                    :internal-border-color diff-hl-show-hunk-posframe-internal-border-color
+                    :hidehandler nil
+                    ;; Sometimes, header-line is not taken into account, so put a min height and a min width
+                    :min-height (when diff-hl-show-hunk-posframe-show-header-line 10)
+                    :min-width (when diff-hl-show-hunk-posframe-show-header-line
+                                 (length (diff-hl-show-hunk-posframe--header-line)))
+                    :respect-header-line diff-hl-show-hunk-posframe-show-header-line
+                    :respect-tab-line nil
+                    :respect-mode-line nil
+                    :override-parameters diff-hl-show-hunk-posframe-parameters)))
 
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-internal-border t)
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-with-header-line t)
@@ -218,8 +221,6 @@ The button calls an ACTION."
       (when diff-hl-show-hunk-posframe-show-header-line
         (setq header-line-format (diff-hl-show-hunk-posframe--header-line)))
       (goto-char (point-min))
-      (when line
-        (forward-line (1- line)))
       (setq buffer-quit-function #'diff-hl-show-hunk--posframe-hide)
       (select-window (window-main-window diff-hl-show-hunk--frame))
 

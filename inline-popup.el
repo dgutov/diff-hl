@@ -32,6 +32,7 @@
 (defvar inline-popup--invokinkg-command nil "Command that invoked the popup.")
 (defvar inline-popup--current-footer nil "String to be displayed in the footer.")
 (defvar inline-popup--current-header nil "String to be displayed in the header.")
+(defvar inline-popup--height nil "Height of the popup.")
 (defvar inline-popup--current-custom-keymap nil "Keymap to be added to the keymap of the inline popup.")
 (defvar inline-popup--close-hook nil "Function to be called when the popup closes.")
 
@@ -42,6 +43,7 @@
 (make-variable-buffer-local 'inline-popup--current-footer)
 (make-variable-buffer-local 'inline-popup--invokinkg-command)
 (make-variable-buffer-local 'inline-popup--current-custom-keymap)
+(make-variable-buffer-local 'inline-popup--height)
 (make-variable-buffer-local 'inline-popup--close-hook)
 
 (defun inline-popup--splice (list offset length)
@@ -60,7 +62,6 @@
          (end (line-number-at-pos (window-end nil t)))
          (height (+ 6 content-height))
          (overflow (- (+ line height) end)))
-    ;; (message "line:%s end:%s height:%s overflow:%s" line end height overflow)
     (when (< 0 overflow)
       (run-with-timer 0.1 nil #'scroll-up overflow))))
 
@@ -90,14 +91,14 @@ Default for CONTENT-SIZE is the size of the current lines"
 
 (defun inline-popup--compute-footer (width &optional footer)
   "Compute the header of the popup, with some WIDTH, and some optional FOOTER text."
-  (let* ((scroll-indicator (if (>= inline-popup--current-index (- (length inline-popup--current-lines) (inline-popup--compute-content-height))) "   "     " ⬇ "))
+  (let* ((scroll-indicator (if (>= inline-popup--current-index (- (length inline-popup--current-lines) inline-popup--height)) "   "     " ⬇ "))
          (footer (or footer ""))
          (new-width (- width (length footer) (length scroll-indicator)))
          (footer (if (< new-width 0) "" footer))
          (new-width (- width (length footer) (length scroll-indicator)))
          (blank-line (propertize (inline-popup--separator width) 'face '(:underline t)))
          (line (propertize (concat (inline-popup--separator new-width) footer scroll-indicator))))
-    (concat blank-line "\n" line)))
+    (concat "\n" blank-line "\n" line)))
 
 (defun inline-popup--separator (width &optional sep)
   "Return the horizontal separator with character SEP and a WIDTH."
@@ -116,8 +117,10 @@ Default for CONTENT-SIZE is the size of the current lines"
              (linenumber-width (line-number-display-width t))
              (available-pixels (- window-width linenumber-width))
              (width (- (/ available-pixels font-width) magic-adjust)))
-      ;; https://emacs.stackexchange.com/questions/5495/how-can-i-determine-the-width-of-characters-on-the-screen
-      width))))
+
+        ;; https://emacs.stackexchange.com/questions/5495/how-can-i-determine-the-width-of-characters-on-the-screen
+        width))))
+
 
 (defun inline-popup--compute-popup-str (lines index window-size header footer)
   "Compute the string that represents the popup.
@@ -127,16 +130,16 @@ FOOTER are showed at start and end."
          (content-lines (inline-popup--compute-content-lines lines index window-size))
          (header (inline-popup--compute-header width header))
          (footer (inline-popup--compute-footer width footer)))
-    (concat header (string-join content-lines  "\n" ) footer)))
+    (concat header (string-join content-lines  "\n" ) footer "\n")))
 
 (defun inline-popup-scroll-to (index)
   "Scroll the inline popup to make visible the line at position INDEX."
   (when inline-popup--current-popup
-    (setq inline-popup--current-index (max 0 (min index (- (length inline-popup--current-lines) (inline-popup--compute-content-height)))))
+    (setq inline-popup--current-index (max 0 (min index (- (length inline-popup--current-lines) inline-popup--height))))
     (let* ((str (inline-popup--compute-popup-str
                  inline-popup--current-lines
                  inline-popup--current-index
-                 (inline-popup--compute-content-height)
+                 inline-popup--height
                  inline-popup--current-header
                  inline-popup--current-footer)))
       (overlay-put inline-popup--current-popup 'after-string str))))
@@ -154,12 +157,12 @@ FOOTER are showed at start and end."
 (defun inline-popup--popup-pagedown()
   "Scrolls one page down."
   (interactive)
-  (inline-popup-scroll-to (+ inline-popup--current-index  (inline-popup--compute-content-height)) ))
+  (inline-popup-scroll-to (+ inline-popup--current-index  inline-popup--height) ))
 
 (defun inline-popup--popup-pageup()
   "Scrolls one page up."
   (interactive)
-  (inline-popup-scroll-to (-  inline-popup--current-index (inline-popup--compute-content-height)) ))
+  (inline-popup-scroll-to (-  inline-popup--current-index inline-popup--height) ))
 
 (defvar inline-popup-transient-mode-map
   (let ((map (make-sparse-keymap)))
@@ -190,7 +193,7 @@ to scroll in the popup")
   (let ((keys (where-is-internal command (list inline-popup--current-custom-keymap inline-popup-transient-mode-map ) t))
         (invoking (eq command inline-popup--invokinkg-command)))
     (or keys invoking)))
-  
+
 (defun inline-popup--post-command-hook ()
   "Called each time a command is executed."
   (let ((allowed-command (or
@@ -223,7 +226,7 @@ to scroll in the popup")
     (setq inline-popup--current-popup nil)))
 
 ;;;###autoload
-(defun inline-popup-show (lines &optional header footer keymap close-hook point)
+(defun inline-popup-show (lines &optional header footer keymap close-hook point height)
   "Create a phantom overlay to show the inline popup, with some
 content LINES, and a HEADER and a FOOTER, at POINT.  KEYMAP is
 added to the current keymaps.  CLOSE-HOOK is called when the popup
@@ -237,13 +240,16 @@ is closed."
     (overlay-put overlay 'inline-popup t)
     (setq inline-popup--current-popup overlay)
 
-    (setq inline-popup--current-lines lines)
+    (setq inline-popup--current-lines
+          (mapcar (lambda (s) (replace-regexp-in-string "\n" " " s)) lines))
     (setq inline-popup--current-header header)
     (setq inline-popup--current-footer footer)
     (setq inline-popup--invokinkg-command this-command)
     (setq inline-popup--current-custom-keymap keymap)
     (setq inline-popup--close-hook close-hook)
-    (inline-popup--ensure-enough-lines point (inline-popup--compute-content-height))
+    (setq inline-popup--height (inline-popup--compute-content-height height))
+    (setq inline-popup--height (min inline-popup--height (length inline-popup--current-lines)))
+    (inline-popup--ensure-enough-lines point inline-popup--height)
     (inline-popup-transient-mode 1)
     (inline-popup-scroll-to 0)
     overlay))
