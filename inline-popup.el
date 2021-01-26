@@ -96,9 +96,11 @@ Default for CONTENT-SIZE is the size of the current lines"
          (new-width (- width (length footer) (length scroll-indicator)))
          (footer (if (< new-width 0) "" footer))
          (new-width (- width (length footer) (length scroll-indicator)))
-         (blank-line (propertize (inline-popup--separator width) 'face '(:underline t)))
-         (line (propertize (concat (inline-popup--separator new-width) footer scroll-indicator))))
-    (concat "\n" blank-line "\n" line)))
+         (blank-line (if (display-graphic-p)
+                         ""
+                       (propertize (concat "\n" (inline-popup--separator width)) 'face '(:underline t))))
+         (line (propertize (concat (inline-popup--separator new-width) footer scroll-indicator) 'face '(:overline t))))
+    (concat blank-line "\n" line)))
 
 (defun inline-popup--separator (width &optional sep)
   "Return the horizontal separator with character SEP and a WIDTH."

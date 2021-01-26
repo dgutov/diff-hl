@@ -191,12 +191,12 @@ The button calls an ACTION."
   (setq posframe-mouse-banish nil)
   (setq diff-hl-show-hunk--original-frame last-event-frame)
 
-  (let* ((hunk-overlay (diff-hl-hunk-overlay-at (point)))
+  (let* ((hunk-overlay diff-hl-show-hunk--original-overlay)
          (position (overlay-end hunk-overlay)))
     (setq
      diff-hl-show-hunk--frame
      (posframe-show buffer
-                    :position (point-at-bol)
+                    :position position
                     :poshandler diff-hl-show-hunk-posframe-poshandler
                     :internal-border-width diff-hl-show-hunk-posframe-internal-border-width
                     :accept-focus t

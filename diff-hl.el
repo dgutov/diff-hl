@@ -508,20 +508,27 @@ in the source file, or the last line of the hunk above it."
            when (overlay-get o 'diff-hl-hunk)
            return o))
 
+(defun diff-hl-search-next-hunk (&optional backward point)
+  "Search the next hunk in the current buffer, or previous if BACKWARD."
+  (interactive)
+  (save-excursion
+    (when point
+      (goto-char point))
+    (catch 'found
+      (while (not (if backward (bobp) (eobp)))
+        (goto-char (if backward
+                       (previous-overlay-change (point))
+                     (next-overlay-change (point))))
+        (let ((o (diff-hl-hunk-overlay-at (point))))
+          (when (and o (= (overlay-start o) (point)))
+            (throw 'found  o)))))))
+
 (defun diff-hl-next-hunk (&optional backward)
   "Go to the beginning of the next hunk in the current buffer."
   (interactive)
-  (let ((pos (save-excursion
-               (catch 'found
-                 (while (not (if backward (bobp) (eobp)))
-                   (goto-char (if backward
-                                  (previous-overlay-change (point))
-                                (next-overlay-change (point))))
-                   (let ((o (diff-hl-hunk-overlay-at (point))))
-                     (when (and o (= (overlay-start o) (point)))
-                       (throw 'found (overlay-start o)))))))))
-    (if pos
-        (goto-char pos)
+  (let ((overlay (diff-hl-search-next-hunk backward)))
+    (if overlay
+        (goto-char (overlay-start overlay))
       (user-error "No further hunks found"))))
 
 (defun diff-hl-previous-hunk ()
