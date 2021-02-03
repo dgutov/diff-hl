@@ -89,7 +89,7 @@
   :group 'diff-hl)
 
 (defconst diff-hl-show-hunk-boundary "^@@.*@@")
-(defconst diff-hl-show-hunk--no-lines-removed-message (list "<<no lines changed>>"))
+(defconst diff-hl-show-hunk--no-lines-removed-message (list "<<no lines removed>>"))
 
 (defcustom diff-hl-show-hunk-inline-popup-hide-hunk nil
   "If t, inline-popup is shown over the hunk, hiding it."
@@ -333,7 +333,7 @@ BUFFER is a buffer with the hunk."
 (defun diff-hl-show-hunk--next-hunk (backward point)
   "Same as `diff-hl-search-next-hunk', but in the current buffer
 of `diff-hl-show-hunk'."
-  (with-current-buffer diff-hl-show-hunk--original-buffer
+  (with-current-buffer (or diff-hl-show-hunk--original-buffer (current-buffer))
     (diff-hl-search-next-hunk backward point)))
 
 (defun diff-hl-show-hunk--goto-hunk-overlay (overlay)
@@ -366,9 +366,13 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
 ;;;###autoload
 (defun diff-hl-show-hunk ()
   "Show the VC diff hunk at point.
-The backend is determined by `diff-hl-show-hunk-function'.  If
-not, it falls back to `diff-hl-diff-goto-hunk'."
+The backend is determined by `diff-hl-show-hunk-function'."
   (interactive)
+
+  ;; Close any previous hunk
+  (save-excursion
+    (diff-hl-show-hunk-hide))
+  
   (cond
    ((not (vc-backend buffer-file-name))
     (user-error "The buffer is not under version control"))
@@ -382,7 +386,9 @@ not, it falls back to `diff-hl-diff-goto-hunk'."
     (when overlay
       (let ((start (overlay-start overlay))
             (end (overlay-end overlay)))
-        (setq diff-hl-show-hunk--original-overlay (make-overlay start end)))))
+        (setq diff-hl-show-hunk--original-overlay (make-overlay start end))))
+    (unless overlay
+      (user-error "Not in a hunk")))
   
   (cond
    ((not diff-hl-show-hunk-function)
