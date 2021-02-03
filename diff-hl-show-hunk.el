@@ -100,8 +100,8 @@
 hunk.  The added lines are shown when scrolling the popup.  If
 the hunk consist only on added lines, then
 `diff-hl-show-hunk--no-lines-removed-message' it is shown.  If
-`diff-hl-show-hunk-inline-popup-hide-hunk' is t, this value is
-ignored and assumed to be nil."
+`diff-hl-show-hunk-inline-popup-hide-hunk' is nil, this value is
+ignored and assumed to be t."
   :type 'boolean)
 
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
@@ -248,7 +248,7 @@ BUFFER is a buffer with the hunk."
   (inline-popup-hide)
   (setq diff-hl-show-hunk--hide-function #'inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
-         (smart-lines (and diff-hl-show-hunk-inline-popup-smart-lines (not diff-hl-show-hunk-inline-popup-hide-hunk)))
+         (smart-lines (or diff-hl-show-hunk-inline-popup-smart-lines (not diff-hl-show-hunk-inline-popup-hide-hunk)))
          (original-lines-number (cl-count-if (lambda (s) (string-prefix-p "-" s)) lines))
          (lines (if (string= (car (last lines)) "" ) (butlast lines) lines))
          (lines (if (and (eq original-lines-number 0) smart-lines)
