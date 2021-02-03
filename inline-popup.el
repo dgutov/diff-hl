@@ -87,7 +87,7 @@ Default for CONTENT-SIZE is the size of the current lines"
          (header (if (< new-width 0) "" header))
          (new-width (- width (length header) (length scroll-indicator)))
          (line (propertize (concat (inline-popup--separator new-width) header scroll-indicator ) 'face '(:underline t))))
-    (concat "\n" line "\n") ))
+    (concat line "\n") ))
 
 (defun inline-popup--compute-footer (width &optional footer)
   "Compute the header of the popup, with some WIDTH, and some optional FOOTER text."
@@ -233,6 +233,10 @@ to scroll in the popup")
 content LINES, and a HEADER and a FOOTER, at POINT.  KEYMAP is
 added to the current keymaps.  CLOSE-HOOK is called when the popup
 is closed."
+  (when inline-popup--current-popup
+    (delete-overlay inline-popup--current-popup)
+    (setq inline-popup--current-popup nil))
+  
   (when (< (inline-popup--compute-content-height 99) 2)
     (user-error "There is no enough vertical space to show the inline popup"))
   (let* ((the-point (or point (point-at-eol)))

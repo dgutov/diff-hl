@@ -63,6 +63,9 @@
   "Face for the posframe buffer.
 Customize it to change the base properties of the text.")
 
+(defface diff-hl-show-hunk-posframe-button-face '((t . (:height 0.9)))
+  "Face for the posframe buttons" )
+
 (defvar diff-hl-show-hunk--frame nil "The postframe frame used in function `diff-hl-show-hunk-posframe'.")
 (defvar diff-hl-show-hunk--original-frame nil "The frame from which the hunk is shown.")
 
@@ -127,7 +130,7 @@ The button calls an ACTION."
   (concat
    (propertize (concat " " text " ")
                'help-echo (if action help-echo "Not available")
-               'face '(:height 0.9) ; FIXME: Move into a named face?
+               'face 'diff-hl-show-hunk-posframe-button-face
                'mouse-face (when action '(:box (:style released-button)))
                'keymap (when action
                          (let ((map (make-sparse-keymap)))
