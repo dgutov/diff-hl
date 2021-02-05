@@ -22,7 +22,7 @@
 ;;; Commentary:
 ;;
 ;;  This provides `diff-hl-show-hunk-posframe' than can be used as
-;;  `diff-hl-show-hunk-function'. `posframe' is a runtime dependency,
+;;  `diff-hl-show-hunk-function'.  `posframe' is a runtime dependency,
 ;;  it is not required by this package, but it should be installed.
 ;;
 ;;; Code:

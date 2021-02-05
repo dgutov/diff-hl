@@ -23,9 +23,9 @@
 
 ;; `diff-hl-show-hunk' shows a popup with the modified hunk at point.
 ;; `diff-hl-show-hunk-function' contains the backend used to show the
-;; hunk. Its default value is `diff-hl-show-hunk-inline-popup', that
-;; shows diffs inline using overlay. There is another built-in backend:
-;; `diff-hl-show-hunk-posframe' (based on posframe). Other backends (for
+;; hunk.  Its default value is `diff-hl-show-hunk-inline-popup', that
+;; shows diffs inline using overlay.  There is another built-in backend:
+;; `diff-hl-show-hunk-posframe' (based on posframe).  Other backends (for
 ;; example based on `pos-tip') could also be implemented.
 ;;
 ;; `diff-hl-show-hunk-mode' adds the following keybindings:
@@ -302,7 +302,8 @@ BUFFER is a buffer with the hunk."
   (diff-hl-revert-hunk))
 
 (defun diff-hl-show-hunk-ensure-hunk-visible (&optional goto-start)
-  "Ensure that the start of the hunk at POS, and maybe the end, is visible."
+  "Ensure that the end of `diff-hl-show-hunk--original-overlay',
+and maybe the start (if GOTO-START), is visible."
   (let* ((overlay diff-hl-show-hunk--original-overlay))
     (when overlay
       (goto-char (overlay-end overlay)))
@@ -316,11 +317,8 @@ BUFFER is a buffer with the hunk."
 (defun diff-hl-show-hunk-previous ()
   "Go to previous hunk/change and show it."
   (interactive)
-  (let* ((buffer (if (buffer-live-p diff-hl-show-hunk--original-buffer)
-                    diff-hl-show-hunk--original-buffer
-                  (current-buffer)))
-        (point (if diff-hl-show-hunk--original-overlay
-                   (overlay-start diff-hl-show-hunk--original-overlay)
+  (let* ((point (if diff-hl-show-hunk--original-overlay
+                    (overlay-start diff-hl-show-hunk--original-overlay)
                  nil))
         (previous-overlay (diff-hl-show-hunk--next-hunk t point)))
     (if (not previous-overlay)
@@ -348,10 +346,7 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
 (defun diff-hl-show-hunk-next ()
   "Go to next hunk/change and show it."
   (interactive)
-  (let* ((buffer (if (buffer-live-p diff-hl-show-hunk--original-buffer)
-                     diff-hl-show-hunk--original-buffer
-                   (current-buffer)))
-         (point (if diff-hl-show-hunk--original-overlay
+  (let* ((point (if diff-hl-show-hunk--original-overlay
                     (overlay-start diff-hl-show-hunk--original-overlay)
                   nil))
          (next-overlay (diff-hl-show-hunk--next-hunk nil point)))
