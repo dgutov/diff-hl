@@ -248,7 +248,7 @@ BUFFER is a buffer with the hunk."
   (inline-popup-hide)
   (setq diff-hl-show-hunk--hide-function #'inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
-         (smart-lines (or diff-hl-show-hunk-inline-popup-smart-lines (not diff-hl-show-hunk-inline-popup-hide-hunk)))
+         (smart-lines diff-hl-show-hunk-inline-popup-smart-lines)
          (original-lines-number (cl-count-if (lambda (s) (string-prefix-p "-" s)) lines))
          (lines (if (string= (car (last lines)) "" ) (butlast lines) lines))
          (lines (if (and (eq original-lines-number 0) smart-lines)
