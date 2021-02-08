@@ -119,7 +119,7 @@ corresponding to the clicked line in the original buffer."
 (defun diff-hl-show-hunk-hide ()
   "Hide the current shown hunk."
   (interactive)
-  (if diff-hl-show-hunk--original-window
+  (if (and diff-hl-show-hunk--original-window (window-live-p diff-hl-show-hunk--original-window))
       (select-window diff-hl-show-hunk--original-window))
   (setq diff-hl-show-hunk--original-window nil)
   (if (buffer-live-p diff-hl-show-hunk--original-buffer)
