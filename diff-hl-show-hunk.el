@@ -99,9 +99,7 @@
   "If t, inline-popup tries to show only the deleted lines of the
 hunk.  The added lines are shown when scrolling the popup.  If
 the hunk consist only on added lines, then
-`diff-hl-show-hunk--no-lines-removed-message' it is shown.  If
-`diff-hl-show-hunk-inline-popup-hide-hunk' is nil, this value is
-ignored and assumed to be t."
+`diff-hl-show-hunk--no-lines-removed-message' it is shown."
   :type 'boolean)
 
 (defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
