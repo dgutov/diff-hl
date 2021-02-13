@@ -120,8 +120,6 @@ You probably shouldn't use this function directly."
   (dolist (win (get-buffer-window-list))
     (set-window-buffer win (current-buffer))))
 
-(define-obsolete-variable-alias 'diff-hl-margin-side 'diff-hl-side "1.7.1")
-
 (defun diff-hl-margin-local-mode-off ()
   (diff-hl-margin-local-mode -1))
 
