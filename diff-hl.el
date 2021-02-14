@@ -354,6 +354,7 @@ performance when viewing such files in certain conditions."
                     (hook '(diff-hl-overlay-modified)))
                 (overlay-put h 'diff-hl t)
                 (overlay-put h 'diff-hl-hunk t)
+                (overlay-put h 'diff-hl-hunk-type type)
                 (overlay-put h 'modification-hooks hook)
                 (overlay-put h 'insert-in-front-hooks hook)
                 (overlay-put h 'insert-behind-hooks hook)))))))))

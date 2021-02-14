@@ -253,7 +253,8 @@ BUFFER is a buffer with the hunk."
                     diff-hl-show-hunk--no-lines-removed-message
                   lines))
          (overlay diff-hl-show-hunk--original-overlay)
-         (point (overlay-end overlay))
+         (type (overlay-get overlay 'diff-hl-hunk-type))
+         (point (if (eq type 'delete) (overlay-start overlay) (overlay-end overlay)))
          (propertize-line (lambda (l)
                             (propertize l 'face
                                         (cond ((string-prefix-p "+" l)
@@ -264,7 +265,9 @@ BUFFER is a buffer with the hunk."
 
     (save-excursion
       ;; Save point in case the hunk is hidden, so next/previous works as expected
-      (when diff-hl-show-hunk-inline-popup-hide-hunk
+      ;; If the hunk is delete type, then don't hide the hunk (because the hunk is located in a non deleted line)
+      (when (and diff-hl-show-hunk-inline-popup-hide-hunk
+                 (not (eq type 'delete)))
         (let* ((invisible-overlay (make-overlay (overlay-start overlay) (overlay-end overlay))))
           ;; Make new overlay, since the diff-hl overlay can be changed by diff-hl-flydiff
           (overlay-put invisible-overlay 'invisible t)
@@ -286,7 +289,6 @@ BUFFER is a buffer with the hunk."
                            height))
       (diff-hl-show-hunk--goto-hunk-overlay overlay))))
 
-
 (defun diff-hl-show-hunk-copy-original-text ()
   "Extracts all the lines from BUFFER starting with '-' to the kill ring."
   (interactive)
@@ -305,11 +307,11 @@ and maybe the start (if GOTO-START), is visible."
   (let* ((overlay diff-hl-show-hunk--original-overlay))
     (when overlay
       (goto-char (overlay-end overlay)))
-      ;; Window scrolls to position only on next redisplay
-      (redisplay t)
-      (when goto-start
-        (goto-char (overlay-start overlay)))
-      ))
+    ;; Window scrolls to position only on next redisplay
+    (redisplay t)
+    (when goto-start
+      (goto-char (overlay-start overlay)))
+    ))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
@@ -317,8 +319,8 @@ and maybe the start (if GOTO-START), is visible."
   (interactive)
   (let* ((point (if diff-hl-show-hunk--original-overlay
                     (overlay-start diff-hl-show-hunk--original-overlay)
-                 nil))
-        (previous-overlay (diff-hl-show-hunk--next-hunk t point)))
+                  nil))
+         (previous-overlay (diff-hl-show-hunk--next-hunk t point)))
     (if (not previous-overlay)
         (message "There is no previous change")
       (diff-hl-show-hunk-hide)
@@ -378,8 +380,12 @@ The backend is determined by `diff-hl-show-hunk-function'."
   (let ((overlay (diff-hl-hunk-overlay-at (point))))
     (when overlay
       (let ((start (overlay-start overlay))
-            (end (overlay-end overlay)))
-        (setq diff-hl-show-hunk--original-overlay (make-overlay start end))))
+            (end (overlay-end overlay))
+            (type (overlay-get overlay 'diff-hl-hunk-type)))
+        (message "type:%s" type)
+        (setq diff-hl-show-hunk--original-overlay (make-overlay start end))
+        (overlay-put diff-hl-show-hunk--original-overlay 'diff-hl-hunk-type type)))
+    
     (unless overlay
       (user-error "Not in a hunk")))
   
