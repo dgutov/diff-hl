@@ -281,7 +281,9 @@ BUFFER is a buffer with the hunk."
                (when (not (eq 0 original-lines-number))
                  original-lines-number))))
         (inline-popup-show propertized-lines
-                           "Diff with HEAD"
+                           (if (and (boundp 'diff-hl-reference-revision) diff-hl-reference-revision)
+                               (concat "Diff with " diff-hl-reference-revision)
+                             "Diff with HEAD")
                            "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
                            diff-hl-show-hunk--inline-popup-map
                            #'diff-hl-show-hunk-hide
