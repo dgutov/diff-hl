@@ -14,7 +14,9 @@ The package also contains auxiliary modes:
 * `diff-hl-dired-mode` provides similar functionality in Dired.
 * `diff-hl-margin-mode` changes the highlighting function to
   use the margin instead of the fringe.
-* `diff-hl-amend-mode` shifts the reference revision back by one.
+* `diff-hl-amend-mode` sets the reference revision to the one before
+  recent one. Also, you could use `diff-hl-set-reference-rev` to set
+  it to any revision, see its docstring for details.
 * `diff-hl-flydiff-mode` implements highlighting changes on the fly.
   It requires Emacs 24.4 or newer.
 * `diff-hl-show-hunk-mouse-mode` enables fringe and margin to show the

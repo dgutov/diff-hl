@@ -15,7 +15,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -82,30 +82,31 @@
   :lighter "" :global t
   (if diff-hl-margin-mode
       (progn
-        (add-hook 'diff-hl-mode-on-hook 'diff-hl-margin-minor-mode)
-        (add-hook 'diff-hl-mode-off-hook 'diff-hl-margin-minor-mode-off)
-        (add-hook 'diff-hl-dired-mode-on-hook 'diff-hl-margin-minor-mode)
-        (add-hook 'diff-hl-dired-mode-off-hook 'diff-hl-margin-minor-mode-off))
-    (remove-hook 'diff-hl-mode-on-hook 'diff-hl-margin-minor-mode)
-    (remove-hook 'diff-hl-mode-off-hook 'diff-hl-margin-minor-mode-off)
-    (remove-hook 'diff-hl-dired-mode-on-hook 'diff-hl-margin-minor-mode)
-    (remove-hook 'diff-hl-dired-mode-off-hook 'diff-hl-margin-minor-mode-off))
+        (add-hook 'diff-hl-mode-on-hook 'diff-hl-margin-local-mode)
+        (add-hook 'diff-hl-mode-off-hook 'diff-hl-margin-local-mode-off)
+        (add-hook 'diff-hl-dired-mode-on-hook 'diff-hl-margin-local-mode)
+        (add-hook 'diff-hl-dired-mode-off-hook 'diff-hl-margin-local-mode-off))
+    (remove-hook 'diff-hl-mode-on-hook 'diff-hl-margin-local-mode)
+    (remove-hook 'diff-hl-mode-off-hook 'diff-hl-margin-local-mode-off)
+    (remove-hook 'diff-hl-dired-mode-on-hook 'diff-hl-margin-local-mode)
+    (remove-hook 'diff-hl-dired-mode-off-hook 'diff-hl-margin-local-mode-off))
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (cond
        (diff-hl-mode
-        (diff-hl-margin-minor-mode (if diff-hl-margin-mode 1 -1))
+        (diff-hl-margin-local-mode (if diff-hl-margin-mode 1 -1))
         (diff-hl-update))
        (diff-hl-dired-mode
-        (diff-hl-margin-minor-mode (if diff-hl-margin-mode 1 -1))
+        (diff-hl-margin-local-mode (if diff-hl-margin-mode 1 -1))
         (diff-hl-dired-update))))))
 
-(define-minor-mode diff-hl-margin-minor-mode
+;;;###autoload
+(define-minor-mode diff-hl-margin-local-mode
   "Toggle displaying `diff-hl-mode' highlights on the margin locally.
 You probably shouldn't use this function directly."
   :lighter ""
   (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
-    (if diff-hl-margin-minor-mode
+    (if diff-hl-margin-local-mode
         (progn
           (set (make-local-variable 'diff-hl-margin-old-highlight-function)
                diff-hl-highlight-function)
@@ -119,10 +120,8 @@ You probably shouldn't use this function directly."
   (dolist (win (get-buffer-window-list))
     (set-window-buffer win (current-buffer))))
 
-(define-obsolete-variable-alias 'diff-hl-margin-side 'diff-hl-side "1.7.1")
-
-(defun diff-hl-margin-minor-mode-off ()
-  (diff-hl-margin-minor-mode -1))
+(defun diff-hl-margin-local-mode-off ()
+  (diff-hl-margin-local-mode -1))
 
 (defvar diff-hl-margin-spec-cache nil)
 

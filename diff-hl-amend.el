@@ -16,7 +16,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -31,7 +31,7 @@
 (define-minor-mode diff-hl-amend-mode
   "Show changes against the second-last revision in `diff-hl-mode'.
 Most useful with backends that support rewriting local commits,
-and most importantly, 'amending' the most recent one.
+and most importantly, \"amending\" the most recent one.
 Currently only supports Git, Mercurial and Bazaar."
   :lighter " Amend"
   (if diff-hl-amend-mode
@@ -39,7 +39,7 @@ Currently only supports Git, Mercurial and Bazaar."
         (diff-hl-amend-setup)
         (add-hook 'after-revert-hook 'diff-hl-amend-setup nil t))
     (remove-hook 'after-revert-hook 'diff-hl-amend-setup t)
-    (setq-local diff-hl-reference-revision nil))
+    (kill-local-variable 'diff-hl-reference-revision))
   (when diff-hl-mode
     (diff-hl-update)))
 
@@ -57,7 +57,8 @@ Currently only supports Git, Mercurial and Bazaar."
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-amend-mode diff-hl-amend-mode
-  turn-on-diff-hl-amend-mode)
+  turn-on-diff-hl-amend-mode
+  :group 'diff-hl)
 
 (defun turn-on-diff-hl-amend-mode ()
   "Turn on `diff-hl-amend-mode' in a buffer if appropriate."

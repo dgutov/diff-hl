@@ -5,7 +5,7 @@
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
-;; Version:  1.8.7
+;; Version:  1.8.8
 ;; Package-Requires: ((cl-lib "0.2") (emacs "24.3"))
 
 ;; This file is part of GNU Emacs.
@@ -21,7 +21,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -35,6 +35,8 @@
 ;; `diff-hl-revert-hunk'     C-x v n
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
+;; `diff-hl-set-reference-rev'
+;; `diff-hl-reset-reference-rev'
 ;;
 ;; The mode takes advantage of `smartrep' if it is installed.
 
@@ -55,6 +57,8 @@
 (require 'diff-mode)
 (require 'vc)
 (require 'vc-dir)
+(require 'log-view)
+
 (eval-when-compile
   (require 'cl-lib)
   (require 'vc-git)
@@ -359,6 +363,15 @@ performance when viewing such files in certain conditions."
                 (overlay-put h 'insert-in-front-hooks hook)
                 (overlay-put h 'insert-behind-hooks hook)))))))))
 
+(defvar-local diff-hl--modified-tick nil)
+
+(put 'diff-hl--modified-tick 'permanent-local t)
+
+(defun diff-hl-update-once ()
+  (unless (equal diff-hl--modified-tick (buffer-chars-modified-tick))
+    (diff-hl-update)
+    (setq diff-hl--modified-tick (buffer-chars-modified-tick))))
+
 (defun diff-hl-add-highlighting (type shape)
   (let ((o (make-overlay (point) (point))))
     (overlay-put o 'diff-hl t)
@@ -397,21 +410,62 @@ performance when viewing such files in certain conditions."
     (unless (buffer-modified-p)
       (diff-hl-update))))
 
-(defun diff-hl-diff-goto-hunk-1 ()
+(defun diff-hl-after-revert ()
+  (defvar revert-buffer-preserve-modes)
+  (when revert-buffer-preserve-modes
+    (diff-hl-update)))
+
+(defun diff-hl-diff-goto-hunk-1 (historic)
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
-         (buffer (current-buffer)))
-    (vc-diff-internal t (vc-deduce-fileset) diff-hl-reference-revision nil t)
+         (buffer (current-buffer))
+         (rev1 diff-hl-reference-revision)
+         rev2)
+    (when historic
+      (let ((revs (diff-hl-diff-read-revisions rev1)))
+        (setq rev1 (car revs)
+              rev2 (cdr revs))))
+    (vc-diff-internal t (vc-deduce-fileset) rev1 rev2 t)
     (vc-exec-after `(if (< (line-number-at-pos (point-max)) 3)
                         (with-current-buffer ,buffer (diff-hl-remove-overlays))
-                      (diff-hl-diff-skip-to ,line)
+                      (unless ,rev2
+                        (diff-hl-diff-skip-to ,line))
                       (setq vc-sentinel-movepoint (point))))))
 
-(defun diff-hl-diff-goto-hunk ()
+(defun diff-hl-diff-goto-hunk (&optional historic)
   "Run VC diff command and go to the line corresponding to the current."
-  (interactive)
+  (interactive (list current-prefix-arg))
   (with-current-buffer (or (buffer-base-buffer) (current-buffer))
-    (diff-hl-diff-goto-hunk-1)))
+    (diff-hl-diff-goto-hunk-1 historic)))
+
+(defun diff-hl-diff-read-revisions (rev1-default)
+  (let* ((file buffer-file-name)
+         (files (list file))
+         (backend (vc-backend file))
+         (rev2-default nil))
+    (cond
+     ;; if the file is not up-to-date, use working revision as older revision
+     ((not (vc-up-to-date-p file))
+      (setq rev1-default
+            (or rev1-default
+                (vc-working-revision file))))
+     ((not rev1-default)
+      (setq rev1-default (ignore-errors ;If `previous-revision' doesn't work.
+                           (vc-call-backend backend 'previous-revision file
+                                            (vc-working-revision file))))
+      (when (string= rev1-default "") (setq rev1-default nil))))
+    ;; finally read the revisions
+    (let* ((rev1-prompt (if rev1-default
+                            (concat "Older revision (default "
+                                    rev1-default "): ")
+                          "Older revision: "))
+           (rev2-prompt (concat "Newer revision (default "
+                                (or rev2-default "current source") "): "))
+           (rev1 (vc-read-revision rev1-prompt files backend rev1-default))
+           (rev2 (vc-read-revision rev2-prompt files backend rev2-default)))
+      (when (string= rev1 "") (setq rev1 nil))
+      (when (string= rev2 "") (setq rev2 nil))
+      (cons rev1 rev2))))
 
 (defun diff-hl-diff-skip-to (line)
   "In `diff-mode', skip to the hunk and line corresponding to LINE
@@ -579,9 +633,9 @@ The value of this variable is a mode line template as in
                     ;; let's wait until the state information is
                     ;; saved, in order not to fetch it twice.
                     'find-file-hook)
-                  'diff-hl-update t t)
+                  'diff-hl-update-once t t)
         (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
-        (add-hook 'after-revert-hook 'diff-hl-update nil t)
+        (add-hook 'after-revert-hook 'diff-hl-after-revert nil t)
         ;; Magit does call `auto-revert-handler', but it usually
         ;; doesn't do much, because `buffer-stale--default-function'
         ;; doesn't care about changed VC state.
@@ -764,6 +818,51 @@ your `exec-path'."
                (not (memq major-mode (cdr diff-hl-global-modes))))
               (t (memq major-mode diff-hl-global-modes)))
     (turn-on-diff-hl-mode)))
+
+;;;###autoload
+(defun diff-hl-set-reference-rev (&optional rev)
+  "Set the reference revision globally to REV.
+When called interactively, REV is get from contexts:
+
+- In a log view buffer, it uses the revision of current entry.
+Call `vc-print-log' or `vc-print-root-log' first to open a log
+view buffer.
+- In a VC annotate buffer, it uses the revision of current line.
+- In other situations, get the revision name at point.
+
+Notice that this sets the reference revision globally, so in
+files from other repositories, `diff-hl-mode' will not highlight
+changes correctly, until you run `diff-hl-reset-reference-rev'.
+
+Also notice that this will disable `diff-hl-amend-mode' in
+buffers that enables it, since `diff-hl-amend-mode' overrides its
+effect."
+  (interactive)
+  (let* ((rev (or rev
+                  (and (equal major-mode 'vc-annotate-mode)
+                       (car (vc-annotate-extract-revision-at-line)))
+                  (log-view-current-tag)
+                  (thing-at-point 'symbol t))))
+    (if rev
+        (message "Set reference rev to %s" rev)
+      (user-error "Can't find a revision around point"))
+    (setq diff-hl-reference-revision rev))
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when diff-hl-mode
+        (when (bound-and-true-p diff-hl-amend-mode)
+          (diff-hl-amend-mode -1))
+        (diff-hl-update)))))
+
+;;;###autoload
+(defun diff-hl-reset-reference-rev ()
+  "Reset the reference revision globally to the most recent one."
+  (interactive)
+  (setq diff-hl-reference-revision nil)
+  (dolist (buf (buffer-list))
+    (with-current-buffer buf
+      (when diff-hl-mode
+        (diff-hl-update)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-diff-hl-mode diff-hl-mode
