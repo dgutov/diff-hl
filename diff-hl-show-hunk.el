@@ -312,8 +312,7 @@ and maybe the start (if GOTO-START), is visible."
     ;; Window scrolls to position only on next redisplay
     (redisplay t)
     (when goto-start
-      (goto-char (overlay-start overlay)))
-    ))
+      (goto-char (overlay-start overlay)))))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
@@ -357,7 +356,6 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
       (diff-hl-show-hunk-hide)
       (diff-hl-show-hunk--goto-hunk-overlay next-overlay)
       (recenter)
-      ;;(run-with-timer 0 nil #'diff-hl-show-hunk))))
       (diff-hl-show-hunk))))
 
 ;;;###autoload
@@ -384,7 +382,6 @@ The backend is determined by `diff-hl-show-hunk-function'."
       (let ((start (overlay-start overlay))
             (end (overlay-end overlay))
             (type (overlay-get overlay 'diff-hl-hunk-type)))
-        (message "type:%s" type)
         (setq diff-hl-show-hunk--original-overlay (make-overlay start end))
         (overlay-put diff-hl-show-hunk--original-overlay 'diff-hl-hunk-type type)))
     
