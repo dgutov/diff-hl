@@ -711,6 +711,25 @@ The value of this variable is a mode line template as in
           (with-current-buffer buffer
             (diff-hl-remove-overlays)))))))
 
+(defun diff-hl-read-or-deduce-revision ()
+  "Deduce a revision from context, as described in
+`diff-hl-set-reference-rev'."
+  (let* ((at-point (thing-at-point 'symbol t))
+         (prompt (if at-point (format "Reference revision (default %s):" at-point) "Reference revision:"))
+         (revision  (or (and (equal major-mode 'vc-annotate-mode)
+                             (car (vc-annotate-extract-revision-at-line)))
+                        (log-view-current-tag)
+                        (when (vc-backend (buffer-file-name))
+                          (vc-read-revision prompt
+                                            (list buffer-file-name)
+                                            nil
+                                            at-point
+                                            nil))
+                        (thing-at-point 'symbol t))))
+    (when (string= "" revision)
+      (user-error "Empty revision"))
+    revision))
+
 (define-minor-mode diff-hl-dir-mode
   "Toggle `diff-hl-mode' integration in a `vc-dir-mode' buffer."
   :lighter ""
@@ -746,6 +765,7 @@ When called interactively, REV is get from contexts:
 Call `vc-print-log' or `vc-print-root-log' first to open a log
 view buffer.
 - In a VC annotate buffer, it uses the revision of current line.
+- If in a VC backed buffer, read the revision from minibuffer
 - In other situations, get the revision name at point.
 
 Notice that this sets the reference revision globally, so in
@@ -755,16 +775,11 @@ changes correctly, until you run `diff-hl-reset-reference-rev'.
 Also notice that this will disable `diff-hl-amend-mode' in
 buffers that enables it, since `diff-hl-amend-mode' overrides its
 effect."
-  (interactive)
-  (let* ((rev (or rev
-                  (and (equal major-mode 'vc-annotate-mode)
-                       (car (vc-annotate-extract-revision-at-line)))
-                  (log-view-current-tag)
-                  (thing-at-point 'symbol t))))
-    (if rev
-        (message "Set reference rev to %s" rev)
-      (user-error "Can't find a revision around point"))
-    (setq diff-hl-reference-revision rev))
+  (interactive (list (diff-hl-read-or-deduce-revision)))
+  (if rev
+      (message "Set reference rev to %s" rev)
+    (user-error "Can't find a revision around point"))
+  (setq diff-hl-reference-revision rev)
   (dolist (buf (buffer-list))
     (with-current-buffer buf
       (when diff-hl-mode
