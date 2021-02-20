@@ -725,7 +725,7 @@ The value of this variable is a mode line template as in
                                             nil
                                             at-point
                                             nil))
-                        (thing-at-point 'symbol t))))
+                        at-point)))
     (when (string= "" revision)
       (user-error "Empty revision"))
     revision))
