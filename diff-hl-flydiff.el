@@ -1,4 +1,4 @@
-;; Copyright (C) 2015-2018 Free Software Foundation, Inc.
+;; Copyright (C) 2015-2021 Free Software Foundation, Inc.
 
 ;; Author:   Jonathan Hayase <PythonNut@gmail.com>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -27,8 +27,6 @@
 
 (require 'diff-hl)
 (require 'diff)
-(unless (require 'nadvice nil t)
-  (error "`diff-hl-flydiff-mode' requires Emacs 24.4 or newer"))
 
 (defgroup diff-hl-flydiff nil
   "Highlight changes on the fly"
@@ -41,42 +39,6 @@
 (defvar diff-hl-flydiff-modified-tick nil)
 (defvar diff-hl-flydiff-timer nil)
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
-
-(defun diff-hl-flydiff/vc-git--symbolic-ref (file)
-  (or
-   (vc-file-getprop file 'vc-git-symbolic-ref)
-   (let* (process-file-side-effects
-          (str (vc-git--run-command-string nil "symbolic-ref" "HEAD")))
-     (vc-file-setprop file 'vc-git-symbolic-ref
-                      (if str
-                          (if (string-match "^\\(refs/heads/\\)?\\(.+\\)$" str)
-                              (match-string 2 str)
-                            str))))))
-
-(defun diff-hl-flydiff/vc-git-working-revision (_file)
-  "Git-specific version of `vc-working-revision'."
-  (let (process-file-side-effects)
-    (vc-git--rev-parse "HEAD")))
-
-(defun diff-hl-flydiff/vc-git-mode-line-string (file)
-  "Return a string for `vc-mode-line' to put in the mode line for FILE."
-  (let* ((rev (vc-working-revision file))
-         (disp-rev (or (diff-hl-flydiff/vc-git--symbolic-ref file)
-                       (substring rev 0 7)))
-         (def-ml (vc-default-mode-line-string 'Git file))
-         (help-echo (get-text-property 0 'help-echo def-ml))
-         (face   (get-text-property 0 'face def-ml)))
-    (propertize (replace-regexp-in-string (concat rev "\\'") disp-rev def-ml t t)
-                'face face
-                'help-echo (concat help-echo "\nCurrent revision: " rev))))
-
-;; Polyfill concrete revisions for vc-git-working-revision in Emacs 24.4, 24.5
-(when (version<= emacs-version "25.0")
-  (with-eval-after-load 'vc-git
-    (advice-add 'vc-git-working-revision :override
-                #'diff-hl-flydiff/vc-git-working-revision)
-    (advice-add 'vc-git-mode-line-string :override
-                #'diff-hl-flydiff/vc-git-mode-line-string)))
 
 (defun diff-hl-flydiff-buffer-with-head (file &optional _backend)
   "View the differences between FILE and its associated file in HEAD revision.

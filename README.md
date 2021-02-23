@@ -18,7 +18,6 @@ The package also contains auxiliary modes:
   recent one. Also, you could use `diff-hl-set-reference-rev` to set
   it to any revision, see its docstring for details.
 * `diff-hl-flydiff-mode` implements highlighting changes on the fly.
-  It requires Emacs 24.4 or newer.
 * `diff-hl-show-hunk-mouse-mode` makes fringe and margin react to
   mouse clicks to show the curresponding hunk. That's the alternative
   to using the `diff-hl-show-hunk` family of commands.
@@ -57,7 +56,7 @@ diff-hl-margin-mode
 Requirements
 =====
 
-Emacs 24.3+.
+Emacs 25.1+.
 
 Notes
 =====

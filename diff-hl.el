@@ -1,12 +1,12 @@
 ;;; diff-hl.el --- Highlight uncommitted changes using VC -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2020  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2021  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
 ;; Version:  1.8.8
-;; Package-Requires: ((cl-lib "0.2") (emacs "24.3"))
+;; Package-Requires: ((cl-lib "0.2") (emacs "25.1"))
 
 ;; This file is part of GNU Emacs.
 
