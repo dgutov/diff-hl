@@ -771,11 +771,14 @@ the user should be returned."
                    (vc-call-backend (or backend (vc-backend file))
                                     'working-revision file)))
 
+(declare-function diff-no-select "diff")
+
 (defun diff-hl-diff-buffer-with-head (file &optional dest-buffer backend)
   "Compute the differences between FILE and its associated file
 in head revision. The diffs are computed in the buffer
 DEST-BUFFER. This requires the external program `diff' to be in
 your `exec-path'."
+  (require 'diff)
   (vc-ensure-vc-buffer)
   (save-current-buffer
     (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-bufer-with-head*"))
