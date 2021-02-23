@@ -576,7 +576,7 @@ in the source file, or the last line of the hunk above it."
                      (next-overlay-change (point))))
         (let ((o (diff-hl-hunk-overlay-at (point))))
           (when (and o (= (overlay-start o) (point)))
-            (throw 'found  o)))))))
+            (throw 'found o)))))))
 
 (defun diff-hl-next-hunk (&optional backward)
   "Go to the beginning of the next hunk in the current buffer."

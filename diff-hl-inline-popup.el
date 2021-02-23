@@ -86,20 +86,29 @@ Default for CONTENT-SIZE is the size of the current lines"
          (new-width (- width (length header) (length scroll-indicator)))
          (header (if (< new-width 0) "" header))
          (new-width (- width (length header) (length scroll-indicator)))
-         (line (propertize (concat (diff-hl-inline-popup--separator new-width) header scroll-indicator ) 'face '(:underline t))))
+         (line (propertize (concat (diff-hl-inline-popup--separator new-width)
+                                   header scroll-indicator )
+                           'face '(:underline t))))
     (concat line "\n") ))
 
 (defun diff-hl-inline-popup--compute-footer (width &optional footer)
   "Compute the header of the popup, with some WIDTH, and some optional FOOTER text."
-  (let* ((scroll-indicator (if (>= diff-hl-inline-popup--current-index (- (length diff-hl-inline-popup--current-lines) diff-hl-inline-popup--height)) "   "     " ⬇ "))
+  (let* ((scroll-indicator (if (>= diff-hl-inline-popup--current-index
+                                   (- (length diff-hl-inline-popup--current-lines)
+                                      diff-hl-inline-popup--height))
+                               "   "
+                             " ⬇ "))
          (footer (or footer ""))
          (new-width (- width (length footer) (length scroll-indicator)))
          (footer (if (< new-width 0) "" footer))
          (new-width (- width (length footer) (length scroll-indicator)))
          (blank-line (if (display-graphic-p)
                          ""
-                       (propertize (concat "\n" (diff-hl-inline-popup--separator width)) 'face '(:underline t))))
-         (line (propertize (concat (diff-hl-inline-popup--separator new-width) footer scroll-indicator) 'face '(:overline t))))
+                       (propertize (concat "\n" (diff-hl-inline-popup--separator width))
+                                   'face '(:underline t))))
+         (line (propertize (concat (diff-hl-inline-popup--separator new-width)
+                                   footer scroll-indicator)
+                           'face '(:overline t))))
     (concat blank-line "\n" line)))
 
 (defun diff-hl-inline-popup--separator (width &optional sep)
@@ -123,7 +132,6 @@ Default for CONTENT-SIZE is the size of the current lines"
         ;; https://emacs.stackexchange.com/questions/5495/how-can-i-determine-the-width-of-characters-on-the-screen
         width))))
 
-
 (defun diff-hl-inline-popup--compute-popup-str (lines index window-size header footer)
   "Compute the string that represents the popup.
 There are some content LINES starting at INDEX, with a WINDOW-SIZE.  HEADER and
@@ -132,7 +140,7 @@ FOOTER are showed at start and end."
          (content-lines (diff-hl-inline-popup--compute-content-lines lines index window-size))
          (header (diff-hl-inline-popup--compute-header width header))
          (footer (diff-hl-inline-popup--compute-footer width footer)))
-    (concat header (string-join content-lines  "\n" ) footer "\n")))
+    (concat header (string-join content-lines "\n") footer "\n")))
 
 (defun diff-hl-inline-popup-scroll-to (index)
   "Scroll the inline popup to make visible the line at position INDEX."
@@ -192,7 +200,8 @@ to scroll in the popup")
 (defun diff-hl-inline-popup--ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing an inline popup."
   ;; https://emacs.stackexchange.com/questions/653/how-can-i-find-out-in-which-keymap-a-key-is-bound
-  (let ((keys (where-is-internal command (list diff-hl-inline-popup--current-custom-keymap diff-hl-inline-popup-transient-mode-map ) t))
+  (let ((keys (where-is-internal command (list diff-hl-inline-popup--current-custom-keymap
+                                               diff-hl-inline-popup-transient-mode-map ) t))
         (invoking (eq command diff-hl-inline-popup--invokinkg-command)))
     (or keys invoking)))
 
@@ -211,7 +220,8 @@ to scroll in the popup")
   (set-keymap-parent diff-hl-inline-popup-transient-mode-map nil)
 
   (when diff-hl-inline-popup-transient-mode
-    (set-keymap-parent diff-hl-inline-popup-transient-mode-map diff-hl-inline-popup--current-custom-keymap)
+    (set-keymap-parent diff-hl-inline-popup-transient-mode-map
+                       diff-hl-inline-popup--current-custom-keymap)
     (add-hook 'post-command-hook #'diff-hl-inline-popup--post-command-hook 0 t)))
 
 ;;;###autoload
@@ -254,7 +264,8 @@ is closed."
     (setq diff-hl-inline-popup--current-custom-keymap keymap)
     (setq diff-hl-inline-popup--close-hook close-hook)
     (setq diff-hl-inline-popup--height (diff-hl-inline-popup--compute-content-height height))
-    (setq diff-hl-inline-popup--height (min diff-hl-inline-popup--height (length diff-hl-inline-popup--current-lines)))
+    (setq diff-hl-inline-popup--height (min diff-hl-inline-popup--height
+                                            (length diff-hl-inline-popup--current-lines)))
     (diff-hl-inline-popup--ensure-enough-lines point diff-hl-inline-popup--height)
     (diff-hl-inline-popup-transient-mode 1)
     (diff-hl-inline-popup-scroll-to 0)
