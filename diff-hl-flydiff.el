@@ -78,65 +78,11 @@
     (advice-add 'vc-git-mode-line-string :override
                 #'diff-hl-flydiff/vc-git-mode-line-string)))
 
-(defun diff-hl-flydiff/working-revision (file)
-  "Like vc-working-revision, but always up-to-date"
-  (vc-file-setprop file 'vc-working-revision
-                   (vc-call-backend (vc-backend file) 'working-revision file)))
-
-(defun diff-hl-flydiff-make-temp-file-name (file rev &optional manual)
-  "Return a backup file name for REV or the current version of FILE.
-If MANUAL is non-nil it means that a name for backups created by
-the user should be returned."
-  (let* ((auto-save-file-name-transforms
-          `((".*" ,temporary-file-directory t))))
-    (expand-file-name
-     (concat (make-auto-save-file-name)
-             ".~" (subst-char-in-string
-                   ?/ ?_ rev)
-             (unless manual ".") "~")
-     temporary-file-directory)))
-
-(defun diff-hl-flydiff-create-revision (file revision)
-  "Read REVISION of FILE into a buffer and return the buffer."
-  (let ((automatic-backup (diff-hl-flydiff-make-temp-file-name file revision))
-        (filebuf (get-file-buffer file))
-        (filename (diff-hl-flydiff-make-temp-file-name file revision 'manual)))
-    (unless (file-exists-p filename)
-      (if (file-exists-p automatic-backup)
-          (rename-file automatic-backup filename nil)
-        (with-current-buffer filebuf
-          (let ((coding-system-for-read 'no-conversion)
-                (coding-system-for-write 'no-conversion))
-            (condition-case nil
-                (with-temp-file filename
-                  (let ((outbuf (current-buffer)))
-                    ;; Change buffer to get local value of
-                    ;; vc-checkout-switches.
-                    (with-current-buffer filebuf
-                      (vc-call find-revision file revision outbuf))))
-              (error
-               (when (file-exists-p filename)
-                 (delete-file filename))))))))
-    filename))
-
-(defun diff-hl-flydiff-buffer-with-head (file &optional backend)
-  "View the differences between BUFFER and its associated file.
-This requires the external program `diff' to be in your `exec-path'."
-  (interactive)
-  (vc-ensure-vc-buffer)
-  (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
-  (save-current-buffer
-    (let* ((temporary-file-directory
-            (if (file-directory-p "/dev/shm/")
-                "/dev/shm/"
-              temporary-file-directory))
-           (rev (diff-hl-flydiff-create-revision
-                 file
-                 (or diff-hl-reference-revision
-                     (diff-hl-flydiff/working-revision file)))))
-      ;; FIXME: When against staging, do it differently!
-      (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
-                      (get-buffer-create " *diff-hl-diff*")))))
+(defun diff-hl-flydiff-buffer-with-head (file &optional _backend)
+  "View the differences between FILE and its associated file in HEAD revision.
+This requires the external program `diff' to be in your
+`exec-path'."
+  (diff-hl-diff-buffer-with-head file " *diff-hl-diff*"))
 
 (defun diff-hl-flydiff-update ()
   (unless (or

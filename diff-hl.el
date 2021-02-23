@@ -358,6 +358,7 @@ performance when viewing such files in certain conditions."
                     (hook '(diff-hl-overlay-modified)))
                 (overlay-put h 'diff-hl t)
                 (overlay-put h 'diff-hl-hunk t)
+                (overlay-put h 'diff-hl-hunk-type type)
                 (overlay-put h 'modification-hooks hook)
                 (overlay-put h 'insert-in-front-hooks hook)
                 (overlay-put h 'insert-behind-hooks hook)))))))))
@@ -562,20 +563,26 @@ in the source file, or the last line of the hunk above it."
            when (overlay-get o 'diff-hl-hunk)
            return o))
 
+(defun diff-hl-search-next-hunk (&optional backward point)
+  "Search the next hunk in the current buffer, or previous if BACKWARD."
+  (save-excursion
+    (when point
+      (goto-char point))
+    (catch 'found
+      (while (not (if backward (bobp) (eobp)))
+        (goto-char (if backward
+                       (previous-overlay-change (point))
+                     (next-overlay-change (point))))
+        (let ((o (diff-hl-hunk-overlay-at (point))))
+          (when (and o (= (overlay-start o) (point)))
+            (throw 'found  o)))))))
+
 (defun diff-hl-next-hunk (&optional backward)
   "Go to the beginning of the next hunk in the current buffer."
   (interactive)
-  (let ((pos (save-excursion
-               (catch 'found
-                 (while (not (if backward (bobp) (eobp)))
-                   (goto-char (if backward
-                                  (previous-overlay-change (point))
-                                (next-overlay-change (point))))
-                   (let ((o (diff-hl-hunk-overlay-at (point))))
-                     (when (and o (= (overlay-start o) (point)))
-                       (throw 'found (overlay-start o)))))))))
-    (if pos
-        (goto-char pos)
+  (let ((overlay (diff-hl-search-next-hunk backward)))
+    (if overlay
+        (goto-char (overlay-start overlay))
       (user-error "No further hunks found"))))
 
 (defun diff-hl-previous-hunk ()
@@ -717,6 +724,72 @@ The value of this variable is a mode line template as in
   (if diff-hl-dir-mode
       (add-hook 'vc-checkin-hook 'diff-hl-dir-update t t)
     (remove-hook 'vc-checkin-hook 'diff-hl-dir-update t)))
+
+(defun diff-hl-make-temp-file-name (buffer rev &optional manual)
+  "Return a backup file name for REV or the current version of BUFFER.
+If MANUAL is non-nil it means that a name for backups created by
+the user should be returned."
+  (let* ((auto-save-file-name-transforms
+          `((".*" ,temporary-file-directory t))))
+    (expand-file-name
+     (concat (make-auto-save-file-name)
+             ".~" (subst-char-in-string
+                   ?/ ?_ rev)
+             (unless manual ".") "~")
+     temporary-file-directory)))
+
+(defun diff-hl-create-revision (file revision)
+  "Read REVISION of BUFFER into a buffer and return the buffer."
+  (let ((automatic-backup (diff-hl-make-temp-file-name file revision))
+        (filebuf (get-file-buffer file))
+        (filename (diff-hl-make-temp-file-name file revision 'manual)))
+    (unless (file-exists-p filename)
+      (if (file-exists-p automatic-backup)
+          (rename-file automatic-backup filename nil)
+        (with-current-buffer filebuf
+          (let ((coding-system-for-read 'no-conversion)
+                (coding-system-for-write 'no-conversion))
+            (condition-case nil
+                (with-temp-file filename
+                  (let ((outbuf (current-buffer)))
+                    ;; Change buffer to get local value of
+                    ;; vc-checkout-switches.
+                    (with-current-buffer filebuf
+                      (vc-call find-revision file revision outbuf))))
+              (error
+               (when (file-exists-p filename)
+                 (delete-file filename))))))))
+    filename))
+
+(defun diff-hl-working-revision (file)
+  "Like vc-working-revision, but always up-to-date"
+  (vc-file-setprop file 'vc-working-revision
+                   (vc-call-backend (vc-backend file) 'working-revision file)))
+
+(defun diff-hl-diff-buffer-with-head (file &optional dest-buffer)
+  "Compute the differences between FILE and its associated file
+in head revision. The diffs are computed in the buffer
+DEST-BUFFER. This requires the external program `diff' to be in
+your `exec-path'."
+  (vc-ensure-vc-buffer)
+  (save-current-buffer
+    (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-bufer-with-head*"))
+           (temporary-file-directory
+            (if (file-directory-p "/dev/shm/")
+                "/dev/shm/"
+              temporary-file-directory))
+           (rev (diff-hl-create-revision
+                 file
+                 (or diff-hl-reference-revision
+                     (diff-hl-working-revision file)))))
+      ;; FIXME: When against staging, do it differently!
+      (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
+                      (get-buffer-create dest-buffer))
+      (with-current-buffer dest-buffer
+        (let ((inhibit-read-only t))
+          ;; Function `diff-sentinel' adds a final line, so remove it
+          (delete-matching-lines "^Diff finished.*")))
+      (get-buffer-create dest-buffer))))
 
 ;;;###autoload
 (defun turn-on-diff-hl-mode ()
