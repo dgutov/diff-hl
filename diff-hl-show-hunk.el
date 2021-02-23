@@ -21,28 +21,16 @@
 
 ;;; Commentary:
 
-;; `diff-hl-show-hunk' shows a popup with the modified hunk at point.
-;; `diff-hl-show-hunk-function' contains the backend used to show the
+;; `diff-hl-show-hunk' shows a popup with the modification hunk at point.
+;; `diff-hl-show-hunk-function' points to the backend used to show the
 ;; hunk.  Its default value is `diff-hl-show-hunk-inline-popup', that
 ;; shows diffs inline using overlay.  There is another built-in backend:
-;; `diff-hl-show-hunk-posframe' (based on posframe).  Other backends (for
-;; example based on `pos-tip') could also be implemented.
+;; `diff-hl-show-hunk-posframe' (based on posframe).
 ;;
-;; `diff-hl-show-hunk-mode' adds the following keybindings:
+;; `diff-hl-show-hunk-mouse-mode' adds interaction on clicking in the
+;; margin or the fringe (shows the current hunk as well).
 ;;
-;;   - `diff-hl-show-hunk': C-x v *
-;;   - `diff-hl-show-hunk-next': C-x v }
-;;   - `diff-hl-show-hunk-previous': C-x v {
-;;
-;; `diff-hl-show-hunk-mouse-mode' includes all the keybindings of
-;; `diff-hl-show-hunk-mode', and adds `diff-hl-show-hunk' when
-;; clicking in the margin or the fringe.
-;;
-;; To use one or both in all buffers:
-;;
-;;   (global-diff-hl-show-hunk-mode)
-;;
-;; and/or
+;; To use it in all buffers:
 ;;
 ;;   (global-diff-hl-show-hunk-mouse-mode)
 
@@ -51,21 +39,12 @@
 (require 'diff-hl-inline-popup)
 (require 'diff-hl)
 
-(defvar diff-hl-show-hunk-mode-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (concat diff-hl-command-prefix  "*") #'diff-hl-show-hunk)
-    (define-key map (concat diff-hl-command-prefix  "{") #'diff-hl-show-hunk-previous)
-    (define-key map (concat diff-hl-command-prefix  "}") #'diff-hl-show-hunk-next)
-    map)
-  "Keymap for command `diff-hl-show-hunk-mode'.")
-
 (defvar diff-hl-show-hunk-mouse-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<left-margin> <mouse-1>") 'diff-hl-show-hunk--click)
     (define-key map (kbd "<right-margin> <mouse-1>") 'diff-hl-show-hunk--click)
     (define-key map (kbd "<left-fringe> <mouse-1>") 'diff-hl-show-hunk--click)
     (define-key map (kbd "<right-fringe> <mouse-1>") 'diff-hl-show-hunk--click)
-    (set-keymap-parent map diff-hl-show-hunk-mode-map)
     map)
   "Keymap for command `diff-hl-show-hunk-mouse-mode'.")
 
@@ -409,7 +388,7 @@ The backend is determined by `diff-hl-show-hunk-function'."
 ;;;###autoload
 (define-minor-mode diff-hl-show-hunk-mouse-mode
   "Enables the margin and fringe to show a posframe/popup with vc diffs when clicked.
-By default, the posframe/popup shows only the current hunk, and
+By default, the popup shows only the current hunk, and
 the line of the hunk that matches the current position is
 highlighted.  The face, border and other visual preferences are
 customizable.  It can be also invoked with the command
@@ -422,18 +401,6 @@ customizable.  It can be also invoked with the command
 (define-globalized-minor-mode global-diff-hl-show-hunk-mouse-mode
   diff-hl-show-hunk-mouse-mode
   diff-hl-show-hunk-mouse-mode)
-
-;;;###autoload
-(define-minor-mode diff-hl-show-hunk-mode
-  "Enables a keymap with some commands of the `diff-hl-show-hunk' package
-\\{diff-hl-show-hunk-mode-map}"
-  :group 'diff-hl-show-hunk
-  :lighter "")
-
-;;;###autoload
-(define-globalized-minor-mode global-diff-hl-show-hunk-mode
-  diff-hl-show-hunk-mode
-  diff-hl-show-hunk-mode)
 
 (provide 'diff-hl-show-hunk)
 ;;; diff-hl-show-hunk.el ends here

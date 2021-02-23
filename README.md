@@ -20,7 +20,7 @@ The package also contains auxiliary modes:
 * `diff-hl-flydiff-mode` implements highlighting changes on the fly.
 * `diff-hl-show-hunk-mouse-mode` makes fringe and margin react to
   mouse clicks to show the curresponding hunk. That's the alternative
-  to using the `diff-hl-show-hunk` family of commands.
+  to using `diff-hl-show-hunk` and friends.
 
 Usage
 =====

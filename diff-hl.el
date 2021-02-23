@@ -35,6 +35,7 @@
 ;; `diff-hl-revert-hunk'     C-x v n
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
+;; `diff-hl-show-hunk'       C-x v *
 ;; `diff-hl-set-reference-rev'
 ;; `diff-hl-reset-reference-rev'
 ;;
@@ -603,6 +604,9 @@ in the source file, or the last line of the hunk above it."
     (define-key map "n" 'diff-hl-revert-hunk)
     (define-key map "[" 'diff-hl-previous-hunk)
     (define-key map "]" 'diff-hl-next-hunk)
+    (define-key map "*" 'diff-hl-show-hunk)
+    (define-key map "{" 'diff-hl-show-hunk-previous)
+    (define-key map "}" 'diff-hl-show-hunk-next)
     map))
 (fset 'diff-hl-command-map diff-hl-command-map)
 
