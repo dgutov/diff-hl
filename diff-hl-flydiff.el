@@ -1,4 +1,4 @@
-;; Copyright (C) 2015-2021 Free Software Foundation, Inc.
+;; Copyright (C) 2015-2021 Free Software Foundation, Inc. -*- lexical-binding: t -*-
 
 ;; Author:   Jonathan Hayase <PythonNut@gmail.com>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -55,7 +55,7 @@ This requires the external program `diff' to be in your
            (file-remote-p default-directory))
     (diff-hl-update)))
 
-(defun diff-hl-flydiff/modified-p (state)
+(defun diff-hl-flydiff/modified-p (_state)
   (buffer-modified-p))
 
 ;;;###autoload

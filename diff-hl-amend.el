@@ -1,4 +1,4 @@
-;; Copyright (C) 2012-2013  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2013, 2020  Free Software Foundation, Inc. -*- lexical-binding: t -*-
 
 ;; Author:   Dmitry Gutov <dgutov@yandex.ru>
 ;; URL:      https://github.com/dgutov/diff-hl
