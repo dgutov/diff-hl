@@ -286,17 +286,6 @@ BUFFER is a buffer with the hunk."
   (diff-hl-show-hunk-hide)
   (diff-hl-revert-hunk))
 
-(defun diff-hl-show-hunk-ensure-hunk-visible (&optional goto-start)
-  "Ensure that the end of `diff-hl-show-hunk--original-overlay',
-and maybe the start (if GOTO-START), is visible."
-  (let* ((overlay diff-hl-show-hunk--original-overlay))
-    (when overlay
-      (goto-char (overlay-end overlay)))
-    ;; Window scrolls to position only on next redisplay
-    (redisplay t)
-    (when goto-start
-      (goto-char (overlay-start overlay)))))
-
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
   "Go to previous hunk/change and show it."
@@ -322,7 +311,8 @@ of `diff-hl-show-hunk'."
   "Tries to display the whole overlay, and place the point at the
 end of the OVERLAY, so posframe/inline is placed below the hunk."
   (goto-char (overlay-start overlay))
-  (redisplay)
+  (when (< (point) (window-start))
+    (set-window-start nil (point)))
   (goto-char (1- (overlay-end overlay))))
 
 ;;;###autoload
@@ -377,7 +367,6 @@ The backend is determined by `diff-hl-show-hunk-function'."
    ((let ((buffer-and-line (diff-hl-show-hunk-buffer)))
       (setq diff-hl-show-hunk--original-buffer (current-buffer))
       (setq diff-hl-show-hunk--original-window (selected-window))
-      (diff-hl-show-hunk-ensure-hunk-visible)
       (apply diff-hl-show-hunk-function buffer-and-line))
     ;; We could fall back to `diff-hl-diff-goto-hunk', but the
     ;; current default should work in all environments (both GUI
