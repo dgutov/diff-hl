@@ -141,10 +141,10 @@ corresponding to the clicked line in the original buffer."
   (member command '(ignore diff-hl-show-hunk handle-switch-frame diff-hl-show-hunk--click)))
 
 (defun diff-hl-show-hunk--compute-diffs ()
-  "Compute diffs using funcions of diff-hl.
-Then put the differences in *diff-hl-show-hunk-diff-buffer*
-buffer, and set the point in that buffer to the corresponding
-line of the original buffer."
+  "Compute diffs using functions of diff-hl.
+Then put the differences inside a special buffer and set the
+point in that buffer to the corresponding line of the original
+buffer."
   (defvar vc-sentinel-movepoint)
   (let* ((buffer (or (buffer-base-buffer) (current-buffer)))
          (line (line-number-at-pos))
@@ -244,7 +244,7 @@ Returns a list with the buffer and the line number of the clicked line."
   "Implementation to show the hunk in a inline popup.
 BUFFER is a buffer with the hunk."
   (diff-hl-inline-popup-hide)
-  (setq diff-hl-show-hunk--hide-function #'inline-popup-hide)
+  (setq diff-hl-show-hunk--hide-function #'diff-hl-inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
          (smart-lines diff-hl-show-hunk-inline-popup-smart-lines)
          (original-lines-number (cl-count-if (lambda (s) (string-prefix-p "-" s)) lines))

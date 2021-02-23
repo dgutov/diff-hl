@@ -761,12 +761,13 @@ the user should be returned."
                  (delete-file filename))))))))
     filename))
 
-(defun diff-hl-working-revision (file)
+(defun diff-hl-working-revision (file &optional backend)
   "Like vc-working-revision, but always up-to-date"
   (vc-file-setprop file 'vc-working-revision
-                   (vc-call-backend (vc-backend file) 'working-revision file)))
+                   (vc-call-backend (or backend (vc-backend file))
+                                    'working-revision file)))
 
-(defun diff-hl-diff-buffer-with-head (file &optional dest-buffer)
+(defun diff-hl-diff-buffer-with-head (file &optional dest-buffer backend)
   "Compute the differences between FILE and its associated file
 in head revision. The diffs are computed in the buffer
 DEST-BUFFER. This requires the external program `diff' to be in
@@ -781,7 +782,7 @@ your `exec-path'."
            (rev (diff-hl-create-revision
                  file
                  (or diff-hl-reference-revision
-                     (diff-hl-working-revision file)))))
+                     (diff-hl-working-revision file backend)))))
       ;; FIXME: When against staging, do it differently!
       (diff-no-select rev (current-buffer) "-U 0 --strip-trailing-cr" 'noasync
                       (get-buffer-create dest-buffer))
