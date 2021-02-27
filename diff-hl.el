@@ -729,7 +729,7 @@ The value of this variable is a mode line template as in
       (add-hook 'vc-checkin-hook 'diff-hl-dir-update t t)
     (remove-hook 'vc-checkin-hook 'diff-hl-dir-update t)))
 
-(defun diff-hl-make-temp-file-name (buffer rev &optional manual)
+(defun diff-hl-make-temp-file-name (rev &optional manual)
   "Return a backup file name for REV or the current version of BUFFER.
 If MANUAL is non-nil it means that a name for backups created by
 the user should be returned."
@@ -744,9 +744,9 @@ the user should be returned."
 
 (defun diff-hl-create-revision (file revision)
   "Read REVISION of BUFFER into a buffer and return the buffer."
-  (let ((automatic-backup (diff-hl-make-temp-file-name file revision))
+  (let ((automatic-backup (diff-hl-make-temp-file-name revision))
         (filebuf (get-file-buffer file))
-        (filename (diff-hl-make-temp-file-name file revision 'manual)))
+        (filename (diff-hl-make-temp-file-name revision 'manual)))
     (unless (file-exists-p filename)
       (if (file-exists-p automatic-backup)
           (rename-file automatic-backup filename nil)
