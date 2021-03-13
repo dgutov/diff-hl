@@ -131,6 +131,7 @@
   "Which side to use for indicators."
   :type '(choice (const left)
                  (const right))
+  :initialize 'custom-initialize-default
   :set (lambda (var value)
          (let ((on (bound-and-true-p global-diff-hl-mode)))
            (when on (global-diff-hl-mode -1))
