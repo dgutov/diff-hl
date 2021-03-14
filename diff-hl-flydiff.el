@@ -41,9 +41,6 @@
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
 (defun diff-hl-flydiff-buffer-with-head (file &optional backend)
-  "View the differences between FILE and its associated file in HEAD revision.
-This requires the external program `diff' to be in your
-`exec-path'."
   (diff-hl-diff-buffer-with-head file " *diff-hl-diff*" backend))
 
 (defun diff-hl-flydiff-update ()

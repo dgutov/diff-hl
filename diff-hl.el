@@ -730,12 +730,13 @@ The value of this variable is a mode line template as in
       (add-hook 'vc-checkin-hook 'diff-hl-dir-update t t)
     (remove-hook 'vc-checkin-hook 'diff-hl-dir-update t)))
 
-(defun diff-hl-make-temp-file-name (buffer rev &optional manual)
-  "Return a backup file name for REV or the current version of BUFFER.
+(defun diff-hl-make-temp-file-name (file rev &optional manual)
+  "Return a backup file name for REV or the current version of FILE.
 If MANUAL is non-nil it means that a name for backups created by
 the user should be returned."
   (let* ((auto-save-file-name-transforms
-          `((".*" ,temporary-file-directory t))))
+          `((".*" ,temporary-file-directory t)))
+         (buffer-file-name file))
     (expand-file-name
      (concat (make-auto-save-file-name)
              ".~" (subst-char-in-string
@@ -744,7 +745,7 @@ the user should be returned."
      temporary-file-directory)))
 
 (defun diff-hl-create-revision (file revision)
-  "Read REVISION of BUFFER into a buffer and return the buffer."
+  "Read REVISION of FILE into a buffer and return the buffer."
   (let ((automatic-backup (diff-hl-make-temp-file-name file revision))
         (filebuf (get-file-buffer file))
         (filename (diff-hl-make-temp-file-name file revision 'manual)))
@@ -774,11 +775,11 @@ the user should be returned."
 
 (declare-function diff-no-select "diff")
 
+;; TODO: Consider simplifying given FILE always = buffer-file-name.
 (defun diff-hl-diff-buffer-with-head (file &optional dest-buffer backend)
-  "Compute the differences between FILE and its associated file
-in head revision. The diffs are computed in the buffer
-DEST-BUFFER. This requires the external program `diff' to be in
-your `exec-path'."
+  "Compute the differences between FILE and its revision.
+ The diffs are computed in the buffer DEST-BUFFER. This requires
+the `diff-program' to be in your `exec-path'."
   (require 'diff)
   (vc-ensure-vc-buffer)
   (save-current-buffer
