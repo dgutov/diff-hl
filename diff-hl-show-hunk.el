@@ -310,10 +310,11 @@ of `diff-hl-show-hunk'."
 (defun diff-hl-show-hunk--goto-hunk-overlay (overlay)
   "Tries to display the whole overlay, and place the point at the
 end of the OVERLAY, so posframe/inline is placed below the hunk."
-  (goto-char (overlay-start overlay))
-  (when (< (point) (window-start))
-    (set-window-start nil (point)))
-  (goto-char (1- (overlay-end overlay))))
+  (when (and (overlayp overlay) (overlay-buffer overlay))
+    (goto-char (overlay-start overlay))
+    (when (< (point) (window-start))
+      (set-window-start nil (point)))
+    (goto-char (1- (overlay-end overlay)))))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-next ()
