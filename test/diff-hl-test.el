@@ -1,6 +1,6 @@
 ;;; diff-hl-test.el --- tests for diff-hl -*- lexical-binding: t -*-
 
-;; Copyright (C) 2020  Free Software Foundation, Inc.
+;; Copyright (C) 2020, 2021  Free Software Foundation, Inc.
 
 ;; Author:   Nathan Moreau <nathan.moreau@m4x.org>
 
@@ -48,7 +48,8 @@
   (diff-hl-test-in-source
     (erase-buffer)
     (insert diff-hl-test-initial-content)
-    (save-buffer)))
+    (save-buffer)
+    (vc-git-command nil 0 buffer-file-name "reset")))
 
 (defun diff-hl-test-compute-diff-lines ()
   (diff-hl-test-in-source
@@ -119,6 +120,45 @@
     (diff-hl-next-hunk)
     (should (looking-at "added"))
     (should-error (diff-hl-next-hunk) :type 'user-error)))
+
+(diff-hl-deftest diff-hl-can-ignore-staged-changes ()
+  (diff-hl-test-in-source
+    (goto-char (point-min))
+    (insert "new line 1\n")
+    (save-buffer)
+    (vc-git-command nil 0 buffer-file-name "add")
+    (goto-char (point-max))
+    (insert "new line 2\n")
+    (save-buffer)
+    (let ((diff-hl-show-staged-changes t))
+      (should
+       (equal (diff-hl-changes)
+              '((1 1 insert)
+                (12 1 insert)))))
+    (let ((diff-hl-show-staged-changes nil))
+      (should
+       (equal (diff-hl-changes)
+              '((12 1 insert)))))))
+
+(diff-hl-deftest diff-hl-flydiff-can-ignore-staged-changes ()
+  (diff-hl-test-in-source
+    (goto-char (point-min))
+    (insert "new line 1\n")
+    (save-buffer)
+    (vc-git-command nil 0 buffer-file-name "add")
+    (goto-char (point-max))
+    (insert "new line 2\n")
+    (let ((diff-hl-show-staged-changes t))
+      (should
+       (equal (diff-hl-changes-from-buffer
+               (diff-hl-diff-buffer-with-head buffer-file-name nil 'Git))
+              '((1 1 insert)
+                (12 1 insert)))))
+    (let ((diff-hl-show-staged-changes nil))
+      (should
+       (equal (diff-hl-changes-from-buffer
+               (diff-hl-diff-buffer-with-head buffer-file-name nil 'Git))
+              '((12 1 insert)))))))
 
 (defun diff-hl-run-tests ()
   (ert-run-tests-batch))
