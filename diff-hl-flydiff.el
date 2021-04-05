@@ -41,6 +41,7 @@
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
 (defun diff-hl-flydiff-buffer-with-head (file &optional backend)
+  (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
   (diff-hl-diff-buffer-with-head file " *diff-hl-diff*" backend))
 
 (defun diff-hl-flydiff-update ()
