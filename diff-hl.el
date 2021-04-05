@@ -793,15 +793,15 @@ the user should be returned."
 
 (declare-function diff-no-select "diff")
 
-;; TODO: Consider simplifying given FILE always = buffer-file-name.
-(defun diff-hl-diff-buffer-with-head (file &optional dest-buffer backend)
-  "Compute the differences between FILE and its revision.
- The diffs are computed in the buffer DEST-BUFFER. This requires
+(defun diff-hl-diff-buffer-with-reference (file &optional dest-buffer backend)
+  "Compute the diff between the current buffer contents and reference.
+The diffs are computed in the buffer DEST-BUFFER. This requires
 the `diff-program' to be in your `exec-path'."
   (require 'diff)
   (vc-ensure-vc-buffer)
   (save-current-buffer
-    (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-bufer-with-head*"))
+    (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-buffer-with-reference*"))
+           (backend (or backend (vc-backend file)))
            (temporary-file-directory
             (if (file-directory-p "/dev/shm/")
                 "/dev/shm/"
@@ -825,6 +825,7 @@ the `diff-program' to be in your `exec-path'."
           (delete-matching-lines "^Diff finished.*")))
       (get-buffer-create dest-buffer))))
 
+;; TODO: Cache based on .git/index's mtime, maybe.
 (defun diff-hl-git-index-object-name (file)
   (with-temp-buffer
     (vc-git-command (current-buffer) 0 file "ls-files" "-s")

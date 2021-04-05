@@ -151,13 +151,13 @@
     (let ((diff-hl-show-staged-changes t))
       (should
        (equal (diff-hl-changes-from-buffer
-               (diff-hl-diff-buffer-with-head buffer-file-name nil 'Git))
+               (diff-hl-diff-buffer-with-reference buffer-file-name))
               '((1 1 insert)
                 (12 1 insert)))))
     (let ((diff-hl-show-staged-changes nil))
       (should
        (equal (diff-hl-changes-from-buffer
-               (diff-hl-diff-buffer-with-head buffer-file-name nil 'Git))
+               (diff-hl-diff-buffer-with-reference buffer-file-name))
               '((12 1 insert)))))))
 
 (defun diff-hl-run-tests ()

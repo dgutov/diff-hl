@@ -129,7 +129,7 @@ buffer."
          (line (line-number-at-pos))
          (dest-buffer "*diff-hl-show-hunk-diff-buffer*"))
     (with-current-buffer buffer
-      (diff-hl-diff-buffer-with-head (buffer-file-name buffer) dest-buffer)
+      (diff-hl-diff-buffer-with-reference (buffer-file-name buffer) dest-buffer)
       (switch-to-buffer dest-buffer)
       (diff-hl-diff-skip-to line)
       (setq vc-sentinel-movepoint (point)))
