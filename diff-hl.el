@@ -40,6 +40,8 @@
 ;; `diff-hl-reset-reference-rev'
 ;;
 ;; The mode takes advantage of `smartrep' if it is installed.
+;;
+;; Alternatively, it integrates with `repeat-mode' (Emacs 28+).
 
 ;; Add either of the following to your init file.
 ;;
@@ -689,6 +691,15 @@ The value of this variable is a mode line template as in
                        map)))
       (scan diff-hl-command-map)
       (smartrep-define-key diff-hl-mode-map diff-hl-command-prefix smart-keys))))
+
+;; Integrate with `repeat-mode' in Emacs 28 (https://debbugs.gnu.org/47566)
+;;
+;; While smartrep feels solid, it looks kinda abandoned.  And the
+;; chances of it being put into GNU ELPA are slim too.
+(map-keymap
+ (lambda (_key cmd)
+   (put cmd 'repeat-map 'diff-hl-command-map))
+ diff-hl-command-map)
 
 (declare-function magit-toplevel "magit-git")
 (declare-function magit-unstaged-files "magit-git")
