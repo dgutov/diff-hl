@@ -885,6 +885,8 @@ the `diff-program' to be in your `exec-path'."
               (t (memq major-mode diff-hl-global-modes)))
     (turn-on-diff-hl-mode)))
 
+(declare-function vc-annotate-extract-revision-at-line "vc-annotate")
+
 ;;;###autoload
 (defun diff-hl-set-reference-rev (rev)
   "Set the reference revision globally to REV.
