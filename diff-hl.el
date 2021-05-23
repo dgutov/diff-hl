@@ -448,6 +448,7 @@ Only affects Git, it's the only backend that has staging area."
     (diff-hl-update)))
 
 (defun diff-hl-diff-goto-hunk-1 (historic)
+  (defvar vc-sentinel-movepoint)
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer))
@@ -458,10 +459,10 @@ Only affects Git, it's the only backend that has staging area."
         (setq rev1 (car revs)
               rev2 (cdr revs))))
     (vc-diff-internal t (vc-deduce-fileset) rev1 rev2 t)
-    (vc-exec-after `(if (< (line-number-at-pos (point-max)) 3)
-                        (with-current-buffer ,buffer (diff-hl-remove-overlays))
-                      (unless ,rev2
-                        (diff-hl-diff-skip-to ,line))
+    (vc-run-delayed (if (< (line-number-at-pos (point-max)) 3)
+                        (with-current-buffer buffer (diff-hl-remove-overlays))
+                      (unless rev2
+                        (diff-hl-diff-skip-to line))
                       (setq vc-sentinel-movepoint (point))))))
 
 (defun diff-hl-diff-goto-hunk (&optional historic)
@@ -547,14 +548,14 @@ in the source file, or the last line of the hunk above it."
           (progn
             (vc-diff-internal nil fileset diff-hl-reference-revision nil
                               nil diff-buffer)
-            (vc-exec-after
-             `(let (beg-line end-line m-end)
+            (vc-run-delayed
+              (let (beg-line end-line m-end)
                 (when (eobp)
-                  (with-current-buffer ,buffer (diff-hl-remove-overlays))
+                  (with-current-buffer buffer (diff-hl-remove-overlays))
                   (user-error "Buffer is up-to-date"))
                 (with-no-warnings
                   (let (diff-auto-refine-mode)
-                    (diff-hl-diff-skip-to ,line)))
+                    (diff-hl-diff-skip-to line)))
                 (save-excursion
                   (while (looking-at "[-+]") (forward-line 1))
                   (setq end-line (line-number-at-pos (point)))
@@ -576,12 +577,12 @@ in the source file, or the last line of the hunk above it."
                     (diff-refine-hunk)))
                 (if diff-hl-ask-before-revert-hunk
                     (unless (yes-or-no-p (format "Revert current hunk in %s? "
-                                                 ,(cl-caadr fileset)))
+                                                 (cl-caadr fileset)))
                       (user-error "Revert canceled")))
                 (let ((diff-advance-after-apply-hunk nil))
                   (save-window-excursion
                     (diff-apply-hunk t)))
-                (with-current-buffer ,buffer
+                (with-current-buffer buffer
                   (save-buffer))
                 (message "Hunk reverted"))))
         (quit-windows-on diff-buffer t)))))
