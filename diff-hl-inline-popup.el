@@ -105,7 +105,7 @@ Default for CONTENT-SIZE is the size of the current lines"
          (blank-line (if (display-graphic-p)
                          ""
                        (concat "\n" (propertize (diff-hl-inline-popup--separator width)
-                                   'face '(:underline t)))))
+                                                'face '(:underline t)))))
          (line (propertize (concat (diff-hl-inline-popup--separator new-width)
                                    footer scroll-indicator)
                            'face '(:overline t))))
