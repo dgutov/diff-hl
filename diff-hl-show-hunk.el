@@ -49,7 +49,10 @@
   "Keymap for command `diff-hl-show-hunk-mouse-mode'.")
 
 (defvar diff-hl-show-hunk-buffer-name "*diff-hl-show-hunk-buffer*"
-  "Name of the posframe used by diff-hl-show-hunk.")
+  "Name of the buffer used by diff-hl-show-hunk.")
+
+(defvar diff-hl-show-hunk-diff-buffer-name "*diff-hl-show-hunk-diff-buffer*"
+  "Name of the buffer used by diff-hl-show-hunk to show the diff.")
 
 (defvar diff-hl-show-hunk--original-window nil
   "The vc window of which the hunk is shown.")
@@ -105,6 +108,8 @@ corresponding to the clicked line in the original buffer."
   (with-current-buffer (get-buffer-create diff-hl-show-hunk-buffer-name)
     (read-only-mode -1)
     (erase-buffer))
+  (bury-buffer diff-hl-show-hunk-buffer-name)
+  (bury-buffer diff-hl-show-hunk-diff-buffer-name)
   (when diff-hl-show-hunk--hide-function
     (let ((hidefunc diff-hl-show-hunk--hide-function))
       (setq diff-hl-show-hunk--hide-function nil)
@@ -127,7 +132,7 @@ buffer."
   (defvar vc-sentinel-movepoint)
   (let* ((buffer (or (buffer-base-buffer) (current-buffer)))
          (line (line-number-at-pos))
-         (dest-buffer "*diff-hl-show-hunk-diff-buffer*"))
+         (dest-buffer diff-hl-show-hunk-diff-buffer-name))
     (with-current-buffer buffer
       (diff-hl-diff-buffer-with-reference (buffer-file-name buffer) dest-buffer)
       (switch-to-buffer dest-buffer)
