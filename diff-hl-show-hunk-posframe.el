@@ -53,11 +53,13 @@
 
 (defcustom diff-hl-show-hunk-posframe-poshandler nil
   "Poshandler of the posframe (see `posframe-show`)."
-  :type 'function)
+  :type '(choice function
+                 (const :tag "None" nil)))
 
 (defcustom diff-hl-show-hunk-posframe-parameters nil
   "The frame parameters used by helm-posframe."
-  :type 'string)
+  :type '(choice string
+                 (const :tag "None" nil)))
 
 (defface diff-hl-show-hunk-posframe '((t nil))
   "Face for the posframe buffer.
