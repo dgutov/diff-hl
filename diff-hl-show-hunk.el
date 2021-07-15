@@ -108,6 +108,9 @@ corresponding to the clicked line in the original buffer."
   (with-current-buffer (get-buffer-create diff-hl-show-hunk-buffer-name)
     (read-only-mode -1)
     (erase-buffer))
+  (with-current-buffer (get-buffer-create diff-hl-show-hunk-diff-buffer-name)
+    (read-only-mode -1)
+    (erase-buffer))
   (bury-buffer diff-hl-show-hunk-buffer-name)
   (bury-buffer diff-hl-show-hunk-diff-buffer-name)
   (when diff-hl-show-hunk--hide-function
