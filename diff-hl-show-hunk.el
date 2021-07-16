@@ -109,7 +109,8 @@ corresponding to the clicked line in the original buffer."
     (read-only-mode -1)
     (erase-buffer))
   (bury-buffer diff-hl-show-hunk-buffer-name)
-  (bury-buffer diff-hl-show-hunk-diff-buffer-name)
+  (when (get-buffer diff-hl-show-hunk-diff-buffer-name)
+    (bury-buffer diff-hl-show-hunk-diff-buffer-name))
   (when diff-hl-show-hunk--hide-function
     (let ((hidefunc diff-hl-show-hunk--hide-function))
       (setq diff-hl-show-hunk--hide-function nil)
