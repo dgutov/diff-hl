@@ -899,6 +899,7 @@ the `diff-program' to be in your `exec-path'."
     (turn-on-diff-hl-mode)))
 
 (declare-function vc-annotate-extract-revision-at-line "vc-annotate")
+(declare-function diff-hl-amend-mode "diff-hl-amend")
 
 ;;;###autoload
 (defun diff-hl-set-reference-rev (rev)
