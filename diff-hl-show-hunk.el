@@ -345,11 +345,10 @@ The backend is determined by `diff-hl-show-hunk-function'."
   (save-excursion
     (diff-hl-show-hunk-hide))
 
-  (cond
-   ((not (vc-backend buffer-file-name))
+  (unless (vc-backend buffer-file-name)
     (user-error "The buffer is not under version control"))
-   ((not (diff-hl-hunk-overlay-at (point)))
-    (diff-hl-previous-hunk)))
+
+  (diff-hl-find-current-hunk)
 
   (setq diff-hl-show-hunk--original-overlay nil)
 

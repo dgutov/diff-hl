@@ -540,8 +540,7 @@ in the source file, or the last line of the hunk above it."
     (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
           (buffer (current-buffer))
           (line (save-excursion
-                  (unless (diff-hl-hunk-overlay-at (point))
-                    (diff-hl-previous-hunk))
+                  (diff-hl-find-current-hunk)
                   (line-number-at-pos)))
           (fileset (vc-deduce-fileset)))
       (unwind-protect
@@ -624,6 +623,15 @@ in the source file, or the last line of the hunk above it."
   "Go to the beginning of the previous hunk in the current buffer."
   (interactive)
   (diff-hl-next-hunk t))
+
+(defun diff-hl-find-current-hunk ()
+  (let (o)
+    (cond
+     ((diff-hl-hunk-overlay-at (point)))
+     ((setq o (diff-hl-search-next-hunk t))
+      (goto-char (overlay-start o)))
+     (t
+      (diff-hl-next-hunk)))))
 
 (defun diff-hl-mark-hunk ()
   (interactive)
