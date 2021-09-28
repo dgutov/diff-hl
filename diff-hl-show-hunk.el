@@ -264,6 +264,7 @@ BUFFER is a buffer with the hunk."
                   (overlay-put invisible-overlay 'invisible nil)
                   (delete-overlay invisible-overlay)
                   (diff-hl-inline-popup-hide)))))
+      (diff-hl-show-hunk--goto-hunk-overlay overlay)
       (let ((height
              (when smart-lines
                (when (not (eq 0 original-lines-number))
@@ -278,7 +279,7 @@ BUFFER is a buffer with the hunk."
          #'diff-hl-show-hunk-hide
          point
          height))
-      (diff-hl-show-hunk--goto-hunk-overlay overlay))))
+      )))
 
 (defun diff-hl-show-hunk-copy-original-text ()
   "Extracts all the lines from BUFFER starting with '-' to the kill ring."
@@ -317,9 +318,13 @@ of `diff-hl-show-hunk'."
   "Tries to display the whole overlay, and place the point at the
 end of the OVERLAY, so posframe/inline is placed below the hunk."
   (when (and (overlayp overlay) (overlay-buffer overlay))
-    (goto-char (overlay-start overlay))
-    (when (< (point) (window-start))
-      (set-window-start nil (point)))
+    (let ((pt (point)))
+      (goto-char (overlay-start overlay))
+      (cond
+       ((< (point) (window-start))
+        (set-window-start nil (point)))
+       ((> (point) pt)
+        (redisplay))))
     (goto-char (1- (overlay-end overlay)))))
 
 ;;;###autoload
