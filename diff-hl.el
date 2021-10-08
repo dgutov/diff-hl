@@ -861,47 +861,36 @@ The value of this variable is a mode line template as in
 (declare-function magit-toplevel "magit-git")
 (declare-function magit-unstaged-files "magit-git")
 
-(defvar diff-hl--magit-unstaged-files nil)
+(defvar diff-hl--vc-states nil)
 
 (defun diff-hl-magit-pre-refresh ()
   (unless (and diff-hl-disable-on-remote
                (file-remote-p default-directory))
-   (setq diff-hl--magit-unstaged-files (magit-unstaged-files t))))
+    (let ((topdir (magit-toplevel)))
+      (dolist (buf (buffer-list))
+        (when-let* ((file-name (buffer-file-name buf))
+                    (state (vc-state file-name)))
+          (when (and (buffer-local-value 'diff-hl-mode buf)
+                     (file-in-directory-p (buffer-file-name buf) topdir)
+                     (file-exists-p file-name)
+                     (not (member state '(ignored unregistered))))
+            (push (cons file-name state) diff-hl--vc-states)))))))
 
 (defun diff-hl-magit-post-refresh ()
   (unless (and diff-hl-disable-on-remote
                (file-remote-p default-directory))
-   (let* ((topdir (magit-toplevel))
-         (modified-files
-          (mapcar (lambda (file) (expand-file-name file topdir))
-                  (delete-consecutive-dups
-                   (sort
-                    (nconc (magit-unstaged-files t)
-                           diff-hl--magit-unstaged-files)
-                    #'string<))))
-         (unmodified-states '(up-to-date ignored unregistered)))
-    (setq diff-hl--magit-unstaged-files nil)
-    (dolist (buf (buffer-list))
-      (when (and (buffer-local-value 'diff-hl-mode buf)
-                 (not (buffer-modified-p buf))
-                 ;; Solve the "cloned indirect buffer" problem
-                 ;; (diff-hl-mode could be non-nil there, even if
-                 ;; buffer-file-name is nil):
-                 (buffer-file-name buf)
-                 (file-in-directory-p (buffer-file-name buf) topdir)
-                 (file-exists-p (buffer-file-name buf)))
-        (with-current-buffer buf
-          (let* ((file buffer-file-name)
-                 (backend (vc-backend file)))
-            (when backend
-              (cond
-               ((member file modified-files)
-                (when (memq (vc-state file) unmodified-states)
-                  (vc-state-refresh file backend))
-                (diff-hl-update))
-               ((not (memq (vc-state file backend) unmodified-states))
-                (vc-state-refresh file backend)
-                (diff-hl-update)))))))))))
+    (let ((topdir (magit-toplevel)))
+      (dolist (buf (buffer-list))
+        (when-let* ((file-name (buffer-file-name buf))
+                    (state (vc-state file-name)))
+          (when (and (buffer-local-value 'diff-hl-mode buf)
+                     (file-in-directory-p (buffer-file-name buf) topdir)
+                     (file-exists-p file-name)
+                     (not (member state '(ignored unregistered)))
+                     (not (eq (assoc file-name diff-hl--vc-states) state)))
+            (with-current-buffer buf
+              (diff-hl-update)))))
+      (setq diff-hl--vc-states nil))))
 
 (defun diff-hl-dir-update ()
   (dolist (pair (if (vc-dir-marked-files)
