@@ -288,10 +288,11 @@ BUFFER is a buffer with the hunk."
   (message "Original hunk content added to kill-ring"))
 
 (defun diff-hl-show-hunk-revert-hunk ()
-  "Dismiss the popup and prompt to revert the current diff hunk."
+  "Dismiss the popup and revert the current diff hunk."
   (interactive)
   (diff-hl-show-hunk-hide)
-  (diff-hl-revert-hunk))
+  (let (diff-hl-ask-before-revert-hunk)
+    (diff-hl-revert-hunk)))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
