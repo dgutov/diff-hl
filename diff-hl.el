@@ -666,6 +666,9 @@ its end position."
 
 (defun diff-hl-stage-current-hunk ()
   (interactive)
+  (let ((backend (vc-backend buffer-file-name)))
+    (unless (eq backend 'Git)
+      (user-error "Only Git supports staging; this file is controlled by %s" backend)))
   (diff-hl-find-current-hunk)
   (let* ((line (line-number-at-pos))
          (file buffer-file-name)
@@ -705,7 +708,10 @@ its end position."
               (setq success t))
           (delete-file patchfile))))
     (when success
-      (message "Hunk staged")
+      (if diff-hl-show-staged-changes
+          (message (concat "Hunk staged; customize `diff-hl-show-staged-changes'"
+                           " to highlight only unstages changes"))
+        (message "Hunk staged"))
       (unless diff-hl-show-staged-changes
         (diff-hl-update)))))
 
