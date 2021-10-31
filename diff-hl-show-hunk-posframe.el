@@ -156,7 +156,14 @@ The button calls an ACTION."
    (diff-hl-show-hunk--posframe-button
     "♻ Revert hunk"
     "Revert hunk (\\[diff-hl-show-hunk-revert-hunk])"
-    #'diff-hl-show-hunk-revert-hunk)))
+    #'diff-hl-show-hunk-revert-hunk)
+
+   (unless diff-hl-show-staged-changes
+     (diff-hl-show-hunk--posframe-button
+      "⊕ Stage hunk"
+      "Stage hunk (\\[diff-hl-show-hunk-stage-hunk])"
+      #'diff-hl-show-hunk-stage-hunk))
+   ))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-posframe (buffer &optional _line)

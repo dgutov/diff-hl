@@ -220,6 +220,7 @@ Returns a list with the buffer and the line number of the clicked line."
     (define-key map (kbd "]") #'diff-hl-show-hunk-next)
     (define-key map (kbd "{") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "}") #'diff-hl-show-hunk-next)
+    (define-key map (kbd "S") #'diff-hl-show-hunk-stage-hunk)
     map))
 
 (defvar diff-hl-show-hunk--hide-function)
@@ -268,13 +269,16 @@ BUFFER is a buffer with the hunk."
       (let ((height
              (when smart-lines
                (when (not (eq 0 original-lines-number))
-                 original-lines-number))))
+                 original-lines-number)))
+            (footer "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"))
+        (unless diff-hl-show-staged-changes
+          (setq footer (concat footer " (S)Stage")))
         (diff-hl-inline-popup-show
          propertized-lines
          (if (and (boundp 'diff-hl-reference-revision) diff-hl-reference-revision)
              (concat "Diff with " diff-hl-reference-revision)
            "Diff with HEAD")
-         "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"
+         footer
          diff-hl-show-hunk-map
          #'diff-hl-show-hunk-hide
          point
@@ -293,6 +297,12 @@ BUFFER is a buffer with the hunk."
   (diff-hl-show-hunk-hide)
   (let (diff-hl-ask-before-revert-hunk)
     (diff-hl-revert-hunk)))
+
+(defun diff-hl-show-hunk-stage-hunk ()
+  "Dismiss the popup and stage the current hunk."
+  (interactive)
+  (diff-hl-show-hunk-hide)
+  (diff-hl-stage-current-hunk))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()
