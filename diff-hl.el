@@ -723,6 +723,7 @@ its end position."
     (define-key map "*" 'diff-hl-show-hunk)
     (define-key map "{" 'diff-hl-show-hunk-previous)
     (define-key map "}" 'diff-hl-show-hunk-next)
+    (define-key map "S" 'diff-hl-stage-current-hunk)
     map))
 (fset 'diff-hl-command-map diff-hl-command-map)
 
