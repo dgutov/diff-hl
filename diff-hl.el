@@ -143,13 +143,15 @@
            (when on (global-diff-hl-mode 1)))))
 
 (defcustom diff-hl-highlight-revert-hunk-function
-  #'diff-hl-revert-highlight-first-column
-  "Function to highlight the current hunk in `diff-hl-revert-hunk'.
-The function is called at the beginning of the hunk and passed
+  #'diff-hl-revert-narrow-to-hunk
+  "Function to emphasize the current hunk in `diff-hl-revert-hunk'.
+The function is called at the beginning of the hunk and is passed
 the end position as its only argument."
   :type '(choice (const :tag "Do nothing" ignore)
                  (const :tag "Highlight the first column"
-                        diff-hl-revert-highlight-first-column)))
+                        diff-hl-revert-highlight-first-column)
+                 (const :tag "Narrow to the hunk"
+                        diff-hl-revert-narrow-to-hunk)))
 
 (defcustom diff-hl-global-modes '(not image-mode)
   "Modes for which `diff-hl-mode' is automagically turned on.
@@ -528,12 +530,18 @@ in the source file, or the last line of the hunk above it."
   "Face used to highlight the first column of the hunk to be reverted.")
 
 (defun diff-hl-revert-highlight-first-column (end)
+  (re-search-forward "^[+-]")
+  (forward-line 0)
+  (setq end (diff-hl-split-away-changes 0))
   (let ((inhibit-read-only t))
     (save-excursion
       (while (< (point) end)
         (font-lock-prepend-text-property (point) (1+ (point)) 'font-lock-face
                                          'diff-hl-reverted-hunk-highlight)
         (forward-line 1)))))
+
+(defun diff-hl-revert-narrow-to-hunk (end)
+  (narrow-to-region (point) end))
 
 (defun diff-hl-revert-hunk-1 ()
   (save-restriction
@@ -557,7 +565,7 @@ in the source file, or the last line of the hunk above it."
                 (with-no-warnings
                   (let (diff-auto-refine-mode)
                     (diff-hl-diff-skip-to line)))
-                (setq m-end (diff-hl-split-away-changes 0))
+                (setq m-end (diff-hl-split-away-changes 3))
                 (setq beg-line (line-number-at-pos)
                       end-line (line-number-at-pos m-end))
                 (funcall diff-hl-highlight-revert-hunk-function m-end)
