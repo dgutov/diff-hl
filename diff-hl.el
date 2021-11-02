@@ -36,8 +36,10 @@
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
 ;; `diff-hl-show-hunk'       C-x v *
+;; `diff-hl-stage-current-hunk' C-x v S
 ;; `diff-hl-set-reference-rev'
 ;; `diff-hl-reset-reference-rev'
+;; `diff-hl-unstage-file'
 ;;
 ;; The mode takes advantage of `smartrep' if it is installed.
 ;;

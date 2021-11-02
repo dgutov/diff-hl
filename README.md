@@ -4,6 +4,8 @@ About
 `diff-hl-mode` highlights uncommitted changes on the left side of the window,
 allows you to jump between and revert them selectively.
 
+In buffers controlled by Git, you can also stage and unstage the changes.
+
 For the usage instructions and the list of commands, see the Commentary section
 inside the file.
 
