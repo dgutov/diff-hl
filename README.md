@@ -1,8 +1,9 @@
 About
 =====
 
-`diff-hl-mode` highlights uncommitted changes on the left side of the window,
-allows you to jump between and revert them selectively.
+`diff-hl-mode` highlights uncommitted changes on the left side of the
+window (area also known as the "gutter"), allows you
+to jump between and revert them selectively.
 
 In buffers controlled by Git, you can also stage and unstage the changes.
 
