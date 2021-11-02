@@ -558,7 +558,7 @@ in the source file, or the last line of the hunk above it."
             (vc-diff-internal nil fileset diff-hl-reference-revision nil
                               nil diff-buffer)
             (vc-run-delayed
-              (let (beg-line end-line m-end)
+              (let (beg-line end-line m-beg m-end)
                 (when (eobp)
                   (with-current-buffer buffer (diff-hl-remove-overlays))
                   (user-error "Buffer is up-to-date"))
@@ -566,9 +566,10 @@ in the source file, or the last line of the hunk above it."
                   (let (diff-auto-refine-mode)
                     (diff-hl-diff-skip-to line)))
                 (setq m-end (diff-hl-split-away-changes 3))
-                (setq beg-line (line-number-at-pos)
-                      end-line (line-number-at-pos m-end))
+                (setq m-beg (point-marker))
                 (funcall diff-hl-highlight-revert-hunk-function m-end)
+                (setq beg-line (line-number-at-pos m-beg)
+                      end-line (line-number-at-pos m-end))
                 (let ((wbh (window-body-height)))
                   (if (>= wbh (- end-line beg-line))
                       (recenter (/ (+ wbh (- beg-line end-line) 2) 2))
