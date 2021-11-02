@@ -664,8 +664,6 @@ its end position."
     (goto-char (overlay-start hunk))
     (push-mark (overlay-end hunk) nil t)))
 
-(defvar diff-hl-diff-buffer-with-reference-no-context t)
-
 (defun diff-hl--ensure-staging-supported ()
   (let ((backend (vc-backend buffer-file-name)))
     (unless (eq backend 'Git)
@@ -683,12 +681,11 @@ Only supported with Git."
          (dest-buffer (get-buffer-create " *diff-hl-stage*"))
          (orig-buffer (current-buffer))
          (file-base (shell-quote-argument (file-name-nondirectory file)))
-         (diff-hl-diff-buffer-with-reference-no-context nil)
          success)
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (erase-buffer)))
-    (diff-hl-diff-buffer-with-reference file dest-buffer)
+    (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
     (with-current-buffer dest-buffer
       (with-no-warnings
         (let (diff-auto-refine-mode)
@@ -919,10 +916,11 @@ the user should be returned."
 
 (declare-function diff-no-select "diff")
 
-(defun diff-hl-diff-buffer-with-reference (file &optional dest-buffer backend)
-  "Compute the diff between the current buffer contents and reference.
+(defun diff-hl-diff-buffer-with-reference (file &optional dest-buffer backend context-lines)
+  "Compute the diff between the current buffer contents and reference in BACKEND.
 The diffs are computed in the buffer DEST-BUFFER. This requires
-the `diff-program' to be in your `exec-path'."
+the `diff-program' to be in your `exec-path'.
+CONTEXT-LINES is the size of the unified diff context, defaults to 0."
   (require 'diff)
   (vc-ensure-vc-buffer)
   (save-current-buffer
@@ -943,9 +941,7 @@ the `diff-program' to be in your `exec-path'."
                file
                (or diff-hl-reference-revision
                    (diff-hl-working-revision file backend)))))
-           (switches (if diff-hl-diff-buffer-with-reference-no-context
-                         "-U 0 --strip-trailing-cr"
-                       "-u --strip-trailing-cr")))
+           (switches (format "-U %d --strip-trailing-cr" (or context-lines 0))))
       (diff-no-select rev (current-buffer) switches 'noasync
                       (get-buffer-create dest-buffer))
       (with-current-buffer dest-buffer
