@@ -293,29 +293,29 @@ Only affects Git, it's the only backend that has staging area."
 (declare-function vc-git-command "vc-git")
 
 (defun diff-hl-changes-buffer (file backend)
-  (let ((buf-name " *diff-hl* "))
-    (if (and (eq backend 'Git)
-             (not diff-hl-reference-revision)
-             (not diff-hl-show-staged-changes))
-        (diff-hl-with-diff-switches
-         (apply #'vc-git-command buf-name 1
-                (list file)
-                "diff-files"
-                (cons "-p" (vc-switches 'git 'diff))))
-      (condition-case err
-          (diff-hl-with-diff-switches
-           (vc-call-backend backend 'diff (list file)
-                            diff-hl-reference-revision nil
-                            buf-name))
-        (error
-         ;; https://github.com/dgutov/diff-hl/issues/117
-         (when (string-match-p "\\`Failed (status 128)" (error-message-string err))
-           (diff-hl-with-diff-switches
-            (vc-call-backend backend 'diff (list file)
-                             "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-                             nil
-                             buf-name))))))
-    buf-name))
+  (diff-hl-with-diff-switches
+   (diff-hl-diff-against-reference file backend " *diff-hl* ")))
+
+(defun diff-hl-diff-against-reference (file backend buffer)
+  (if (and (eq backend 'Git)
+           (not diff-hl-reference-revision)
+           (not diff-hl-show-staged-changes))
+      (apply #'vc-git-command buffer 1
+             (list file)
+             "diff-files"
+             (cons "-p" (vc-switches 'git 'diff)))
+    (condition-case err
+        (vc-call-backend backend 'diff (list file)
+                         diff-hl-reference-revision nil
+                         buffer)
+      (error
+       ;; https://github.com/dgutov/diff-hl/issues/117
+       (when (string-match-p "\\`Failed (status 128)" (error-message-string err))
+         (vc-call-backend backend 'diff (list file)
+                          "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+                          nil
+                          buffer)))))
+  buffer)
 
 (defun diff-hl-changes ()
   (let* ((file buffer-file-name)
@@ -547,17 +547,26 @@ in the source file, or the last line of the hunk above it."
   (save-restriction
     (widen)
     (vc-buffer-sync)
-    (let ((diff-buffer (generate-new-buffer-name "*diff-hl*"))
-          (buffer (current-buffer))
-          (line (save-excursion
-                  (diff-hl-find-current-hunk)
-                  (line-number-at-pos)))
-          (fileset (vc-deduce-fileset)))
+    (let* ((diff-buffer (get-buffer-create
+                         (generate-new-buffer-name "*diff-hl*")))
+           (buffer (current-buffer))
+           (line (save-excursion
+                   (diff-hl-find-current-hunk)
+                   (line-number-at-pos)))
+           (file buffer-file-name)
+           (backend (vc-backend file)))
       (unwind-protect
           (progn
-            (vc-diff-internal nil fileset diff-hl-reference-revision nil
-                              nil diff-buffer)
+            (vc-setup-buffer diff-buffer)
+            (diff-hl-diff-against-reference file backend diff-buffer)
+            (set-buffer diff-buffer)
+            (diff-mode)
+            (setq-local diff-vc-backend backend)
+            (setq-local diff-vc-revisions (list diff-hl-reference-revision nil))
+            (setq buffer-read-only t)
+            (pop-to-buffer diff-buffer)
             (vc-run-delayed
+              (vc-diff-finish diff-buffer nil)
               (let (beg-line end-line m-beg m-end)
                 (when (eobp)
                   (with-current-buffer buffer (diff-hl-remove-overlays))
@@ -579,7 +588,7 @@ in the source file, or the last line of the hunk above it."
                     (diff-refine-hunk)))
                 (if diff-hl-ask-before-revert-hunk
                     (unless (yes-or-no-p (format "Revert current hunk in %s? "
-                                                 (cl-caadr fileset)))
+                                                 file))
                       (user-error "Revert canceled")))
                 (let ((diff-advance-after-apply-hunk nil))
                   (save-window-excursion
