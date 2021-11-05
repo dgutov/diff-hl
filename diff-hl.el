@@ -747,7 +747,9 @@ Only supported with Git."
     (user-error "No current file"))
   (diff-hl--ensure-staging-supported)
   (vc-git-command nil 0 buffer-file-name "reset")
-  (message "Unstaged all"))
+  (message "Unstaged all")
+  (unless diff-hl-show-staged-changes
+    (diff-hl-update)))
 
 (defvar diff-hl-command-map
   (let ((map (make-sparse-keymap)))
