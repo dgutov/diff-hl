@@ -178,6 +178,17 @@ performance when viewing such files in certain conditions."
 Only affects Git, it's the only backend that has staging area."
   :type 'boolean)
 
+(defcustom diff-hl-goto-hunk-old-revisions nil
+  "When non-nil, `diff-hl-diff-goto-hunk' will always try to
+navigate to the line in the diff that corresponds to the current
+line in the file buffer (or as close as it can get to it).
+
+When this variable is nil (default), `diff-hl-diff-goto-hunk'
+only does that when called without the prefix argument, or when
+the NEW revision is not specified (meaning, the diff is against
+the current version of the file)."
+  :type 'boolean)
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -465,7 +476,7 @@ Only affects Git, it's the only backend that has staging area."
     (vc-diff-internal t (vc-deduce-fileset) rev1 rev2 t)
     (vc-run-delayed (if (< (line-number-at-pos (point-max)) 3)
                         (with-current-buffer buffer (diff-hl-remove-overlays))
-                      (unless rev2
+                      (when (or (not rev2) diff-hl-goto-hunk-old-revisions)
                         (diff-hl-diff-skip-to line))
                       (setq vc-sentinel-movepoint (point))))))
 
