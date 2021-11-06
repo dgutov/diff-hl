@@ -507,6 +507,7 @@ Only affects Git, it's the only backend that has staging area."
 (defun diff-hl-diff-skip-to (line)
   "In `diff-mode', skip to the hunk and line corresponding to LINE
 in the source file, or the last line of the hunk above it."
+  (goto-char (point-min)) ; Counteract any similar behavior in diff-mode.
   (diff-hunk-next)
   (let (found)
     (while (and (looking-at diff-hunk-header-re-unified) (not found))
