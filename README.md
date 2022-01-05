@@ -34,6 +34,9 @@ Put this into your init script:
 (global-diff-hl-mode)
 ```
 
+You must also ensure that VC is enabled (e.g. `vc-handled-backends` is
+not nil).
+
 Check out the Commentary section in each file for more detailed usage
 instructions.
 
