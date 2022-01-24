@@ -106,6 +106,11 @@
   :group 'diff-hl
   :type 'boolean)
 
+(defcustom diff-hl-disable-on-remote nil
+  "Non-nil will disable `diff-hl' on remote buffers."
+  :group 'diff-hl
+  :type 'boolean)
+
 (defcustom diff-hl-ask-before-revert-hunk t
   "Non-nil to ask for confirmation before revert a hunk."
   :group 'diff-hl
@@ -851,10 +856,14 @@ The value of this variable is a mode line template as in
 (defvar diff-hl--magit-unstaged-files nil)
 
 (defun diff-hl-magit-pre-refresh ()
-  (setq diff-hl--magit-unstaged-files (magit-unstaged-files t)))
+  (unless (and diff-hl-disable-on-remote
+               (file-remote-p default-directory))
+   (setq diff-hl--magit-unstaged-files (magit-unstaged-files t))))
 
 (defun diff-hl-magit-post-refresh ()
-  (let* ((topdir (magit-toplevel))
+  (unless (and diff-hl-disable-on-remote
+               (file-remote-p default-directory))
+   (let* ((topdir (magit-toplevel))
          (modified-files
           (mapcar (lambda (file) (expand-file-name file topdir))
                   (delete-consecutive-dups
@@ -884,7 +893,7 @@ The value of this variable is a mode line template as in
                 (diff-hl-update))
                ((not (memq (vc-state file backend) unmodified-states))
                 (vc-state-refresh file backend)
-                (diff-hl-update))))))))))
+                (diff-hl-update)))))))))))
 
 (defun diff-hl-dir-update ()
   (dolist (pair (if (vc-dir-marked-files)
@@ -1016,10 +1025,12 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
 (defun turn-on-diff-hl-mode ()
   "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."
   (cond
-   (buffer-file-name
-    (diff-hl-mode 1))
+   ((or (not buffer-file-name)
+	(and diff-hl-disable-on-remote
+	     (file-remote-p buffer-file-name))))
    ((eq major-mode 'vc-dir-mode)
-    (diff-hl-dir-mode 1))))
+    (diff-hl-dir-mode 1))
+   (t (diff-hl-mode 1))))
 
 ;;;###autoload
 (defun diff-hl--global-turn-on ()
