@@ -107,7 +107,7 @@
   :type 'boolean)
 
 (defcustom diff-hl-disable-on-remote nil
-  "Non-nil will disable `diff-hl' on remote buffers."
+  "Non-nil will disable `diff-hl' in remote buffers."
   :group 'diff-hl
   :type 'boolean)
 
