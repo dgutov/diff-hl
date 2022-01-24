@@ -1025,12 +1025,12 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
 (defun turn-on-diff-hl-mode ()
   "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."
   (cond
-   ((or (not buffer-file-name)
-	(and diff-hl-disable-on-remote
-	     (file-remote-p buffer-file-name))))
+   (buffer-file-name
+    (unless (and diff-hl-disable-on-remote
+                 (file-remote-p buffer-file-name))
+      (diff-hl-mode 1)))
    ((eq major-mode 'vc-dir-mode)
-    (diff-hl-dir-mode 1))
-   (t (diff-hl-mode 1))))
+    (diff-hl-dir-mode 1))))
 
 ;;;###autoload
 (defun diff-hl--global-turn-on ()
