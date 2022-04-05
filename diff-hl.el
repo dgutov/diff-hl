@@ -828,6 +828,10 @@ The value of this variable is a mode line template as in
     (remove-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps t)
     (diff-hl-remove-overlays)))
 
+(defvar diff-hl-repeat-exceptions '(diff-hl-show-hunk
+                                    diff-hl-show-hunk-previous
+                                    diff-hl-show-hunk-next))
+
 (when (require 'smartrep nil t)
   (let (smart-keys)
     (cl-labels ((scan (map)
@@ -835,7 +839,8 @@ The value of this variable is a mode line template as in
                        (lambda (event binding)
                          (if (consp binding)
                              (scan binding)
-                           (when (characterp event)
+                           (when (and (characterp event)
+                                      (not (memq binding diff-hl-repeat-exceptions)))
                              (push (cons (string event) binding) smart-keys))))
                        map)))
       (scan diff-hl-command-map)
@@ -847,7 +852,8 @@ The value of this variable is a mode line template as in
 ;; chances of it being put into GNU ELPA are slim too.
 (map-keymap
  (lambda (_key cmd)
-   (put cmd 'repeat-map 'diff-hl-command-map))
+   (unless (memq cmd diff-hl-repeat-exceptions)
+     (put cmd 'repeat-map 'diff-hl-command-map)))
  diff-hl-command-map)
 
 (declare-function magit-toplevel "magit-git")
