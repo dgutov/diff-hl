@@ -293,6 +293,7 @@ the current version of the file)."
                       vc-git-diff-switches))))
          (vc-hg-diff-switches nil)
          (vc-svn-diff-switches nil)
+         (vc-fossil-diff-switches '("-c" "0"))
          (vc-diff-switches '("-U0"))
          ,@(when (boundp 'vc-disable-async-diff)
              '((vc-disable-async-diff t))))
