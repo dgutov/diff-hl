@@ -279,6 +279,7 @@ the current version of the file)."
     (t (intern (format "diff-hl-bmp-%s" type)))))
 
 (defvar vc-svn-diff-switches)
+(defvar vc-fossil-diff-switches)
 
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches
