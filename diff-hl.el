@@ -758,10 +758,10 @@ Only supported with Git."
         (diff-hl-update)))))
 
 (defun diff-hl-unstage-file ()
-  (interactive)
   "Unstage all changes in the current file.
 
 Only supported with Git."
+  (interactive)
   (unless buffer-file-name
     (user-error "No current file"))
   (diff-hl--ensure-staging-supported)
