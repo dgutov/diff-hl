@@ -26,6 +26,7 @@
 (require 'diff-hl)
 (require 'subr-x) ;; string-trim
 (require 'ert)
+(require 'vc-git)
 
 (defvar diff-hl-test-source-file
   (expand-file-name (concat (file-name-directory (locate-library "diff-hl"))
