@@ -50,7 +50,11 @@
     (erase-buffer)
     (insert diff-hl-test-initial-content)
     (save-buffer)
-    (vc-git-command nil 0 buffer-file-name "reset")))
+    (pcase (vc-backend buffer-file-name)
+      (`Git
+       (vc-git-command nil 0 buffer-file-name "reset"))
+      (`Hg
+       (vc-hg-command nil 0 buffer-file-name "revert")))))
 
 (defun diff-hl-test-compute-diff-lines ()
   (diff-hl-test-in-source
