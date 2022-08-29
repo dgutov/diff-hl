@@ -809,7 +809,8 @@ The value of this variable is a mode line template as in
                     ;; saved, in order not to fetch it twice.
                     'find-file-hook)
                   'diff-hl-update-once t t)
-        (add-hook 'vc-checkin-hook 'diff-hl-update nil t)
+        ;; Never removed because it acts globally.
+        (add-hook 'vc-checkin-hook 'diff-hl-after-checkin)
         (add-hook 'after-revert-hook 'diff-hl-after-revert nil t)
         ;; Magit does call `auto-revert-handler', but it usually
         ;; doesn't do much, because `buffer-stale--default-function'
@@ -823,12 +824,20 @@ The value of this variable is a mode line template as in
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
-    (remove-hook 'vc-checkin-hook 'diff-hl-update t)
     (remove-hook 'after-revert-hook 'diff-hl-update t)
     (remove-hook 'magit-revert-buffer-hook 'diff-hl-update t)
     (remove-hook 'magit-not-reverted-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps t)
     (diff-hl-remove-overlays)))
+
+(defun diff-hl-after-checkin ()
+  (let ((fileset (vc-deduce-fileset t)))
+    (dolist (file (nth 1 fileset))
+      (let ((buf (find-buffer-visiting file)))
+        (when buf
+          (with-current-buffer buf
+            (when diff-hl-mode
+              (diff-hl-update))))))))
 
 (defvar diff-hl-repeat-exceptions '(diff-hl-show-hunk
                                     diff-hl-show-hunk-previous
