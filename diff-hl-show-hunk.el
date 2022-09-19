@@ -179,7 +179,9 @@ Returns a list with the buffer and the line number of the clicked line."
 
       ;; Highlight the clicked line
       (goto-char point-in-buffer)
-      (setq line-overlay (make-overlay (point-at-bol) (min (point-max) (1+ (point-at-eol)))))
+      (setq line-overlay (make-overlay (line-beginning-position)
+                                       (min (point-max)
+                                            (1+ (line-end-position)))))
 
       ;; diff-mode
       (diff-mode)

@@ -247,7 +247,7 @@ is closed."
 
   (when (< (diff-hl-inline-popup--compute-content-height 99) 2)
     (user-error "There is no enough vertical space to show the inline popup"))
-  (let* ((the-point (or point (point-at-eol)))
+  (let* ((the-point (or point (line-end-position)))
          (the-buffer (current-buffer))
          (overlay (make-overlay the-point the-point the-buffer)))
     (overlay-put overlay 'phantom t)
