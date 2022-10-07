@@ -49,8 +49,8 @@
            (not diff-hl-mode)
            (eq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
            (not buffer-file-name)
-           (not (file-exists-p buffer-file-name))
-           (file-remote-p default-directory))
+           (file-remote-p default-directory)
+           (not (file-exists-p buffer-file-name)))
     (diff-hl-update)))
 
 (defun diff-hl-flydiff/modified-p (_state)
