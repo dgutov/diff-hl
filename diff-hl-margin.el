@@ -40,6 +40,8 @@
 
 (defvar diff-hl-margin-old-highlight-function nil)
 
+(defvar diff-hl-margin-old-width nil)
+
 (defgroup diff-hl-margin nil
   "Highlight buffer changes on margin"
   :group 'diff-hl)
@@ -108,15 +110,17 @@ You probably shouldn't use this function directly."
   (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
     (if diff-hl-margin-local-mode
         (progn
-          (set (make-local-variable 'diff-hl-margin-old-highlight-function)
-               diff-hl-highlight-function)
-          (set (make-local-variable 'diff-hl-highlight-function)
-               'diff-hl-highlight-on-margin)
+          (setq-local diff-hl-margin-old-highlight-function
+                      diff-hl-highlight-function)
+          (setq-local diff-hl-highlight-function
+                      #'diff-hl-highlight-on-margin)
+          (setq-local diff-hl-margin-old-width (symbol-value width-var))
           (set width-var 1))
       (when diff-hl-margin-old-highlight-function
         (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
               diff-hl-margin-old-highlight-function nil))
-      (set width-var 0)))
+      (set width-var diff-hl-margin-old-width)
+      (kill-local-variable 'diff-hl-margin-old-width)))
   (dolist (win (get-buffer-window-list))
     (set-window-buffer win (current-buffer))))
 
