@@ -1,6 +1,6 @@
 ;;; diff-hl-dired.el --- Highlight changed files in Dired -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2017  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2017, 2023  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -167,6 +167,7 @@ for DIR containing FILES. Call UPDATE-FUNCTION as entries are added."
                  (diff-hl-fringe-face-function 'diff-hl-dired-face-from-type)
                  (o (diff-hl-add-highlighting type 'single)))
             (overlay-put o 'modification-hooks '(diff-hl-overlay-modified))
+            (overlay-put o 'diff-hl-dired-type type)
             ))))))
 
 (defun diff-hl-dired-face-from-type (type _pos)
