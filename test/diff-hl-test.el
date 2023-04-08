@@ -165,6 +165,30 @@
                (diff-hl-diff-buffer-with-reference buffer-file-name))
               '((12 1 insert)))))))
 
+(diff-hl-deftest diff-hl-can-split-away-no-trailing-newline ()
+  (diff-hl-test-in-source
+    (goto-char (point-max))
+    (delete-char -1)
+    (search-backward "}")
+    (insert " ")
+    (save-buffer)
+    (let ((file buffer-file-name)
+          (dest-buffer (get-buffer-create " *diff-hl-test*")))
+      (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
+      (with-current-buffer dest-buffer
+        (with-no-warnings
+          (let (diff-auto-refine-mode)
+            (diff-hl-diff-skip-to 10)))
+        (let ((inhibit-read-only t))
+          (diff-hl-split-away-changes 3))
+        (should (equal (buffer-substring (point) (point-max))
+                       "\x20
+-last line
++last line
+\\ No newline at end of file
+
+"))))))
+
 (defun diff-hl-run-tests ()
   (ert-run-tests-batch))
 
