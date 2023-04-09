@@ -609,6 +609,7 @@ in the source file, or the last line of the hunk above it."
                     (unless (yes-or-no-p (format "Revert current hunk in %s? "
                                                  file))
                       (user-error "Revert canceled")))
+                (widen)
                 (let ((diff-advance-after-apply-hunk nil))
                   (save-window-excursion
                     (diff-apply-hunk t)))
