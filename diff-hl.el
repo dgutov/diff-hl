@@ -644,7 +644,8 @@ its end position."
         (forward-line -1)))
     (unless (looking-at "@")
       (forward-line 1)
-      (diff-split-hunk))
+      (diff-split-hunk)
+      (forward-line -1))
     end-marker))
 
 (defun diff-hl-revert-hunk ()
