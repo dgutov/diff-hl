@@ -719,7 +719,8 @@ Only supported with Git."
          (file buffer-file-name)
          (dest-buffer (get-buffer-create " *diff-hl-stage*"))
          (orig-buffer (current-buffer))
-         (file-base (shell-quote-argument (file-name-nondirectory file)))
+         ;; FIXME: If the file name has double quotes, these need to be quoted.
+         (file-base (file-name-nondirectory file))
          success)
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
