@@ -290,7 +290,7 @@ the current version of the file)."
                      (listp vc-git-diff-switches)
                      (cl-remove-if-not
                       (lambda (arg)
-                        (member arg '("--histogram" "--patience" "--minimal")))
+                        (member arg '("--histogram" "--patience" "--minimal" "--textconv")))
                       vc-git-diff-switches))))
          (vc-hg-diff-switches nil)
          (vc-svn-diff-switches nil)
