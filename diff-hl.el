@@ -755,7 +755,7 @@ Only supported with Git."
     (when success
       (if diff-hl-show-staged-changes
           (message (concat "Hunk staged; customize `diff-hl-show-staged-changes'"
-                           " to highlight only unstages changes"))
+                           " to highlight only unstaged changes"))
         (message "Hunk staged"))
       (unless diff-hl-show-staged-changes
         (diff-hl-update)))))
