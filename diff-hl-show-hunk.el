@@ -372,7 +372,7 @@ The backend is determined by `diff-hl-show-hunk-function'."
 
   (setq diff-hl-show-hunk--original-overlay nil)
 
-  ;; Store begining and end of hunk overlay
+  ;; Store beginning and end of hunk overlay
   (let ((overlay (diff-hl-hunk-overlay-at (point))))
     (when overlay
       (let ((start (overlay-start overlay))

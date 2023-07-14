@@ -230,7 +230,7 @@ The button calls an ACTION."
       ;; Make cursor visible (mainly for selecting text in posframe)
       (setq cursor-type 'box)
 
-      ;; Recenter arround point
+      ;; Recenter around point
       (recenter)))
   (select-frame-set-input-focus diff-hl-show-hunk--frame))
 
