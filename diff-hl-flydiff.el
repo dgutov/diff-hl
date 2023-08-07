@@ -61,6 +61,9 @@
   "Perform highlighting on-the-fly.
 This is a global minor mode.  It alters how `diff-hl-mode' works."
   :lighter "" :global t
+  (and diff-hl-flydiff-timer
+       (cancel-timer diff-hl-flydiff-timer))
+
   (if diff-hl-flydiff-mode
       (progn
         (advice-add 'diff-hl-overlay-modified :override #'ignore)
@@ -75,9 +78,6 @@ This is a global minor mode.  It alters how `diff-hl-mode' works."
     (advice-remove 'diff-hl-overlay-modified #'ignore)
 
     (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
-    (advice-remove 'diff-hl-changes-buffer #'diff-hl-flydiff-changes-buffer)
-
-    (and diff-hl-flydiff-timer
-         (cancel-timer diff-hl-flydiff-timer))))
+    (advice-remove 'diff-hl-changes-buffer #'diff-hl-flydiff-changes-buffer)))
 
 (provide 'diff-hl-flydiff)
