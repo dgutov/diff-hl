@@ -146,13 +146,14 @@ for DIR containing FILES. Call UPDATE-FUNCTION as entries are added."
 
 (when (version< emacs-version "24.4.51.5")
   ;; Work around http://debbugs.gnu.org/19386
-  (defadvice vc-git-dir-status-goto-stage (around
-                                           diff-hl-dired-skip-up-to-date
-                                           (stage files update-function)
-                                           activate)
-    (when (eq stage 'ls-files-up-to-date)
-      (setq stage 'diff-index))
-    ad-do-it))
+  (with-no-warnings
+    (defadvice vc-git-dir-status-goto-stage (around
+                                             diff-hl-dired-skip-up-to-date
+                                             (stage files update-function)
+                                             activate)
+      (when (eq stage 'ls-files-up-to-date)
+        (setq stage 'diff-index))
+      ad-do-it)))
 
 (defun diff-hl-dired-highlight-items (alist)
   "Highlight ALIST containing (FILE . TYPE) elements."
