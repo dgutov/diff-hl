@@ -827,7 +827,7 @@ The value of this variable is a mode line template as in
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update t)
-    (remove-hook 'after-revert-hook 'diff-hl-update t)
+    (remove-hook 'after-revert-hook 'diff-hl-after-revert t)
     (remove-hook 'magit-revert-buffer-hook 'diff-hl-update t)
     (remove-hook 'magit-not-reverted-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps t)
