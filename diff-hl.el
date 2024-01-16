@@ -782,7 +782,7 @@ Only supported with Git."
   "Stage the current hunk or choose the hunks to stage.
 When called with the prefix argument, invokes `diff-hl-stage-some'."
   (interactive "p")
-  (if with-edit
+  (if (or with-edit (region-active-p))
       (call-interactively #'diff-hl-stage-some)
     (call-interactively #'diff-hl-stage-current-hunk)))
 
@@ -796,13 +796,13 @@ When called with the prefix argument, invokes `diff-hl-stage-some'."
 
 (define-key diff-hl-stage-diff-mode-map (kbd "C-c C-c") #'diff-hl-stage-finish)
 
-(defun diff-hl-stage-some ()
+(defun diff-hl-stage-some (&optional beg end)
   "Stage some or all of the current changes, interactively.
 Pops up a diff buffer that can be edited to choose the changes to stage."
-  (interactive)
+  (interactive "r")
   (diff-hl--ensure-staging-supported)
-  (diff-hl-find-current-hunk)
-  (let* ((line (line-number-at-pos))
+  (let* ((line-beg (and beg (line-number-at-pos beg t)))
+         (line-end (and end (line-number-at-pos end t)))
          (file buffer-file-name)
          (dest-buffer (get-buffer-create "*diff-hl-stage-some*"))
          (orig-buffer (current-buffer))
@@ -813,12 +813,22 @@ Pops up a diff buffer that can be edited to choose the changes to stage."
         (erase-buffer)))
     (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
     (with-current-buffer dest-buffer
-      (with-no-warnings
-        (let (diff-auto-refine-mode)
-          (diff-hl-diff-skip-to line)))
       (let ((inhibit-read-only t))
-        (goto-char (point-min))
-        (forward-line 3)
+        (when end
+          (with-no-warnings
+            (let (diff-auto-refine-mode)
+              (diff-hl-diff-skip-to line-end)
+              (diff-hl-split-away-changes 3)
+              (diff-end-of-hunk)))
+          (delete-region (point) (point-max)))
+        (if beg
+            (with-no-warnings
+              (let (diff-auto-refine-mode)
+                (diff-hl-diff-skip-to line-beg)
+                (diff-hl-split-away-changes 3)
+                (diff-beginning-of-hunk)))
+          (goto-char (point-min))
+          (forward-line 3))
         (delete-region (point-min) (point))
         ;; diff-no-select creates a very ugly header; Git rejects it
         (insert (format "diff a/%s b/%s\n" file-base file-base))
