@@ -12,13 +12,16 @@ ARTIFACTS=$(patsubst %.el, %.elc, $(SOURCES))
 
 RM ?= rm -f
 
+# Lisp expression to initialize package for using other packages, like "async".
+PACKAGE_INIT="(progn (require 'package) (package-initialize))"
+
 all: compile test
 
 test:
-	$(EMACS) -batch -L . -l test/diff-hl-test.el -f diff-hl-run-tests
+	$(EMACS) -batch -L . --eval ${PACKAGE_INIT} -l test/diff-hl-test.el -f diff-hl-run-tests
 
 compile:
-	$(EMACS) -batch -L . -f batch-byte-compile $(SOURCES)
+	$(EMACS) -batch -L . --eval ${PACKAGE_INIT} -f batch-byte-compile $(SOURCES)
 
 clean:
 	$(RM) $(ARTIFACTS)

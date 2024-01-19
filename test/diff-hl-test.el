@@ -23,6 +23,7 @@
 
 ;;; Code:
 
+(require 'async)
 (require 'diff-hl)
 (require 'subr-x) ;; string-trim
 (require 'ert)
@@ -109,7 +110,7 @@
                    (car (last (diff-hl-test-compute-diff-lines)))))))
 
 (diff-hl-deftest diff-hl-indirect-buffer-move ()
-  (diff-hl-test-in-source
+   (diff-hl-test-in-source
     (narrow-to-region (point-min) (point-max))
     (goto-char (point-min))
     (kill-whole-line 3)
@@ -117,6 +118,28 @@
     (insert "added\n")
     (save-buffer)
     (diff-hl-mode 1)
+    (diff-hl-previous-hunk)
+    (should (looking-at "added"))
+    (diff-hl-previous-hunk)
+    (should (looking-at "function2"))
+    (should-error (diff-hl-previous-hunk) :type 'user-error)
+    (diff-hl-next-hunk)
+    (should (looking-at "added"))
+    (should-error (diff-hl-next-hunk) :type 'user-error)))
+
+(diff-hl-deftest diff-hl-indirect-buffer-move-async ()
+   (diff-hl-test-in-source
+    (setq diff-hl-update-async t)
+
+    (narrow-to-region (point-min) (point-max))
+    (goto-char (point-min))
+    (kill-whole-line 3)
+    (goto-char (point-max))
+    (insert "added\n")
+    (save-buffer)
+    (diff-hl-mode 1)
+
+    (async-wait diff-hl--update-async-process)
     (diff-hl-previous-hunk)
     (should (looking-at "added"))
     (diff-hl-previous-hunk)

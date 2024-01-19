@@ -6,7 +6,7 @@
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
 ;; Version:  1.9.2
-;; Package-Requires: ((cl-lib "0.2") (emacs "25.1"))
+;; Package-Requires: ((cl-lib "0.2") (emacs "25.1") (async "1.9.7"))
 
 ;; This file is part of GNU Emacs.
 
@@ -58,6 +58,7 @@
 
 ;;; Code:
 
+(require 'async)
 (require 'fringe)
 (require 'diff-mode)
 (require 'vc)
@@ -192,6 +193,13 @@ When this variable is nil (default), `diff-hl-diff-goto-hunk'
 only does that when called without the prefix argument, or when
 the NEW revision is not specified (meaning, the diff is against
 the current version of the file)."
+  :type 'boolean)
+
+(defcustom diff-hl-update-async nil
+  "When non-nil, `diff-hl-update' will run asynchronously.
+
+This can help prevent Emacs from freezing when using a slow version
+control (VC) backend."
   :type 'boolean)
 
 (defvar diff-hl-reference-revision nil
@@ -383,9 +391,39 @@ the current version of the file)."
               (push (list line len type) res)))))
       (nreverse res))))
 
+(defvar diff-hl--update-async-process
+  nil
+  "The child process for async diff-hl-update. Used in unit test.")
+
 (defun diff-hl-update ()
-  (let ((changes (diff-hl-changes))
-        (current-line 1))
+  "Updates the diff-hl overlay."
+  (if diff-hl-update-async
+      (let ((buffer-name (buffer-name))
+            (filename (buffer-file-name)))
+        (setq diff-hl--update-async-process
+              (async-start
+               ;; Use a child process to find the changes
+               `(lambda ()
+                  ;; A way to allow the child process to load package.
+                  ;; Also see https://github.com/jwiegley/emacs-async/issues/39.
+                  ,(async-inject-variables "^load-path$")
+
+                  (require 'diff-hl)
+                  (find-file ,filename)
+                  (diff-hl-changes))
+
+               ;; Update the diff-hl overlay with the changes.
+               `(lambda (changes)
+                  (with-current-buffer ,buffer-name
+                    (diff-hl--update changes))))))
+
+    (diff-hl--update (diff-hl-changes))))
+
+
+
+(defun diff-hl--update (changes)
+  "Updates the diff-hl overlay with the given `changes'."
+  (let ((current-line 1))
     (diff-hl-remove-overlays)
     (save-excursion
       (save-restriction
