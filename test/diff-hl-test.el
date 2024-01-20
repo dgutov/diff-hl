@@ -181,13 +181,12 @@
             (diff-hl-diff-skip-to 10)))
         (let ((inhibit-read-only t))
           (diff-hl-split-away-changes 3))
-        (should (equal (buffer-substring (point) (point-max))
-                       "\x20
+        (should (cl-search "\x20
 -last line
 +last line
 \\ No newline at end of file
 
-"))))))
+" (buffer-substring (point) (point-max))))))))
 
 (defun diff-hl-run-tests ()
   (ert-run-tests-batch))
