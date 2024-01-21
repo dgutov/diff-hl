@@ -395,43 +395,48 @@ control (VC) backend."
   (if (and diff-hl-update-with-thread
            ;; Disable threading on the remote file as it is unreliable.
            (not (file-remote-p default-directory)))
+      ;; TODO: debounce if a thread is already running.
       (make-thread 'diff-hl--update "diff-hl--update")
     (diff-hl--update)))
 
 (defun diff-hl--update ()
   "Updates the diff-hl overlay."
-  (let ((changes (diff-hl-changes))
-        (current-line 1))
-    (diff-hl-remove-overlays)
-    (save-excursion
-      (save-restriction
-        (widen)
-        (goto-char (point-min))
-        (dolist (c changes)
-          (cl-destructuring-bind (line len type) c
-            (forward-line (- line current-line))
-            (setq current-line line)
-            (let ((hunk-beg (point)))
-              (while (cl-plusp len)
-                (diff-hl-add-highlighting
-                 type
-                 (cond
-                  ((not diff-hl-draw-borders) 'empty)
-                  ((and (= len 1) (= line current-line)) 'single)
-                  ((= len 1) 'bottom)
-                  ((= line current-line) 'top)
-                  (t 'middle)))
-                (forward-line 1)
-                (cl-incf current-line)
-                (cl-decf len))
-              (let ((h (make-overlay hunk-beg (point)))
-                    (hook '(diff-hl-overlay-modified)))
-                (overlay-put h 'diff-hl t)
-                (overlay-put h 'diff-hl-hunk t)
-                (overlay-put h 'diff-hl-hunk-type type)
-                (overlay-put h 'modification-hooks hook)
-                (overlay-put h 'insert-in-front-hooks hook)
-                (overlay-put h 'insert-behind-hooks hook)))))))))
+  (condition-case err
+      (let ((changes (diff-hl-changes))
+            (current-line 1))
+        (diff-hl-remove-overlays)
+        (save-excursion
+          (save-restriction
+            (widen)
+            (goto-char (point-min))
+            (dolist (c changes)
+              (cl-destructuring-bind (line len type) c
+                (forward-line (- line current-line))
+                (setq current-line line)
+                (let ((hunk-beg (point)))
+                  (while (cl-plusp len)
+                    (diff-hl-add-highlighting
+                     type
+                     (cond
+                      ((not diff-hl-draw-borders) 'empty)
+                      ((and (= len 1) (= line current-line)) 'single)
+                      ((= len 1) 'bottom)
+                      ((= line current-line) 'top)
+                      (t 'middle)))
+                    (forward-line 1)
+                    (cl-incf current-line)
+                    (cl-decf len))
+                  (let ((h (make-overlay hunk-beg (point)))
+                        (hook '(diff-hl-overlay-modified)))
+                    (overlay-put h 'diff-hl t)
+                    (overlay-put h 'diff-hl-hunk t)
+                    (overlay-put h 'diff-hl-hunk-type type)
+                    (overlay-put h 'modification-hooks hook)
+                    (overlay-put h 'insert-in-front-hooks hook)
+                    (overlay-put h 'insert-behind-hooks hook))))))))
+    (error
+     (message "An error occurred in diff-hl--update: %S" err)
+     nil)))
 
 (defvar-local diff-hl--modified-tick nil)
 
