@@ -126,6 +126,31 @@
     (should (looking-at "added"))
     (should-error (diff-hl-next-hunk) :type 'user-error)))
 
+(diff-hl-deftest diff-hl-indirect-buffer-move-async ()
+  (diff-hl-test-in-source
+   (let ((diff-hl-update-async t))
+     (narrow-to-region (point-min) (point-max))
+     (goto-char (point-min))
+     (kill-whole-line 3)
+     (goto-char (point-max))
+     (insert "added\n")
+     (save-buffer)
+     (diff-hl-mode 1)
+
+     ;; wait for all thread to complete.
+     (dolist (thread (all-threads))
+       (unless (eq thread main-thread)
+         (thread-join thread)))
+
+     (diff-hl-previous-hunk)
+     (should (looking-at "added"))
+     (diff-hl-previous-hunk)
+     (should (looking-at "function2"))
+     (should-error (diff-hl-previous-hunk) :type 'user-error)
+     (diff-hl-next-hunk)
+     (should (looking-at "added"))
+     (should-error (diff-hl-next-hunk) :type 'user-error))))
+
 (diff-hl-deftest diff-hl-can-ignore-staged-changes ()
   (diff-hl-test-in-source
     (goto-char (point-min))
