@@ -1,6 +1,6 @@
 ;;; diff-hl-test.el --- tests for diff-hl -*- lexical-binding: t -*-
 
-;; Copyright (C) 2020, 2021  Free Software Foundation, Inc.
+;; Copyright (C) 2020-2024  Free Software Foundation, Inc.
 
 ;; Author:   Nathan Moreau <nathan.moreau@m4x.org>
 
@@ -182,7 +182,8 @@
         (let ((inhibit-read-only t))
           (diff-hl-split-away-changes 3))
         (should (equal (buffer-substring (point) (point-max))
-                       "\x20
+                       "@@ -9,2 +9,2 @@
+\x20
 -last line
 +last line
 \\ No newline at end of file
