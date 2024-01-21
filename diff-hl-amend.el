@@ -1,6 +1,6 @@
-;; Copyright (C) 2012-2013, 2020  Free Software Foundation, Inc. -*- lexical-binding: t -*-
+;; Copyright (C) 2012-2013, 2020-2024  Free Software Foundation, Inc. -*- lexical-binding: t -*-
 
-;; Author:   Dmitry Gutov <dgutov@yandex.ru>
+;; Author:   Dmitry Gutov <dmitry@gutov.dev>
 ;; URL:      https://github.com/dgutov/diff-hl
 
 ;; This file is part of GNU Emacs.
