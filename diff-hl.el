@@ -194,11 +194,12 @@ the NEW revision is not specified (meaning, the diff is against
 the current version of the file)."
   :type 'boolean)
 
-(defcustom diff-hl-update-with-thread nil
+(defcustom diff-hl-update-async nil
   "When non-nil, `diff-hl-update' will run asynchronously.
 
 This can help prevent Emacs from freezing, especially by a slow version
-control (VC) backend."
+control (VC) backend. Remote files will not be affected since this feature
+does not work reliably with them."
   :type 'boolean)
 
 (defvar diff-hl-reference-revision nil
@@ -392,51 +393,55 @@ control (VC) backend."
 
 (defun diff-hl-update ()
   "Updates the diff-hl overlay in a thread."
-  (if (and diff-hl-update-with-thread
+  (if (and diff-hl-update-async
            ;; Disable threading on the remote file as it is unreliable.
            (not (file-remote-p default-directory)))
       ;; TODO: debounce if a thread is already running.
-      (make-thread 'diff-hl--update "diff-hl--update")
+      (make-thread 'diff-hl--update-safe "diff-hl--update-safe")
     (diff-hl--update)))
 
-(defun diff-hl--update ()
-  "Updates the diff-hl overlay."
+(defun diff-hl--update-safe ()
+  "Updates the diff-hl overlay. It handles and logs when an error is signaled."
   (condition-case err
-      (let ((changes (diff-hl-changes))
-            (current-line 1))
-        (diff-hl-remove-overlays)
-        (save-excursion
-          (save-restriction
-            (widen)
-            (goto-char (point-min))
-            (dolist (c changes)
-              (cl-destructuring-bind (line len type) c
-                (forward-line (- line current-line))
-                (setq current-line line)
-                (let ((hunk-beg (point)))
-                  (while (cl-plusp len)
-                    (diff-hl-add-highlighting
-                     type
-                     (cond
-                      ((not diff-hl-draw-borders) 'empty)
-                      ((and (= len 1) (= line current-line)) 'single)
-                      ((= len 1) 'bottom)
-                      ((= line current-line) 'top)
-                      (t 'middle)))
-                    (forward-line 1)
-                    (cl-incf current-line)
-                    (cl-decf len))
-                  (let ((h (make-overlay hunk-beg (point)))
-                        (hook '(diff-hl-overlay-modified)))
-                    (overlay-put h 'diff-hl t)
-                    (overlay-put h 'diff-hl-hunk t)
-                    (overlay-put h 'diff-hl-hunk-type type)
-                    (overlay-put h 'modification-hooks hook)
-                    (overlay-put h 'insert-in-front-hooks hook)
-                    (overlay-put h 'insert-behind-hooks hook))))))))
+      (diff-hl--update)
     (error
      (message "An error occurred in diff-hl--update: %S" err)
      nil)))
+
+(defun diff-hl--update ()
+  "Updates the diff-hl overlay."
+  (let ((changes (diff-hl-changes))
+        (current-line 1))
+    (diff-hl-remove-overlays)
+    (save-excursion
+      (save-restriction
+        (widen)
+        (goto-char (point-min))
+        (dolist (c changes)
+          (cl-destructuring-bind (line len type) c
+            (forward-line (- line current-line))
+            (setq current-line line)
+            (let ((hunk-beg (point)))
+              (while (cl-plusp len)
+                (diff-hl-add-highlighting
+                 type
+                 (cond
+                  ((not diff-hl-draw-borders) 'empty)
+                  ((and (= len 1) (= line current-line)) 'single)
+                  ((= len 1) 'bottom)
+                  ((= line current-line) 'top)
+                  (t 'middle)))
+                (forward-line 1)
+                (cl-incf current-line)
+                (cl-decf len))
+              (let ((h (make-overlay hunk-beg (point)))
+                    (hook '(diff-hl-overlay-modified)))
+                (overlay-put h 'diff-hl t)
+                (overlay-put h 'diff-hl-hunk t)
+                (overlay-put h 'diff-hl-hunk-type type)
+                (overlay-put h 'modification-hooks hook)
+                (overlay-put h 'insert-in-front-hooks hook)
+                (overlay-put h 'insert-behind-hooks hook)))))))))
 
 (defvar-local diff-hl--modified-tick nil)
 
