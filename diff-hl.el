@@ -194,6 +194,13 @@ the NEW revision is not specified (meaning, the diff is against
 the current version of the file)."
   :type 'boolean)
 
+(defcustom diff-hl-update-with-thread nil
+  "When non-nil, `diff-hl-update' will run asynchronously.
+
+This can help prevent Emacs from freezing, especially by a slow version
+control (VC) backend."
+  :type 'boolean)
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -384,6 +391,15 @@ the current version of the file)."
       (nreverse res))))
 
 (defun diff-hl-update ()
+  "Updates the diff-hl overlay in a thread."
+  (if (and diff-hl-update-with-thread
+           ;; Disable threading on the remote file as it is unreliable.
+           (not (file-remote-p default-directory)))
+      (make-thread 'diff-hl--update "diff-hl--update")
+    (diff-hl--update)))
+
+(defun diff-hl--update ()
+  "Updates the diff-hl overlay."
   (let ((changes (diff-hl-changes))
         (current-line 1))
     (diff-hl-remove-overlays)
