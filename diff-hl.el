@@ -392,7 +392,7 @@ does not work reliably with them."
       (nreverse res))))
 
 (defun diff-hl-update ()
-  "Updates the diff-hl overlay in a thread."
+  "Updates the diff-hl overlay."
   (if (and diff-hl-update-async
            ;; Disable threading on the remote file as it is unreliable.
            (not (file-remote-p default-directory)))
