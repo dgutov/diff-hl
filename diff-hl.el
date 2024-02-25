@@ -807,7 +807,7 @@ Only supported with Git."
 (defun diff-hl-stage-dwim (&optional with-edit)
   "Stage the current hunk or choose the hunks to stage.
 When called with the prefix argument, invokes `diff-hl-stage-some'."
-  (interactive "p")
+  (interactive "P")
   (if (or with-edit (region-active-p))
       (call-interactively #'diff-hl-stage-some)
     (call-interactively #'diff-hl-stage-current-hunk)))
