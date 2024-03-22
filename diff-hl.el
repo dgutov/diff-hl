@@ -395,7 +395,11 @@ does not work reliably with them."
   "Updates the diff-hl overlay."
   (if (and diff-hl-update-async
            ;; Disable threading on the remote file as it is unreliable.
-           (not (file-remote-p default-directory)))
+           (not (file-remote-p default-directory))
+           ;; Editing with a thread can prevent a buffer from being killed.
+           ;; Disable threading on `with-editor-mode' because its
+           ;; `with-editor-finish' need to kill the buffer.
+           (not (bound-and-true-p with-editor-mode)))
       ;; TODO: debounce if a thread is already running.
       (make-thread 'diff-hl--update-safe "diff-hl--update-safe")
     (diff-hl--update)))
