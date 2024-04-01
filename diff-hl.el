@@ -198,8 +198,8 @@ the current version of the file)."
   "When non-nil, `diff-hl-update' will run asynchronously.
 
 This can help prevent Emacs from freezing, especially by a slow version
-control (VC) backend. Remote files will not be affected since this feature
-does not work reliably with them."
+control (VC) backend. It's disabled in remote buffers, though, since it
+didn't work reliably in such during testing."
   :type 'boolean)
 
 (defvar diff-hl-reference-revision nil
