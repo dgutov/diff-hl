@@ -1098,7 +1098,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
     (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-buffer-with-reference*"))
            (backend (or backend (vc-backend file)))
            (temporary-file-directory
-            (if (file-directory-p "/dev/shm/")
+            (if (and (eq system-type 'gnu/linux) (file-directory-p "/dev/shm/"))
                 "/dev/shm/"
               temporary-file-directory))
            (rev
