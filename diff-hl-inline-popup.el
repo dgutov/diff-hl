@@ -53,7 +53,8 @@
    (- (length list) length offset)))
 
 (defun diff-hl-inline-popup--ensure-enough-lines (pos content-height)
-  "Ensure there is enough lines below POS to show the inline popup with CONTENT-HEIGHT height."
+  "Ensure there is enough lines below POS to show the inline popup.
+CONTENT-HEIGHT specifies the height of the popup."
   (let* ((line (line-number-at-pos pos))
          (end (line-number-at-pos (window-end nil t)))
          (height (+ 6 content-height))
@@ -69,14 +70,16 @@ Default for CONTENT-SIZE is the size of the current lines"
     (min content-size max-size)))
 
 (defun diff-hl-inline-popup--compute-content-lines (lines index window-size)
-  "Compute the lines to show in the popup, from LINES starting at INDEX with a WINDOW-SIZE."
+  "Compute the lines to show in the popup.
+Compute it from LINES starting at INDEX with a WINDOW-SIZE."
   (let* ((len (length lines))
          (window-size (min window-size len))
          (index (min index (- len window-size))))
     (diff-hl-inline-popup--splice lines index window-size)))
 
 (defun diff-hl-inline-popup--compute-header (width &optional header)
-  "Compute the header of the popup, with some WIDTH, and some optional HEADER text."
+  "Compute the header of the popup.
+Compute it from some WIDTH, and some optional HEADER text."
   (let* ((scroll-indicator (if (eq diff-hl-inline-popup--current-index 0) "   " " ⬆ "))
          (header (or header ""))
          (new-width (- width (length header) (length scroll-indicator)))
@@ -88,7 +91,8 @@ Default for CONTENT-SIZE is the size of the current lines"
     (concat line "\n") ))
 
 (defun diff-hl-inline-popup--compute-footer (width &optional footer)
-  "Compute the header of the popup, with some WIDTH, and some optional FOOTER text."
+  "Compute the header of the popup.
+Compute it from some WIDTH, and some optional FOOTER text."
   (let* ((scroll-indicator (if (>= diff-hl-inline-popup--current-index
                                    (- (length diff-hl-inline-popup--current-lines)
                                       diff-hl-inline-popup--height))
