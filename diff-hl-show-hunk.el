@@ -400,7 +400,7 @@ The backend is determined by `diff-hl-show-hunk-function'."
 
 ;;;###autoload
 (define-minor-mode diff-hl-show-hunk-mouse-mode
-  "Enables the margin and fringe to show a posframe/popup with vc diffs when clicked.
+  "Enable margin and fringe to show a posframe/popup with vc diffs when clicked.
 By default, the popup shows only the current hunk, and
 the line of the hunk that matches the current position is
 highlighted.  The face, border and other visual preferences are
