@@ -202,6 +202,17 @@ control (VC) backend. It's disabled in remote buffers, though, since it
 didn't work reliably in such during testing."
   :type 'boolean)
 
+;; Threads are not reliable with remote files, yet.
+(defcustom diff-hl-async-inhibit-functions (list #'diff-hl-with-editor-p
+                                                 #'file-remote-p)
+  "Functions to call to check whether asychronous method should be disabled.
+
+When `diff-hl-update-async' is non-nil, these functions are called in turn
+and passed the value `default-directory'.
+
+If any returns non-nil, `diff-hl-update' will run synchronously anyway."
+  :type '(repeat :tag "Predicate" function))
+
 (defvar diff-hl-reference-revision nil
   "Revision to diff against.  nil means the most recent one.")
 
@@ -394,11 +405,15 @@ didn't work reliably in such during testing."
 (defun diff-hl-update ()
   "Updates the diff-hl overlay."
   (if (and diff-hl-update-async
-           ;; Disable threading on the remote file as it is unreliable.
-           (not (file-remote-p default-directory)))
+           (not
+            (run-hook-with-args-until-success 'diff-hl-async-inhibit-functions
+                                              default-directory)))
       ;; TODO: debounce if a thread is already running.
       (make-thread 'diff-hl--update-safe "diff-hl--update-safe")
     (diff-hl--update)))
+
+(defun diff-hl-with-editor-p (_dir)
+  (bound-and-true-p with-editor-mode))
 
 (defun diff-hl--update-safe ()
   "Updates the diff-hl overlay. It handles and logs when an error is signaled."
