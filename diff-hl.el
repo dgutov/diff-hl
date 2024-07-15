@@ -506,8 +506,7 @@ If any returns non-nil, `diff-hl-update' will run synchronously anyway."
       (diff-hl-update))))
 
 (defun diff-hl-after-revert ()
-  (defvar revert-buffer-preserve-modes)
-  (when revert-buffer-preserve-modes
+  (when (bound-and-true-p revert-buffer-preserve-modes)
     (diff-hl-update)))
 
 (defun diff-hl-diff-goto-hunk-1 (historic)
