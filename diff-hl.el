@@ -1146,7 +1146,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
 
 (defun diff-hl-git-index-revision (file object-name)
   (let ((filename (diff-hl-make-temp-file-name file
-                                               (concat ":" object-name)
+                                               (concat ";" object-name)
                                                'manual))
         (filebuf (get-file-buffer file)))
     (unless (file-exists-p filename)
