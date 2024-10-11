@@ -328,6 +328,7 @@ If any returns non-nil, `diff-hl-update' will run synchronously anyway."
                diff-hl-reference-revision))))
 
 (declare-function vc-git-command "vc-git")
+(declare-function vc-git--rev-parse "vc-git")
 
 (defun diff-hl-changes-buffer (file backend)
   (diff-hl-with-diff-switches
@@ -1124,7 +1125,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
                  (diff-hl-git-index-object-name file))
               (diff-hl-create-revision
                file
-               (or diff-hl-reference-revision
+               (or (diff-hl-resolved-reference-revision backend)
                    (diff-hl-working-revision file backend)))))
            (switches (format "-U %d --strip-trailing-cr" (or context-lines 0))))
       (diff-no-select rev (current-buffer) switches 'noasync
@@ -1134,6 +1135,16 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
           ;; Function `diff-sentinel' adds a final line, so remove it
           (delete-matching-lines "^Diff finished.*")))
       (get-buffer-create dest-buffer))))
+
+(defun diff-hl-resolved-reference-revision (backend)
+  (cond
+   ((null diff-hl-reference-revision)
+    nil)
+   ((eq backend 'Git)
+    (vc-git--rev-parse diff-hl-reference-revision))
+   ;; Symbolic refs resolution needed for Hg too?
+   (t
+     diff-hl-reference-revision)))
 
 ;; TODO: Cache based on .git/index's mtime, maybe.
 (defun diff-hl-git-index-object-name (file)
