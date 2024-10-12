@@ -214,7 +214,10 @@ If any returns non-nil, `diff-hl-update' will run synchronously anyway."
   :type '(repeat :tag "Predicate" function))
 
 (defvar diff-hl-reference-revision nil
-  "Revision to diff against.  nil means the most recent one.")
+  "Revision to diff against.  nil means the most recent one.
+
+It can be a relative expression as well, such as \"HEAD^\" with Git, or
+\"-2\" with Mercurial.")
 
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
@@ -329,6 +332,7 @@ If any returns non-nil, `diff-hl-update' will run synchronously anyway."
 
 (declare-function vc-git-command "vc-git")
 (declare-function vc-git--rev-parse "vc-git")
+(declare-function vc-hg-command "vc-hg")
 
 (defun diff-hl-changes-buffer (file backend)
   (diff-hl-with-diff-switches
@@ -1142,9 +1146,15 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
     nil)
    ((eq backend 'Git)
     (vc-git--rev-parse diff-hl-reference-revision))
-   ;; Symbolic refs resolution needed for Hg too?
+   ((eq backend 'Hg)
+    (with-temp-buffer
+      (vc-hg-command (current-buffer) 0 nil
+                     "identify" "-r" diff-hl-reference-revision
+                     "-i")
+      (goto-char (point-min))
+      (buffer-substring-no-properties (point) (line-end-position))))
    (t
-     diff-hl-reference-revision)))
+    diff-hl-reference-revision)))
 
 ;; TODO: Cache based on .git/index's mtime, maybe.
 (defun diff-hl-git-index-object-name (file)
