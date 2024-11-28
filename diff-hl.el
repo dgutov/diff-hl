@@ -1162,7 +1162,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
     (vc-git-command (current-buffer) 0 file "ls-files" "-s")
     (and
      (goto-char (point-min))
-     (re-search-forward "^[0-9]+ \\([0-9a-f]+\\)")
+     (re-search-forward "^[0-9]+ \\([0-9a-f]+\\)" nil t)
      (match-string-no-properties 1))))
 
 (defun diff-hl-git-index-revision (file object-name)
