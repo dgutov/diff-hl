@@ -38,6 +38,29 @@
 
 (require 'diff-hl)
 
+(defgroup diff-hl-show-hunk nil
+  "Show vc diffs in a posframe or popup."
+  :group 'diff-hl)
+
+(defcustom diff-hl-show-hunk-ignorable-commands
+  '(ignore
+    diff-hl-show-hunk
+    handle-switch-frame
+    diff-hl-show-hunk--click)
+  "Commands that will keep the hunk shown.
+Any command not on this list will cause the hunk to be hidden."
+  :type '(repeat function)
+  :group 'diff-hl-show-hunk)
+
+(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline
+  "The function used to render the hunk.
+The function receives as first parameter a buffer with the
+contents of the hunk, and as second parameter the line number
+corresponding to the clicked line in the original buffer."
+  :type '(choice
+          (const :tag "Show inline" diff-hl-show-hunk-inline)
+          (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
+
 (defvar diff-hl-show-hunk-mouse-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<left-margin> <mouse-1>") 'diff-hl-show-hunk--click)
@@ -65,21 +88,8 @@
 (defvar diff-hl-show-hunk--original-overlay nil
   "Copy of the diff-hl hunk overlay.")
 
-(defgroup diff-hl-show-hunk nil
-  "Show vc diffs in a posframe or popup."
-  :group 'diff-hl)
-
 (defconst diff-hl-show-hunk-boundary "^@@.*@@")
 (defconst diff-hl-show-hunk--no-lines-removed-message (list "<<no lines removed>>"))
-
-(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline
-  "The function used to render the hunk.
-The function receives as first parameter a buffer with the
-contents of the hunk, and as second parameter the line number
-corresponding to the clicked line in the original buffer."
-  :type '(choice
-          (const :tag "Show inline" diff-hl-show-hunk-inline)
-          (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
 
 (defvar diff-hl-show-hunk--hide-function nil
   "Function to call to close the shown hunk.")
@@ -111,7 +121,7 @@ corresponding to the clicked line in the original buffer."
 
 (defun diff-hl-show-hunk-ignorable-command-p (command)
   "Decide if COMMAND is a command allowed while showing the current hunk."
-  (member command '(ignore diff-hl-show-hunk handle-switch-frame diff-hl-show-hunk--click)))
+  (member command diff-hl-show-hunk-ignorable-commands))
 
 (defun diff-hl-show-hunk--compute-diffs ()
   "Compute diffs using functions of diff-hl.

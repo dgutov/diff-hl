@@ -222,6 +222,7 @@ to scroll in the popup")
 (defun diff-hl-show-hunk-inline--post-command-hook ()
   "Called each time a command is executed."
   (let ((allowed-command (or
+                          (diff-hl-show-hunk-ignorable-command-p this-command)
                           (string-match-p "diff-hl-show-hunk-inline-" (symbol-name this-command))
                           (diff-hl-show-hunk-inline--ignorable-command-p this-command))))
     (unless allowed-command
