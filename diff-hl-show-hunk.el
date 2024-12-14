@@ -22,9 +22,9 @@
 ;;; Commentary:
 
 ;; `diff-hl-show-hunk' shows a popup with the modification hunk at point.
-;; `diff-hl-show-hunk-function' points to the backend used to show the
-;; hunk.  Its default value is `diff-hl-show-hunk-inline-popup', that
-;; shows diffs inline using overlay.  There is another built-in backend:
+;; `diff-hl-show-hunk-function' points to the backend used to show the hunk.
+;; Its default value is `diff-hl-show-hunk-inline', that shows diffs inline
+;; using overlay.  There is another built-in backend:
 ;; `diff-hl-show-hunk-posframe' (based on posframe).
 ;;
 ;; `diff-hl-show-hunk-mouse-mode' adds interaction on clicking in the
@@ -72,13 +72,13 @@
 (defconst diff-hl-show-hunk-boundary "^@@.*@@")
 (defconst diff-hl-show-hunk--no-lines-removed-message (list "<<no lines removed>>"))
 
-(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
+(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline
   "The function used to render the hunk.
 The function receives as first parameter a buffer with the
 contents of the hunk, and as second parameter the line number
 corresponding to the clicked line in the original buffer."
   :type '(choice
-          (const :tag "Show inline" diff-hl-show-hunk-inline-popup)
+          (const :tag "Show inline" diff-hl-show-hunk-inline)
           (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
 
 (defvar diff-hl-show-hunk--hide-function nil
