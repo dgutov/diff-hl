@@ -26,6 +26,19 @@
 
 (require 'subr-x)
 
+(defcustom diff-hl-show-hunk-inline-popup-hide-hunk nil
+  "If t, inline-popup is shown over the hunk, hiding it."
+  :type 'boolean
+  :group 'diff-hl-show-hunk)
+
+(defcustom diff-hl-show-hunk-inline-popup-smart-lines t
+  "If t, inline-popup tries to show only the deleted lines of the
+hunk.  The added lines are shown when scrolling the popup.  If
+the hunk consist only on added lines, then
+`diff-hl-show-hunk--no-lines-removed-message' it is shown."
+  :type 'boolean
+  :group 'diff-hl-show-hunk)
+
 (defvar diff-hl-inline-popup--current-popup nil "The overlay of the current inline popup.")
 (defvar diff-hl-inline-popup--current-lines nil "A list of the lines to show in the popup.")
 (defvar diff-hl-inline-popup--current-index nil "First line showed in popup.")
@@ -283,6 +296,68 @@ is closed."
          (overlays (cl-remove-if-not (lambda (o)(overlay-get o 'diff-hl-inline-popup)) all-overlays)))
     (dolist (o overlays)
       (delete-overlay o))))
+
+(defvar diff-hl-show-hunk--hide-function)
+
+;;;###autoload
+(defun diff-hl-show-hunk-inline-popup (buffer &optional _ignored-line)
+  "Implementation to show the hunk in a inline popup.
+BUFFER is a buffer with the hunk."
+  (diff-hl-inline-popup-hide)
+  (setq diff-hl-show-hunk--hide-function #'diff-hl-inline-popup-hide)
+  (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
+         (smart-lines diff-hl-show-hunk-inline-popup-smart-lines)
+         (original-lines-number (cl-count-if (lambda (s) (string-prefix-p "-" s)) lines))
+         (lines (if (string= (car (last lines)) "" ) (butlast lines) lines))
+         (lines (if (and (eq original-lines-number 0) smart-lines)
+                    diff-hl-show-hunk--no-lines-removed-message
+                  lines))
+         (overlay diff-hl-show-hunk--original-overlay)
+         (type (overlay-get overlay 'diff-hl-hunk-type))
+         (point (if (eq type 'delete) (overlay-start overlay) (overlay-end overlay)))
+         (propertize-line (lambda (l)
+                            (propertize l 'face
+                                        (cond ((string-prefix-p "+" l)
+                                               'diff-added)
+                                              ((string-prefix-p "-" l)
+                                               'diff-removed)))))
+         (propertized-lines (mapcar propertize-line lines)))
+
+    (save-excursion
+      ;; Save point in case the hunk is hidden, so next/previous works as expected
+      ;; If the hunk is delete type, then don't hide the hunk
+      ;; (because the hunk is located in a non deleted line)
+      (when (and diff-hl-show-hunk-inline-popup-hide-hunk
+                 (not (eq type 'delete)))
+        (let* ((invisible-overlay (make-overlay (overlay-start overlay)
+                                                (overlay-end overlay))))
+          ;; Make new overlay, since the diff-hl overlay can be changed by diff-hl-flydiff
+          (overlay-put invisible-overlay 'invisible t)
+          ;; Change default hide popup function, to make the overlay visible
+          (setq diff-hl-show-hunk--hide-function
+                (lambda ()
+                  (overlay-put invisible-overlay 'invisible nil)
+                  (delete-overlay invisible-overlay)
+                  (diff-hl-inline-popup-hide)))))
+      (diff-hl-show-hunk--goto-hunk-overlay overlay)
+      (let ((height
+             (when smart-lines
+               (when (not (eq 0 original-lines-number))
+                 original-lines-number)))
+            (footer "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"))
+        (unless diff-hl-show-staged-changes
+          (setq footer (concat footer " (S)Stage")))
+        (diff-hl-inline-popup-show
+         propertized-lines
+         (if (and (boundp 'diff-hl-reference-revision) diff-hl-reference-revision)
+             (concat "Diff with " diff-hl-reference-revision)
+           "Diff with HEAD")
+         footer
+         diff-hl-show-hunk-map
+         #'diff-hl-show-hunk-hide
+         point
+         height))
+      )))
 
 (provide 'diff-hl-inline-popup)
 ;;; diff-hl-inline-popup ends here
