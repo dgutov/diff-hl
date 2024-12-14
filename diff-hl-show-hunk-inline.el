@@ -28,11 +28,13 @@
 (eval-when-compile
   (require 'subr-x))
 
+(define-obsolete-variable-alias 'diff-hl-show-hunk-inline-popup-hide-hunk 'diff-hl-show-hunk-inline-hide-hunk "1.11.0")
 (defcustom diff-hl-show-hunk-inline-hide-hunk nil
   "If t, the inline popup is shown over the hunk, hiding it."
   :type 'boolean
   :group 'diff-hl-show-hunk)
 
+(define-obsolete-variable-alias 'diff-hl-show-hunk-inline-popup-smart-lines 'diff-hl-show-hunk-inline-smart-lines "1.11.0")
 (defcustom diff-hl-show-hunk-inline-smart-lines t
   "If t, the inline popup tries to show only the deleted lines of the
 hunk.  The added lines are shown when scrolling the popup.  If
@@ -357,6 +359,8 @@ BUFFER is a buffer with the hunk."
          #'diff-hl-show-hunk-hide
          point
          height)))))
+
+(define-obsolete-function-alias 'diff-hl-show-hunk-inline-popup 'diff-hl-show-hunk-inline "1.11.0")
 
 (provide 'diff-hl-show-hunk-inline)
 
