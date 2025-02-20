@@ -1,9 +1,9 @@
 About
 =====
 
-`diff-hl-mode` highlights uncommitted changes on the left side of the
-window (area also known as the "gutter"), allows you
-to jump between and revert them selectively.
+`diff-hl-mode` highlights uncommitted changes on the side of the window (area
+also known as the "gutter"), allows you to jump between and revert them
+selectively.
 
 In buffers controlled by Git, you can also stage and unstage the changes.
 
@@ -67,9 +67,9 @@ Emacs 25.1+.
 Notes
 =====
 
-* By default `diff-hl-mode` uses the corresponding VC diff command, so
-  it's only accurate when the buffer is in saved state. Check out
-  `diff-hl-flydiff-mode`, it aims to handle unsaved buffers as well.
+* By default `diff-hl-mode` only updates the display when the buffer is in
+  saved state. For a different tradeoff, try `diff-hl-flydiff-mode`, which
+  updates the buffer on a timer.
 
 * To use an
   [alternative diff algorithm](http://stackoverflow.com/questions/32365271/whats-the-difference-between-git-diff-patience-and-git-diff-histogram)
@@ -98,7 +98,8 @@ Notes
 
 * [emacs-git-gutter](https://github.com/syohex/emacs-git-gutter) shows
   indicators in the margin by default, allows you to customize how the
-  indicators look more easily, and has a "stage hunk" command.
+  indicators look more easily. But it misses some of the other features,
+  such as the Dired integration.
 
 Integration
 =====
