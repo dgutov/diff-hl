@@ -506,9 +506,10 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
           (run-with-idle-timer 0.01 nil #'diff-hl-after-undo (current-buffer)))))
 
 (defun diff-hl-after-undo (buffer)
-  (with-current-buffer buffer
-    (unless (buffer-modified-p)
-      (diff-hl-update))))
+  (when (buffer-live-p buffer)
+    (with-current-buffer buffer
+      (unless (buffer-modified-p)
+        (diff-hl-update)))))
 
 (defun diff-hl-after-revert ()
   (when (bound-and-true-p revert-buffer-preserve-modes)
