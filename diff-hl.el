@@ -148,7 +148,9 @@
            (when on (global-diff-hl-mode 1)))))
 
 (defcustom diff-hl-bmp-max-width 16
-  "Maximum width in pixels of the bitmap indicators."
+  "Maximum width of the fringe indicator bitmaps, in pixels.
+The bitmap width is decided by comparing this value with the current width
+of the fringe.  When the fringe is hidden, this value is also used."
   :type 'integer)
 
 (defcustom diff-hl-highlight-revert-hunk-function
