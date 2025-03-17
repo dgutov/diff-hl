@@ -6,7 +6,7 @@
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
 ;; Version:  1.10.0
-;; Package-Requires: ((cl-lib "0.2") (emacs "25.1"))
+;; Package-Requires: ((cl-lib "0.2") (emacs "26.1"))
 
 ;; This file is part of GNU Emacs.
 
@@ -761,7 +761,7 @@ its end position."
       (user-error "Only Git supports staging; this file is controlled by %s" backend))))
 
 (defun diff-hl-stage-diff (orig-buffer)
-  (let ((patchfile (make-temp-file "diff-hl-stage-patch"))
+  (let ((patchfile (make-nearby-temp-file "diff-hl-stage-patch"))
         success)
     (write-region (point-min) (point-max) patchfile
                   nil 'silent)
@@ -769,7 +769,7 @@ its end position."
         (with-current-buffer orig-buffer
           (with-output-to-string
             (vc-git-command standard-output 0
-                            patchfile
+                            (file-local-name patchfile)
                             "apply" "--cached" )
             (setq success t)))
       (delete-file patchfile))
