@@ -420,7 +420,15 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
             (run-hook-with-args-until-success 'diff-hl-async-inhibit-functions
                                               default-directory)))
       ;; TODO: debounce if a thread is already running.
-      (make-thread 'diff-hl--update-safe "diff-hl--update-safe")
+      (let ((buf (current-buffer)))
+        ;; Switch buffer temporarily, to "unlock" it for other threads.
+        (with-temp-buffer
+          (make-thread
+           (lambda ()
+             (when (buffer-live-p buf)
+               (set-buffer buf)
+               (diff-hl--update-safe)))
+           "diff-hl--update-safe")))
     (diff-hl--update)))
 
 (defun diff-hl-with-editor-p (_dir)
