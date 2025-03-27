@@ -420,11 +420,13 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
             (run-hook-with-args-until-success 'diff-hl-async-inhibit-functions
                                               default-directory)))
       ;; TODO: debounce if a thread is already running.
-      (let ((buf (current-buffer)))
+      (let ((buf (current-buffer))
+            (temp-buffer (generate-new-buffer " *temp*" t)))
         ;; Switch buffer temporarily, to "unlock" it for other threads.
-        (with-temp-buffer
+        (with-current-buffer temp-buffer
           (make-thread
            (lambda ()
+             (kill-buffer temp-buffer)
              (when (buffer-live-p buf)
                (set-buffer buf)
                (diff-hl--update-safe)))
