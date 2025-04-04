@@ -96,6 +96,21 @@
   "Face used to highlight changed lines."
   :group 'diff-hl)
 
+(defface diff-hl-reference-insert
+  '((default :inherit diff-hl-insert))
+  "Face used to highlight lines inserted since reference rev."
+  :group 'diff-hl)
+
+(defface diff-hl-reference-delete
+  '((default :inherit diff-hl-delete))
+  "Face used to highlight lines deleted since reference rev."
+  :group 'diff-hl)
+
+(defface diff-hl-reference-change
+  '((default :inherit diff-hl-change))
+  "Face used to highlight lines changed since reference rev."
+  :group 'diff-hl)
+
 (defcustom diff-hl-command-prefix (kbd "C-x v")
   "The prefix for all `diff-hl' commands."
   :group 'diff-hl
@@ -146,6 +161,12 @@ built-in bitmaps."
 (defcustom diff-hl-fringe-face-function 'diff-hl-fringe-face-from-type
   "Function to choose the fringe face for a given change type
   and position within a hunk.  Should accept two arguments."
+  :group 'diff-hl
+  :type 'function)
+
+(defcustom diff-hl-fringe-reference-face-function 'diff-hl-fringe-reference-face-from-type
+  "Function to choose the fringe face for a given change type
+and position within a \"diff to reference\" hunk."
   :group 'diff-hl
   :type 'function)
 
@@ -308,6 +329,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 
 (defun diff-hl-fringe-face-from-type (type _pos)
   (intern (format "diff-hl-%s" type)))
+
+(defun diff-hl-fringe-reference-face-from-type (type _pos)
+  (intern (format "diff-hl-reference-%s" type)))
 
 (defun diff-hl-fringe-bmp-from-pos (_type pos)
   (intern (format "diff-hl-bmp-%s" pos)))
@@ -557,7 +581,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          (changes (assoc-default :current cc nil cc)))
     (diff-hl-remove-overlays)
     (let ((diff-hl-highlight-function
-           diff-hl-highlight-reference-function))
+           diff-hl-highlight-reference-function)
+          (diff-hl-fringe-face-function
+           diff-hl-fringe-reference-face-function))
       (diff-hl--update-overlays ref-changes))
     (diff-hl--update-overlays changes)))
 
