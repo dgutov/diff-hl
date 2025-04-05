@@ -416,7 +416,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
           (let* ((ref-changes
                   (and diff-hl-reference-revision
                        (diff-hl-changes-from-buffer
-                        (diff-hl-changes-buffer file backend "HEAD"))))
+                        (diff-hl-changes-buffer file backend
+                                                (diff-hl-tip-revision backend)))))
                  (diff-hl-reference-revision nil)
                  (work-changes (diff-hl-changes-from-buffer
                                 (diff-hl-changes-buffer file backend))))
@@ -426,6 +427,12 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
           `((1 ,(line-number-at-pos (point-max)) insert)))
          ((eq state 'removed)
           `((1 ,(line-number-at-pos (point-max)) delete))))))))
+
+(defun diff-hl-tip-revision (backend)
+  (if (eq backend 'Git)
+      "HEAD"
+    ;; That seems to cover Hg and Bzr.  Any others?
+    "-1"))
 
 (defun diff-hl-adjust-changes (old new)
   (let ((acc 0)
