@@ -383,13 +383,21 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 
 (defun diff-hl-diff-against-reference (file backend buffer &optional new-rev)
   (if (and (eq backend 'Git)
-           (not diff-hl-reference-revision)
            (not new-rev)
            (not diff-hl-show-staged-changes))
-      (apply #'vc-git-command buffer 1
-             (list file)
-             "diff-files"
-             (cons "-p" (vc-switches 'git 'diff)))
+      (if diff-hl-reference-revision
+          (apply #'vc-git-command buffer 1
+                 (list file)
+                 "diff-index"
+                 (append
+                  (vc-switches 'git 'diff)
+                  (list "-p" "--cached"
+                        diff-hl-reference-revision
+                        "--")))
+        (apply #'vc-git-command buffer 1
+               (list file)
+               "diff-files"
+               (cons "-p" (vc-switches 'git 'diff))))
     (condition-case err
         (vc-call-backend backend 'diff (list file)
                          diff-hl-reference-revision
@@ -406,7 +414,12 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 
 (defun diff-hl-changes ()
   (let* ((file buffer-file-name)
-         (backend (vc-backend file)))
+         (backend (vc-backend file))
+         (hide-staged (and (eq backend 'Git) (not diff-hl-show-staged-changes)))
+         (diff-hl-reference-revision
+          (or diff-hl-reference-revision
+              (and hide-staged
+                   (diff-hl-tip-revision backend)))))
     (when backend
       (let ((state (vc-state file backend)))
         (cond
@@ -416,8 +429,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
           (let* ((ref-changes
                   (and diff-hl-reference-revision
                        (diff-hl-changes-from-buffer
-                        (diff-hl-changes-buffer file backend
-                                                (diff-hl-tip-revision backend)))))
+                        (diff-hl-changes-buffer file backend (unless hide-staged
+                                                               (diff-hl-tip-revision backend))))))
                  (diff-hl-reference-revision nil)
                  (work-changes (diff-hl-changes-from-buffer
                                 (diff-hl-changes-buffer file backend))))
