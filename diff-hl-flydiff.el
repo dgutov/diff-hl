@@ -42,11 +42,7 @@
 
 (defun diff-hl-flydiff-changes-buffer (file backend &optional new-rev)
   (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
-  (if (or new-rev
-          (and
-           (eq backend 'Git)
-           diff-hl-reference-revision
-           (not diff-hl-show-staged-changes)))
+  (if new-rev
       (diff-hl-with-diff-switches
        (diff-hl-diff-against-reference file backend " *diff-hl-diff*" new-rev))
     (diff-hl-diff-buffer-with-reference file " *diff-hl-diff*" backend)))

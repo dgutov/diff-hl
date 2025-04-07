@@ -382,9 +382,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
    (diff-hl-diff-against-reference file backend " *diff-hl* " new-rev)))
 
 (defun diff-hl-diff-against-reference (file backend buffer &optional new-rev)
-  (if (and (eq backend 'Git)
-           (not new-rev)
-           (not diff-hl-show-staged-changes))
+  (if (eq new-rev 'git-index)
       (if diff-hl-reference-revision
           (apply #'vc-git-command buffer 1
                  (list file)
@@ -429,7 +427,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
           (let* ((ref-changes
                   (and diff-hl-reference-revision
                        (diff-hl-changes-from-buffer
-                        (diff-hl-changes-buffer file backend (unless hide-staged
+                        (diff-hl-changes-buffer file backend (if hide-staged
+                                                                 'git-index
                                                                (diff-hl-tip-revision backend))))))
                  (diff-hl-reference-revision nil)
                  (work-changes (diff-hl-changes-from-buffer
