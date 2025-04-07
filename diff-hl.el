@@ -527,6 +527,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                    (type (cond ((zerop deletes) 'insert)
                                ((zerop inserts) 'delete)
                                (t 'change))))
+              (when (eq type 'delete)
+                (setq len 1)
+                (cl-incf line))
               (push (list line inserts deletes type) res)))))
       (nreverse res))))
 
