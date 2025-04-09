@@ -440,7 +440,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          ((eq state 'removed)
           `((1 ,(line-number-at-pos (point-max)) delete))))))))
 
-(defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "-1") (Hg . ".")))
+(defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "last:1") (Hg . ".")))
 
 (defun diff-hl-head-revision (backend)
   (or (assoc-default backend diff-hl-head-revision-alist)
@@ -1306,6 +1306,13 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
                      "-i")
       (goto-char (point-min))
       (buffer-substring-no-properties (point) (line-end-position))))
+   (eq backend 'Bzr)
+   (with-temp-buffer
+      (vc-bzr-command (current-buffer) 0 nil
+                      "log" "--log-format=template" "--template-str='{revno}'"
+                      "-r" diff-hl-reference-revision)
+      (goto-char (point-min))
+      (buffer-substring-no-properties (point) (line-end-position)))
    (t
     diff-hl-reference-revision)))
 
