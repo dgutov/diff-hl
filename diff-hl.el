@@ -434,7 +434,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                  (work-changes (diff-hl-changes-from-buffer
                                 (diff-hl-changes-buffer file backend))))
             `((:reference . ,(diff-hl-adjust-changes ref-changes work-changes))
-              (:current . ,work-changes))))
+              (:working . ,work-changes))))
          ((eq state 'added)
           `((1 ,(line-number-at-pos (point-max)) insert)))
          ((eq state 'removed)
@@ -612,7 +612,7 @@ Return a list of line overlays used."
 (defun diff-hl--update ()
   (let* ((cc (diff-hl-changes))
          (ref-changes (assoc-default :reference cc))
-         (changes (assoc-default :current cc nil cc))
+         (changes (assoc-default :working cc nil cc))
          reuse)
     (diff-hl-remove-overlays)
     (let ((diff-hl-highlight-function
