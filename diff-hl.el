@@ -417,7 +417,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          (diff-hl-reference-revision
           (or diff-hl-reference-revision
               (and hide-staged
-                   (diff-hl-tip-revision backend)))))
+                   (diff-hl-head-revision backend)))))
     (when backend
       (let ((state (vc-state file backend)))
         (cond
@@ -429,7 +429,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                        (diff-hl-changes-from-buffer
                         (diff-hl-changes-buffer file backend (if hide-staged
                                                                  'git-index
-                                                               (diff-hl-tip-revision backend))))))
+                                                               (diff-hl-head-revision backend))))))
                  (diff-hl-reference-revision nil)
                  (work-changes (diff-hl-changes-from-buffer
                                 (diff-hl-changes-buffer file backend))))
@@ -440,11 +440,11 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          ((eq state 'removed)
           `((1 ,(line-number-at-pos (point-max)) delete))))))))
 
-(defun diff-hl-tip-revision (backend)
-  (if (eq backend 'Git)
-      "HEAD"
-    ;; That seems to cover Hg and Bzr.  Any others?
-    "-1"))
+(defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "-1") (Hg . ".")))
+
+(defun diff-hl-head-revision (backend)
+  (or (assoc-default backend diff-hl-head-revision-alist)
+      (user-error "VCS not supported for this feature")))
 
 (defun diff-hl-adjust-changes (old new)
   (let ((acc 0)
