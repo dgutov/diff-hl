@@ -563,9 +563,12 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
      (message "An error occurred in diff-hl--update: %S" err)
      nil)))
 
-(defun diff-hl--update-overlays (changes)
-  "Updates the diff-hl overlays based on CHANGES."
-  (let ((current-line 1))
+(defun diff-hl--update-overlays (changes reuse)
+  "Updates the diff-hl overlays based on CHANGES.
+REUSE is a list of existing line overlays that can be used.
+Return a list of line overlays used."
+  (let ((current-line 1)
+        ovls)
     (save-excursion
       (save-restriction
         (widen)
@@ -576,15 +579,23 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
             (setq current-line line)
             (let ((hunk-beg (point))
                   (len (if (eq type 'delete) 1 inserts)))
+              (while (and reuse
+                          (< (overlay-start (car reuse)) (point)))
+                (setq reuse (cdr reuse)))
               (while (cl-plusp len)
-                (diff-hl-add-highlighting
-                 type
-                 (cond
-                  ((not diff-hl-draw-borders) 'empty)
-                  ((and (= len 1) (= line current-line)) 'single)
-                  ((= len 1) 'bottom)
-                  ((= line current-line) 'top)
-                  (t 'middle)))
+                (push
+                 (diff-hl-add-highlighting
+                  type
+                  (cond
+                   ((not diff-hl-draw-borders) 'empty)
+                   ((and (= len 1) (= line current-line)) 'single)
+                   ((= len 1) 'bottom)
+                   ((= line current-line) 'top)
+                   (t 'middle))
+                  (and reuse
+                       (= (overlay-start (car reuse)) (point))
+                       (pop reuse)))
+                 ovls)
                 (forward-line 1)
                 (cl-incf current-line)
                 (cl-decf len))
@@ -595,19 +606,21 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                 (overlay-put h 'diff-hl-hunk-type type)
                 (overlay-put h 'modification-hooks hook)
                 (overlay-put h 'insert-in-front-hooks hook)
-                (overlay-put h 'insert-behind-hooks hook)))))))))
+                (overlay-put h 'insert-behind-hooks hook)))))))
+    (nreverse ovls)))
 
 (defun diff-hl--update ()
   (let* ((cc (diff-hl-changes))
          (ref-changes (assoc-default :reference cc))
-         (changes (assoc-default :current cc nil cc)))
+         (changes (assoc-default :current cc nil cc))
+         reuse)
     (diff-hl-remove-overlays)
     (let ((diff-hl-highlight-function
            diff-hl-highlight-reference-function)
           (diff-hl-fringe-face-function
            diff-hl-fringe-reference-face-function))
-      (diff-hl--update-overlays ref-changes))
-    (diff-hl--update-overlays changes)))
+      (setq reuse (diff-hl--update-overlays ref-changes nil)))
+    (diff-hl--update-overlays changes reuse)))
 
 (defvar-local diff-hl--modified-tick nil)
 
@@ -618,8 +631,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
     (diff-hl-update)
     (setq diff-hl--modified-tick (buffer-chars-modified-tick))))
 
-(defun diff-hl-add-highlighting (type shape)
-  (let ((o (make-overlay (point) (point))))
+(defun diff-hl-add-highlighting (type shape &optional ovl)
+  (let ((o (or ovl (make-overlay (point) (point)))))
     (overlay-put o 'diff-hl t)
     (funcall diff-hl-highlight-function o type shape)
     o))
