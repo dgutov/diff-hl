@@ -1141,6 +1141,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
            (switches (format "-U %d --strip-trailing-cr" (or context-lines 0))))
       (diff-no-select rev (current-buffer) switches 'noasync
                       (get-buffer-create dest-buffer))
+      (delete-file rev)
       (with-current-buffer dest-buffer
         (let ((inhibit-read-only t))
           ;; Function `diff-sentinel' adds a final line, so remove it
