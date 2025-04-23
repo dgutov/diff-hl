@@ -445,7 +445,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 
 (defun diff-hl-head-revision (backend)
   (or (assoc-default backend diff-hl-head-revision-alist)
-      (user-error "VCS not supported for this feature")))
+      ;; It's usually cached already (e.g. for mode-line).
+      ;; So this is basically an optimization for rare cases.
+      (vc-working-revision buffer-file-name backend)))
 
 (defun diff-hl-adjust-changes (old new)
   (let ((acc 0)
