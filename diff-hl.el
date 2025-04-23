@@ -376,6 +376,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 (declare-function vc-git-command "vc-git")
 (declare-function vc-git--rev-parse "vc-git")
 (declare-function vc-hg-command "vc-hg")
+(declare-function vc-bzr-command "vc-bzr")
 
 (defun diff-hl-changes-buffer (file backend &optional new-rev)
   (diff-hl-with-diff-switches
@@ -527,7 +528,6 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                                ((zerop inserts) 'delete)
                                (t 'change))))
               (when (eq type 'delete)
-                (setq len 1)
                 (cl-incf line))
               (push (list line inserts deletes type) res)))))
       (nreverse res))))
@@ -574,7 +574,7 @@ Return a list of line overlays used."
         (widen)
         (goto-char (point-min))
         (dolist (c changes)
-          (cl-destructuring-bind (line inserts deletes type) c
+          (cl-destructuring-bind (line inserts _deletes type) c
             (forward-line (- line current-line))
             (setq current-line line)
             (let ((hunk-beg (point))
@@ -641,7 +641,7 @@ Return a list of line overlays used."
   (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
                                                        diff-hl-side)))
 
-(defun diff-hl-highlight-on-fringe-flat (ovl type shape)
+(defun diff-hl-highlight-on-fringe-flat (ovl type _shape)
   (let ((diff-hl-fringe-bmp-function (lambda (&rest _s) diff-hl-fringe-flat-bmp)))
     (diff-hl-highlight-on-fringe ovl type nil)))
 
@@ -1306,13 +1306,13 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
                      "-i")
       (goto-char (point-min))
       (buffer-substring-no-properties (point) (line-end-position))))
-   (eq backend 'Bzr)
-   (with-temp-buffer
+   ((eq backend 'Bzr)
+    (with-temp-buffer
       (vc-bzr-command (current-buffer) 0 nil
                       "log" "--log-format=template" "--template-str='{revno}'"
                       "-r" diff-hl-reference-revision)
       (goto-char (point-min))
-      (buffer-substring-no-properties (point) (line-end-position)))
+      (buffer-substring-no-properties (point) (line-end-position))))
    (t
     diff-hl-reference-revision)))
 
