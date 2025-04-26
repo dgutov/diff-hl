@@ -383,20 +383,26 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
    (diff-hl-diff-against-reference file backend " *diff-hl* " new-rev)))
 
 (defun diff-hl-diff-against-reference (file backend buffer &optional new-rev)
-  (if (eq new-rev 'git-index)
-      (if diff-hl-reference-revision
-          (apply #'vc-git-command buffer 1
-                 (list file)
-                 "diff-index"
-                 (append
-                  (vc-switches 'git 'diff)
-                  (list "-p" "--cached"
-                        diff-hl-reference-revision
-                        "--")))
-        (apply #'vc-git-command buffer 1
-               (list file)
-               "diff-files"
-               (cons "-p" (vc-switches 'git 'diff))))
+  (cond
+   ((and (not new-rev)
+         (not diff-hl-reference-revision)
+         (not diff-hl-show-staged-changes)
+         (eq backend 'Git))
+    (apply #'vc-git-command buffer 1
+           (list file)
+           "diff-files"
+           (cons "-p" (vc-switches 'git 'diff))))
+   ((eq new-rev 'git-index)
+    (apply #'vc-git-command buffer 1
+           (list file)
+           "diff-index"
+           (append
+            (vc-switches 'git 'diff)
+            (list "-p" "--cached"
+                  (or diff-hl-reference-revision
+                      (diff-hl-head-revision backend))
+                  "--"))))
+   (t
     (condition-case err
         (vc-call-backend backend 'diff (list file)
                          diff-hl-reference-revision
@@ -408,17 +414,13 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          (vc-call-backend backend 'diff (list file)
                           "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
                           nil
-                          buffer)))))
+                          buffer))))))
   buffer)
 
 (defun diff-hl-changes ()
   (let* ((file buffer-file-name)
          (backend (vc-backend file))
-         (hide-staged (and (eq backend 'Git) (not diff-hl-show-staged-changes)))
-         (diff-hl-reference-revision
-          (or diff-hl-reference-revision
-              (and hide-staged
-                   (diff-hl-head-revision backend)))))
+         (hide-staged (and (eq backend 'Git) (not diff-hl-show-staged-changes))))
     (when backend
       (let ((state (vc-state file backend)))
         (cond
