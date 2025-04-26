@@ -953,7 +953,8 @@ Only supported with Git."
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (erase-buffer)))
-    (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
+    (let (diff-hl-reference-revision)
+      (diff-hl-diff-buffer-with-reference file dest-buffer nil 3))
     (with-current-buffer dest-buffer
       (with-no-warnings
         (let (diff-auto-refine-mode)
@@ -1024,7 +1025,8 @@ Pops up a diff buffer that can be edited to choose the changes to stage."
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (erase-buffer)))
-    (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
+    (let (diff-hl-reference-revision)
+      (diff-hl-diff-buffer-with-reference file dest-buffer nil 3))
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (when end
