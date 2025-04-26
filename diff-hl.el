@@ -452,6 +452,10 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
       (vc-working-revision buffer-file-name backend)))
 
 (defun diff-hl-adjust-changes (old new)
+  "Adjust changesets in OLD using changes in NEW.
+The result alters the values inside the OLD changeset so that the line
+numbers and insertion/deletion counts refer to the lines in the file
+contents as they are (or would be) after applying the changes in NEW."
   (let ((acc 0)
         (ref old)
         overlap)
