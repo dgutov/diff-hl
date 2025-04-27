@@ -686,12 +686,11 @@ Return a list of line overlays used."
   (when (bound-and-true-p revert-buffer-preserve-modes)
     (diff-hl-update)))
 
-(defun diff-hl-diff-goto-hunk-1 (historic)
+(defun diff-hl-diff-goto-hunk-1 (historic rev1)
   (defvar vc-sentinel-movepoint)
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer))
-         (rev1 diff-hl-reference-revision)
          rev2)
     (when historic
       (let ((revs (diff-hl-diff-read-revisions rev1)))
@@ -705,10 +704,20 @@ Return a list of line overlays used."
                       (setq vc-sentinel-movepoint (point))))))
 
 (defun diff-hl-diff-goto-hunk (&optional historic)
-  "Run VC diff command and go to the line corresponding to the current."
+  "Run VC diff command and go to the corresponding line in diff.
+With double prefix argument (C-u C-u), the diff is made against the
+reference revision."
   (interactive (list current-prefix-arg))
   (with-current-buffer (or (buffer-base-buffer) (current-buffer))
-    (diff-hl-diff-goto-hunk-1 historic)))
+    (if (equal historic '(16))
+        (diff-hl-diff-reference-goto-hunk)
+      (diff-hl-diff-goto-hunk-1 historic nil))))
+
+(defun diff-hl-diff-reference-goto-hunk ()
+  "Run VC diff command against the reference and go to the corresponding line."
+  (interactive)
+  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+    (diff-hl-diff-goto-hunk-1 nil diff-hl-reference-revision)))
 
 (defun diff-hl-diff-read-revisions (rev1-default)
   (let* ((file buffer-file-name)
