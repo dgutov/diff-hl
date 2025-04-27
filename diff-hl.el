@@ -220,7 +220,10 @@ performance when viewing such files in certain conditions."
 
 (defcustom diff-hl-show-staged-changes t
   "Whether to include staged changes in the indicators.
-Only affects Git, it's the only backend that has staging area."
+Only affects Git, it's the only backend that has staging area.
+
+When `diff-hl-highlight-reference-function' is non-nil, instead of being
+hidden, the staged changes become part of the \"reference\" indicators."
   :type 'boolean)
 
 (defcustom diff-hl-goto-hunk-old-revisions nil
