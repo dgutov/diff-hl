@@ -701,7 +701,7 @@ Return a list of line overlays used."
               rev2 (cdr revs))))
     (vc-diff-internal t (vc-deduce-fileset) rev1 rev2 t)
     (vc-run-delayed (if (< (line-number-at-pos (point-max)) 3)
-                        (with-current-buffer buffer (diff-hl-remove-overlays))
+                        (with-current-buffer buffer (diff-hl-update))
                       (when (or (not rev2) diff-hl-goto-hunk-old-revisions)
                         (diff-hl-diff-skip-to line))
                       (setq vc-sentinel-movepoint (point))))))
