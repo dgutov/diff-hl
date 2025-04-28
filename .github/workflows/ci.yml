@@ -32,7 +32,7 @@ jobs:
         with:
           version: ${{ matrix.emacs_version }}
 
-      - name: Checkout Company
+      - name: Checkout Code
         uses: actions/checkout@v3
 
       - name: Run tests
