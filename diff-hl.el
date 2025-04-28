@@ -431,7 +431,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
            diff-hl-reference-revision
            (diff-hl-modified-p state))
           (let* ((ref-changes
-                  (and diff-hl-reference-revision
+                  (and (or diff-hl-reference-revision
+                           hide-staged)
                        (diff-hl-changes-from-buffer
                         (diff-hl-changes-buffer file backend (if hide-staged
                                                                  'git-index

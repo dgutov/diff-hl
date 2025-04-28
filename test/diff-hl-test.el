@@ -164,12 +164,16 @@
     (let ((diff-hl-show-staged-changes t))
       (should
        (equal (diff-hl-changes)
-              '((1 1 insert)
-                (12 1 insert)))))
+              '((:reference . nil)
+                (:working
+                 .
+                 ((1 1 0 insert)
+                  (12 1 0 insert)))))))
     (let ((diff-hl-show-staged-changes nil))
       (should
        (equal (diff-hl-changes)
-              '((12 1 insert)))))))
+              '((:reference . ((1 1 0 insert)))
+                (:working . ((12 1 0 insert)))))))))
 
 (diff-hl-deftest diff-hl-flydiff-can-ignore-staged-changes ()
   (diff-hl-test-in-source
@@ -183,13 +187,13 @@
       (should
        (equal (diff-hl-changes-from-buffer
                (diff-hl-diff-buffer-with-reference buffer-file-name))
-              '((1 1 insert)
-                (12 1 insert)))))
+              '((1 1 0 insert)
+                (12 1 0 insert)))))
     (let ((diff-hl-show-staged-changes nil))
       (should
        (equal (diff-hl-changes-from-buffer
                (diff-hl-diff-buffer-with-reference buffer-file-name))
-              '((12 1 insert)))))))
+              '((12 1 0 insert)))))))
 
 (diff-hl-deftest diff-hl-can-split-away-no-trailing-newline ()
   (diff-hl-test-in-source

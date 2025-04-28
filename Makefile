@@ -15,7 +15,7 @@ RM ?= rm -f
 all: compile test
 
 test:
-	$(EMACS) -batch -L . -l test/diff-hl-test.el -f ert-run-tests-batch-and-exit
+	$(EMACS) -batch -L . -l test/diff-hl-test.el -l test/diff-hl-adjust-test.el -f ert-run-tests-batch-and-exit
 
 compile:
 	$(EMACS) -batch -L . -f batch-byte-compile $(SOURCES)
