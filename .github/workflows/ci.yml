@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    paths:
+      - '**.el'
+      - '**ci.yml'
+      - 'Makefile'
+    branches:
+      - master
+
+  pull_request:
+    paths:
+      - '**.el'
+      - '**ci.yml'
+      - 'Makefile'
+    branches:
+      - master
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        emacs_version: [26.1, 26.3, 27.2, 28.2, 29.4, snapshot]
+
+    steps:
+      - name: Setup Emacs
+        uses: purcell/setup-emacs@master
+        with:
+          version: ${{ matrix.emacs_version }}
+
+      - name: Checkout Company
+        uses: actions/checkout@v3
+
+      - name: Run tests
+        run: make test
