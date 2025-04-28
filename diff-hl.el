@@ -421,7 +421,10 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                                               default-directory)))
       ;; TODO: debounce if a thread is already running.
       (let ((buf (current-buffer))
-            (temp-buffer (generate-new-buffer " *temp*" t)))
+            (temp-buffer
+             (if (< emacs-major-version 28)
+                 (generate-new-buffer " *temp*")
+               (generate-new-buffer " *temp*" t))))
         ;; Switch buffer temporarily, to "unlock" it for other threads.
         (with-current-buffer temp-buffer
           (make-thread
