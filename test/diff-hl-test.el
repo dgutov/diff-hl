@@ -215,9 +215,6 @@
 
 "))))))
 
-(defun diff-hl-run-tests ()
-  (ert-run-tests-batch))
-
 (provide 'diff-hl-test)
 
 ;;; diff-hl-test.el ends here
