@@ -1,4 +1,4 @@
-About
+About [![Build Status](https://github.com/dgutov/diff-hl/actions/workflows/ci.yml/badge.svg)](https://github.com/dgutov/diff-hl/actions/workflows/ci.yml)
 =====
 
 `diff-hl-mode` highlights uncommitted changes on the side of the window (area

@@ -127,6 +127,7 @@
     (should-error (diff-hl-next-hunk) :type 'user-error)))
 
 (diff-hl-deftest diff-hl-indirect-buffer-move-async ()
+  (skip-unless (>= emacs-major-version 27)) ;No `main-thread'.
   (diff-hl-test-in-source
    (let ((diff-hl-update-async t))
      (narrow-to-region (point-min) (point-max))
@@ -214,9 +215,6 @@
 \\ No newline at end of file
 
 "))))))
-
-(defun diff-hl-run-tests ()
-  (ert-run-tests-batch))
 
 (provide 'diff-hl-test)
 
