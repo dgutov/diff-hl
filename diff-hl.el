@@ -308,6 +308,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 
 (defvar vc-svn-diff-switches)
 (defvar vc-fossil-diff-switches)
+(defvar vc-jj-diff-switches)
 
 (defmacro diff-hl-with-diff-switches (body)
   `(let ((vc-git-diff-switches
@@ -323,6 +324,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          (vc-hg-diff-switches nil)
          (vc-svn-diff-switches nil)
          (vc-fossil-diff-switches '("-c" "0"))
+         (vc-jj-diff-switches '("--context=0"))
          (vc-diff-switches '("-U0"))
          ,@(when (boundp 'vc-disable-async-diff)
              '((vc-disable-async-diff t))))
