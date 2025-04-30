@@ -324,7 +324,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          (vc-hg-diff-switches nil)
          (vc-svn-diff-switches nil)
          (vc-fossil-diff-switches '("-c" "0"))
-         (vc-jj-diff-switches '("--context=0"))
+         (vc-jj-diff-switches '("--git" "--context=0"))
          (vc-diff-switches '("-U0"))
          ,@(when (boundp 'vc-disable-async-diff)
              '((vc-disable-async-diff t))))
