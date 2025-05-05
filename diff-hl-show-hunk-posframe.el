@@ -192,7 +192,7 @@ The button calls an ACTION."
                    'keymap diff-hl-show-hunk-posframe--transient-mode-map)))
 
   (setq posframe-mouse-banish nil)
-  (setq diff-hl-show-hunk--original-frame last-event-frame)
+  (setq diff-hl-show-hunk--original-frame (selected-frame))
 
   (let* ((hunk-overlay diff-hl-show-hunk--original-overlay)
          (position (overlay-end hunk-overlay)))
