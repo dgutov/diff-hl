@@ -1118,6 +1118,11 @@ the user should be returned."
 
 (declare-function diff-no-select "diff")
 
+(defvar diff-hl-temporary-directory (if (and (eq system-type 'gnu/linux)
+                                             (file-directory-p "/dev/shm/"))
+                                        "/dev/shm/"
+                                      temporary-file-directory))
+
 (defun diff-hl-diff-buffer-with-reference (file &optional dest-buffer backend context-lines)
   "Compute the diff between the current buffer contents and reference in BACKEND.
 The diffs are computed in the buffer DEST-BUFFER. This requires
@@ -1128,10 +1133,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
   (save-current-buffer
     (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-buffer-with-reference*"))
            (backend (or backend (vc-backend file)))
-           (temporary-file-directory
-            (if (and (eq system-type 'gnu/linux) (file-directory-p "/dev/shm/"))
-                "/dev/shm/"
-              temporary-file-directory))
+           (temporary-file-directory diff-hl-temporary-directory)
            (rev
             (if (and (eq backend 'Git)
                      (not diff-hl-reference-revision)
