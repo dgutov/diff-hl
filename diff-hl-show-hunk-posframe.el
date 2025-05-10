@@ -194,8 +194,12 @@ The button calls an ACTION."
   (setq posframe-mouse-banish nil)
   (setq diff-hl-show-hunk--original-frame (selected-frame))
 
-  (let* ((hunk-overlay diff-hl-show-hunk--original-overlay)
-         (position (overlay-end hunk-overlay)))
+  (let* ((overlay diff-hl-show-hunk--original-overlay)
+         (type (overlay-get overlay 'diff-hl-hunk-type))
+         (position (save-excursion
+                     (goto-char (overlay-end overlay))
+                     (forward-line -1)
+                     (point))))
     (setq
      diff-hl-show-hunk--frame
      (posframe-show buffer
@@ -213,6 +217,7 @@ The button calls an ACTION."
                     :respect-header-line diff-hl-show-hunk-posframe-show-header-line
                     :respect-tab-line nil
                     :respect-mode-line nil
+                    :y-pixel-offset (if (eq type 'delete) (- (default-line-height)))
                     :override-parameters diff-hl-show-hunk-posframe-parameters)))
 
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-internal-border t)
