@@ -202,7 +202,6 @@ The button calls an ACTION."
                     :internal-border-color diff-hl-show-hunk-posframe-internal-border-color
                     :hidehandler nil
                     ;; Sometimes, header-line is not taken into account, so put a min height and a min width
-                    :min-height (when diff-hl-show-hunk-posframe-show-header-line 10)
                     :min-width (when diff-hl-show-hunk-posframe-show-header-line
                                  (length (diff-hl-show-hunk-posframe--header-line)))
                     :respect-header-line diff-hl-show-hunk-posframe-show-header-line
