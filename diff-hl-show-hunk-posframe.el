@@ -171,7 +171,6 @@ The button calls an ACTION."
     (user-error
      "Package `posframe' is not workable.  Please customize diff-hl-show-hunk-function"))
 
-  (diff-hl-show-hunk--posframe-hide)
   (setq diff-hl-show-hunk--hide-function #'diff-hl-show-hunk--posframe-hide)
 
   ;; put an overlay to override read-only-mode keymap
@@ -228,8 +227,7 @@ The button calls an ACTION."
       (setq cursor-type 'box)
 
       ;; Recenter around point
-      (recenter)))
-  (select-frame-set-input-focus diff-hl-show-hunk--frame))
+      (recenter))))
 
 (provide 'diff-hl-show-hunk-posframe)
 ;;; diff-hl-show-hunk-posframe.el ends here
