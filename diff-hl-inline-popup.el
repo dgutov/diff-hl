@@ -154,7 +154,8 @@ FOOTER are showed at start and end."
                  diff-hl-inline-popup--current-footer)))
       ;; https://debbugs.gnu.org/38563, `company--replacement-string'.
       (add-face-text-property 0 (length str) 'default t str)
-      (overlay-put diff-hl-inline-popup--current-popup 'after-string str))))
+      (put-text-property 0 1 'cursor 0 str)
+      (overlay-put diff-hl-inline-popup--current-popup 'before-string str))))
 
 (defun diff-hl-inline-popup--popup-down()
   "Scrolls one line down."
