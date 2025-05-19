@@ -348,7 +348,8 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
   (let* ((point (if diff-hl-show-hunk--original-overlay
                     (overlay-start diff-hl-show-hunk--original-overlay)
                   nil))
-         (next-overlay (diff-hl-show-hunk--next-hunk nil point)))
+         (next-overlay (diff-hl-show-hunk--next-hunk nil point))
+         (inhibit-redisplay t))
     (if (not next-overlay)
         (message "There is no next change")
       (diff-hl-show-hunk-hide)
