@@ -1,6 +1,6 @@
 ;;; diff-hl.el --- Highlight uncommitted changes using VC -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2024  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2025  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dmitry@gutov.dev>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -96,6 +96,21 @@
   "Face used to highlight changed lines."
   :group 'diff-hl)
 
+(defface diff-hl-reference-insert
+  '((default :inherit diff-hl-insert))
+  "Face used to highlight lines inserted since reference rev."
+  :group 'diff-hl)
+
+(defface diff-hl-reference-delete
+  '((default :inherit diff-hl-delete))
+  "Face used to highlight lines deleted since reference rev."
+  :group 'diff-hl)
+
+(defface diff-hl-reference-change
+  '((default :inherit diff-hl-change))
+  "Face used to highlight lines changed since reference rev."
+  :group 'diff-hl)
+
 (defcustom diff-hl-command-prefix (kbd "C-x v")
   "The prefix for all `diff-hl' commands."
   :group 'diff-hl
@@ -122,6 +137,19 @@
   :group 'diff-hl
   :type 'function)
 
+(defcustom diff-hl-highlight-reference-function 'diff-hl-highlight-on-fringe-flat
+  "Function to highlight the changes against the reference revision.
+Its arguments are overlay, change type and position within a hunk."
+  :group 'diff-hl
+  :type 'function)
+
+(defcustom diff-hl-fringe-flat-bmp 'diff-hl-bmp-empty
+  "The bitmap symbol to use in `diff-hl-highlight-on-fringe-flat'.
+Some options are `diff-hl-bmp-empty', `diff-hl-bmp-i', or any of the
+built-in bitmaps."
+  :group 'diff-hl
+  :type 'symbol)
+
 (defcustom diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-pos
   "Function to choose the fringe bitmap for a given change type
   and position within a hunk.  Should accept two arguments."
@@ -133,6 +161,12 @@
 (defcustom diff-hl-fringe-face-function 'diff-hl-fringe-face-from-type
   "Function to choose the fringe face for a given change type
   and position within a hunk.  Should accept two arguments."
+  :group 'diff-hl
+  :type 'function)
+
+(defcustom diff-hl-fringe-reference-face-function 'diff-hl-fringe-reference-face-from-type
+  "Function to choose the fringe face for a given change type
+and position within a \"diff to reference\" hunk."
   :group 'diff-hl
   :type 'function)
 
@@ -186,7 +220,10 @@ performance when viewing such files in certain conditions."
 
 (defcustom diff-hl-show-staged-changes t
   "Whether to include staged changes in the indicators.
-Only affects Git, it's the only backend that has staging area."
+Only affects Git, it's the only backend that has staging area.
+
+When `diff-hl-highlight-reference-function' is non-nil, instead of being
+hidden, the staged changes become part of the \"reference\" indicators."
   :type 'boolean)
 
 (defcustom diff-hl-goto-hunk-old-revisions nil
@@ -296,6 +333,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 (defun diff-hl-fringe-face-from-type (type _pos)
   (intern (format "diff-hl-%s" type)))
 
+(defun diff-hl-fringe-reference-face-from-type (type _pos)
+  (intern (format "diff-hl-reference-%s" type)))
+
 (defun diff-hl-fringe-bmp-from-pos (_type pos)
   (intern (format "diff-hl-bmp-%s" pos)))
 
@@ -341,22 +381,37 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 (declare-function vc-git-command "vc-git")
 (declare-function vc-git--rev-parse "vc-git")
 (declare-function vc-hg-command "vc-hg")
+(declare-function vc-bzr-command "vc-bzr")
 
-(defun diff-hl-changes-buffer (file backend)
+(defun diff-hl-changes-buffer (file backend &optional new-rev)
   (diff-hl-with-diff-switches
-   (diff-hl-diff-against-reference file backend " *diff-hl* ")))
+   (diff-hl-diff-against-reference file backend " *diff-hl* " new-rev)))
 
-(defun diff-hl-diff-against-reference (file backend buffer)
-  (if (and (eq backend 'Git)
-           (not diff-hl-reference-revision)
-           (not diff-hl-show-staged-changes))
-      (apply #'vc-git-command buffer 1
-             (list file)
-             "diff-files"
-             (cons "-p" (vc-switches 'git 'diff)))
+(defun diff-hl-diff-against-reference (file backend buffer &optional new-rev)
+  (cond
+   ((and (not new-rev)
+         (not diff-hl-reference-revision)
+         (not diff-hl-show-staged-changes)
+         (eq backend 'Git))
+    (apply #'vc-git-command buffer 1
+           (list file)
+           "diff-files"
+           (cons "-p" (vc-switches 'git 'diff))))
+   ((eq new-rev 'git-index)
+    (apply #'vc-git-command buffer 1
+           (list file)
+           "diff-index"
+           (append
+            (vc-switches 'git 'diff)
+            (list "-p" "--cached"
+                  (or diff-hl-reference-revision
+                      (diff-hl-head-revision backend))
+                  "--"))))
+   (t
     (condition-case err
         (vc-call-backend backend 'diff (list file)
-                         diff-hl-reference-revision nil
+                         diff-hl-reference-revision
+                         new-rev
                          buffer)
       (error
        ;; https://github.com/dgutov/diff-hl/issues/117
@@ -364,22 +419,101 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          (vc-call-backend backend 'diff (list file)
                           "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
                           nil
-                          buffer)))))
+                          buffer))))))
   buffer)
 
 (defun diff-hl-changes ()
   (let* ((file buffer-file-name)
-         (backend (vc-backend file)))
+         (backend (vc-backend file))
+         (hide-staged (and (eq backend 'Git) (not diff-hl-show-staged-changes))))
     (when backend
       (let ((state (vc-state file backend)))
         (cond
-         ((diff-hl-modified-p state)
-          (diff-hl-changes-from-buffer
-           (diff-hl-changes-buffer file backend)))
+         ((or
+           diff-hl-reference-revision
+           (diff-hl-modified-p state))
+          (let* ((ref-changes
+                  (and (or diff-hl-reference-revision
+                           hide-staged)
+                       (diff-hl-changes-from-buffer
+                        (diff-hl-changes-buffer file backend (if hide-staged
+                                                                 'git-index
+                                                               (diff-hl-head-revision backend))))))
+                 (diff-hl-reference-revision nil)
+                 (work-changes (diff-hl-changes-from-buffer
+                                (diff-hl-changes-buffer file backend))))
+            `((:reference . ,(diff-hl-adjust-changes ref-changes work-changes))
+              (:working . ,work-changes))))
          ((eq state 'added)
           `((1 ,(line-number-at-pos (point-max)) insert)))
          ((eq state 'removed)
           `((1 ,(line-number-at-pos (point-max)) delete))))))))
+
+(defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "last:1") (Hg . ".")))
+
+(defun diff-hl-head-revision (backend)
+  (or (assoc-default backend diff-hl-head-revision-alist)
+      ;; It's usually cached already (e.g. for mode-line).
+      ;; So this is basically an optimization for rare cases.
+      (vc-working-revision buffer-file-name backend)))
+
+(defun diff-hl-adjust-changes (old new)
+  "Adjust changesets in OLD using changes in NEW.
+The result alters the values inside the OLD changeset so that the line
+numbers and insertion/deletion counts refer to the lines in the file
+contents as they are (or would be) after applying the changes in NEW."
+  (let ((acc 0)
+        (ref old)
+        overlap)
+    (while (and new old)
+      (cond
+       ((<= (+ (nth 0 (car new)) (nth 2 (car new)))
+            (+ acc (nth 0 (car old))))
+        ;; (A) NEW-END <= OLD-BEG
+        (cl-incf acc (- (nth 1 (car new)) (nth 2 (car new))))
+        (setq new (cdr new)))
+       ((<= (+ acc (nth 0 (car old)) (nth 1 (car old)))
+            (nth 0 (car new)))
+        ;; (B) OLD-END <= NEW-BEG
+        (cl-incf (nth 0 (car old)) acc)
+        (setq old (cdr old)))
+       (t
+        ;; There is overlap.
+        (setq overlap
+              (-
+               (min
+                (+ (nth 0 (car new)) (nth 2 (car new)))
+                (+ acc (nth 0 (car old)) (nth 1 (car old))))
+               (max
+                (nth 0 (car new))
+                (+ acc (nth 0 (car old))))))
+        (cl-decf (nth 1 (car old)) overlap)
+        ;; Add INSERTION amount to either before or inside.
+        (cl-incf (nth
+                  (if (> (nth 0 (car new))
+                         (+ acc (nth 0 (car old))))
+                      1 0)
+                  (car old))
+                 (-
+                  (nth 1 (car new))
+                  (- (nth 2 (car new))
+                     overlap)))
+        ;; See which of the heads to pop.
+        (if (> (+ (nth 0 (car new)) (nth 1 (car new)))
+               (+ acc (nth 0 (car old)) (nth 1 (car old))))
+            (progn
+              ;; Repetition of B (how to avoid dup?)
+              (cl-incf (nth 0 (car old)) acc)
+              (setq old (cdr old)))
+          ;; Repetition of A.
+          (cl-incf acc (- (nth 1 (car new)) (nth 2 (car new))))
+          ;; But also decrease OLD-BEG by the same amount: it's added later.
+          (cl-decf (nth 0 (car old)) (- (nth 1 (car new)) (nth 2 (car new))))
+          (setq new (cdr new))))))
+    (while old
+      (cl-incf (nth 0 (car old)) acc)
+      (setq old (cdr old)))
+    ref))
 
 (defun diff-hl-changes-from-buffer (buf)
   (with-current-buffer buf
@@ -398,8 +532,6 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
               (diff-beginning-of-hunk t))))
         (while (looking-at diff-hunk-header-re-unified)
           (let ((line (string-to-number (match-string 3)))
-                (len (let ((m (match-string 4)))
-                       (if m (string-to-number m) 1)))
                 (beg (point)))
             (with-no-warnings
               (let (diff-auto-refine-mode)
@@ -410,9 +542,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                                ((zerop inserts) 'delete)
                                (t 'change))))
               (when (eq type 'delete)
-                (setq len 1)
                 (cl-incf line))
-              (push (list line len type) res)))))
+              (push (list line inserts deletes type) res)))))
       (nreverse res))))
 
 (defun diff-hl-update ()
@@ -449,29 +580,39 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
      (message "An error occurred in diff-hl--update: %S" err)
      nil)))
 
-(defun diff-hl--update ()
-  "Updates the diff-hl overlay."
-  (let ((changes (diff-hl-changes))
-        (current-line 1))
-    (diff-hl-remove-overlays)
+(defun diff-hl--update-overlays (changes reuse)
+  "Updates the diff-hl overlays based on CHANGES.
+REUSE is a list of existing line overlays that can be used.
+Return a list of line overlays used."
+  (let ((current-line 1)
+        ovls)
     (save-excursion
       (save-restriction
         (widen)
         (goto-char (point-min))
         (dolist (c changes)
-          (cl-destructuring-bind (line len type) c
+          (cl-destructuring-bind (line inserts _deletes type) c
             (forward-line (- line current-line))
             (setq current-line line)
-            (let ((hunk-beg (point)))
+            (let ((hunk-beg (point))
+                  (len (if (eq type 'delete) 1 inserts)))
+              (while (and reuse
+                          (< (overlay-start (car reuse)) (point)))
+                (setq reuse (cdr reuse)))
               (while (cl-plusp len)
-                (diff-hl-add-highlighting
-                 type
-                 (cond
-                  ((not diff-hl-draw-borders) 'empty)
-                  ((and (= len 1) (= line current-line)) 'single)
-                  ((= len 1) 'bottom)
-                  ((= line current-line) 'top)
-                  (t 'middle)))
+                (push
+                 (diff-hl-add-highlighting
+                  type
+                  (cond
+                   ((not diff-hl-draw-borders) 'empty)
+                   ((and (= len 1) (= line current-line)) 'single)
+                   ((= len 1) 'bottom)
+                   ((= line current-line) 'top)
+                   (t 'middle))
+                  (and reuse
+                       (= (overlay-start (car reuse)) (point))
+                       (pop reuse)))
+                 ovls)
                 (forward-line 1)
                 (cl-incf current-line)
                 (cl-decf len))
@@ -482,7 +623,21 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                 (overlay-put h 'diff-hl-hunk-type type)
                 (overlay-put h 'modification-hooks hook)
                 (overlay-put h 'insert-in-front-hooks hook)
-                (overlay-put h 'insert-behind-hooks hook)))))))))
+                (overlay-put h 'insert-behind-hooks hook)))))))
+    (nreverse ovls)))
+
+(defun diff-hl--update ()
+  (let* ((cc (diff-hl-changes))
+         (ref-changes (assoc-default :reference cc))
+         (changes (assoc-default :working cc nil cc))
+         reuse)
+    (diff-hl-remove-overlays)
+    (let ((diff-hl-highlight-function
+           diff-hl-highlight-reference-function)
+          (diff-hl-fringe-face-function
+           diff-hl-fringe-reference-face-function))
+      (setq reuse (diff-hl--update-overlays ref-changes nil)))
+    (diff-hl--update-overlays changes reuse)))
 
 (defvar-local diff-hl--modified-tick nil)
 
@@ -493,8 +648,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
     (diff-hl-update)
     (setq diff-hl--modified-tick (buffer-chars-modified-tick))))
 
-(defun diff-hl-add-highlighting (type shape)
-  (let ((o (make-overlay (point) (point))))
+(defun diff-hl-add-highlighting (type shape &optional ovl)
+  (let ((o (or ovl (make-overlay (point) (point)))))
     (overlay-put o 'diff-hl t)
     (funcall diff-hl-highlight-function o type shape)
     o))
@@ -502,6 +657,10 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 (defun diff-hl-highlight-on-fringe (ovl type shape)
   (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
                                                        diff-hl-side)))
+
+(defun diff-hl-highlight-on-fringe-flat (ovl type _shape)
+  (let ((diff-hl-fringe-bmp-function (lambda (&rest _s) diff-hl-fringe-flat-bmp)))
+    (diff-hl-highlight-on-fringe ovl type nil)))
 
 (defun diff-hl-remove-overlays (&optional beg end)
   (save-restriction
@@ -536,12 +695,11 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   (when (bound-and-true-p revert-buffer-preserve-modes)
     (diff-hl-update)))
 
-(defun diff-hl-diff-goto-hunk-1 (historic)
+(defun diff-hl-diff-goto-hunk-1 (historic rev1)
   (defvar vc-sentinel-movepoint)
   (vc-buffer-sync)
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer))
-         (rev1 diff-hl-reference-revision)
          rev2)
     (when historic
       (let ((revs (diff-hl-diff-read-revisions rev1)))
@@ -549,16 +707,26 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
               rev2 (cdr revs))))
     (vc-diff-internal t (vc-deduce-fileset) rev1 rev2 t)
     (vc-run-delayed (if (< (line-number-at-pos (point-max)) 3)
-                        (with-current-buffer buffer (diff-hl-remove-overlays))
+                        (with-current-buffer buffer (diff-hl-update))
                       (when (or (not rev2) diff-hl-goto-hunk-old-revisions)
                         (diff-hl-diff-skip-to line))
                       (setq vc-sentinel-movepoint (point))))))
 
 (defun diff-hl-diff-goto-hunk (&optional historic)
-  "Run VC diff command and go to the line corresponding to the current."
+  "Run VC diff command and go to the corresponding line in diff.
+With double prefix argument (C-u C-u), the diff is made against the
+reference revision."
   (interactive (list current-prefix-arg))
   (with-current-buffer (or (buffer-base-buffer) (current-buffer))
-    (diff-hl-diff-goto-hunk-1 historic)))
+    (if (equal historic '(16))
+        (diff-hl-diff-reference-goto-hunk)
+      (diff-hl-diff-goto-hunk-1 historic nil))))
+
+(defun diff-hl-diff-reference-goto-hunk ()
+  "Run VC diff command against the reference and go to the corresponding line."
+  (interactive)
+  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+    (diff-hl-diff-goto-hunk-1 nil diff-hl-reference-revision)))
 
 (defun diff-hl-diff-read-revisions (rev1-default)
   (let* ((file buffer-file-name)
@@ -879,7 +1047,8 @@ Pops up a diff buffer that can be edited to choose the changes to stage."
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (erase-buffer)))
-    (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
+    (let (diff-hl-reference-revision)
+      (diff-hl-diff-buffer-with-reference file dest-buffer nil 3))
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (when end
@@ -1165,6 +1334,13 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
       (vc-hg-command (current-buffer) 0 nil
                      "identify" "-r" diff-hl-reference-revision
                      "-i")
+      (goto-char (point-min))
+      (buffer-substring-no-properties (point) (line-end-position))))
+   ((eq backend 'Bzr)
+    (with-temp-buffer
+      (vc-bzr-command (current-buffer) 0 nil
+                      "log" "--log-format=template" "--template-str='{revno}'"
+                      "-r" diff-hl-reference-revision)
       (goto-char (point-min))
       (buffer-substring-no-properties (point) (line-end-position))))
    (t

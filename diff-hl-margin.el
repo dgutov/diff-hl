@@ -1,6 +1,6 @@
 ;;; diff-hl-margin.el --- Highlight buffer changes on margins -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2017  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2025  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -40,6 +40,8 @@
 
 (defvar diff-hl-margin-old-highlight-function nil)
 
+(defvar diff-hl-margin-old-highlight-ref-function nil)
+
 (defvar diff-hl-margin-old-width nil)
 
 (defgroup diff-hl-margin nil
@@ -66,9 +68,21 @@
   '((default :inherit dired-ignored))
   "Face used to highlight changed lines on the margin.")
 
+(defface diff-hl-margin-reference-insert
+  '((default :inherit diff-hl-reference-insert))
+  "Face used to highlight lines inserted since reference rev on the margin.")
+
+(defface diff-hl-margin-reference-delete
+  '((default :inherit diff-hl-reference-delete))
+  "Face used to highlight lines deleted since reference rev on the margin.")
+
+(defface diff-hl-margin-reference-change
+  '((default :inherit diff-hl-reference-change))
+  "Face used to highlight changed since reference rev on the margin.")
+
 (defcustom diff-hl-margin-symbols-alist
   '((insert . "+") (delete . "-") (change . "!")
-    (unknown . "?") (ignored . "i"))
+    (unknown . "?") (ignored . "i") (reference . " "))
   "Associative list from symbols to strings."
   :type '(alist :key-type symbol
                 :value-type string
@@ -112,12 +126,17 @@ You probably shouldn't use this function directly."
         (progn
           (setq-local diff-hl-margin-old-highlight-function
                       diff-hl-highlight-function)
+          (setq-local diff-hl-margin-old-highlight-ref-function
+                      diff-hl-highlight-reference-function)
           (setq-local diff-hl-highlight-function
                       #'diff-hl-highlight-on-margin)
+          (setq-local diff-hl-highlight-reference-function
+                      #'diff-hl-highlight-on-margin-flat)
           (setq-local diff-hl-margin-old-width (symbol-value width-var))
           (set width-var 1))
       (when diff-hl-margin-old-highlight-function
         (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
+              diff-hl-highlight-reference-function diff-hl-margin-old-highlight-ref-function
               diff-hl-margin-old-highlight-function nil))
       (set width-var diff-hl-margin-old-width)
       (kill-local-variable 'diff-hl-margin-old-width)))
@@ -135,20 +154,39 @@ You probably shouldn't use this function directly."
             (diff-hl-margin-build-spec-cache))))
 
 (defun diff-hl-margin-build-spec-cache ()
-  (cl-loop for (type . char) in diff-hl-margin-symbols-alist
-           nconc
-           (cl-loop for side in '(left right)
-                    collect
-                    (cons
-                     (cons type side)
-                     (propertize
-                      " " 'display
-                      `((margin ,(intern (format "%s-margin" side)))
-                        ,(propertize char 'face
-                                     (intern (format "diff-hl-margin-%s" type)))))))))
+  (nconc
+   (cl-loop for (type . char) in diff-hl-margin-symbols-alist
+            unless (eq type 'reference)
+            nconc
+            (cl-loop for side in '(left right)
+                     collect
+                     (cons
+                      (cons type side)
+                      (propertize
+                       " " 'display
+                       `((margin ,(intern (format "%s-margin" side)))
+                         ,(propertize char 'face
+                                      (intern (format "diff-hl-margin-%s" type))))))))
+   (cl-loop for char = (assoc-default 'reference diff-hl-margin-symbols-alist nil " ")
+            for type in '(insert delete change)
+            nconc
+            (cl-loop for side in '(left right)
+                     collect
+                     (cons
+                      (list type side 'reference)
+                      (propertize
+                       " " 'display
+                       `((margin ,(intern (format "%s-margin" side)))
+                         ,(propertize char 'face
+                                      (intern (format "diff-hl-margin-reference-%s" type))))))))))
 
 (defun diff-hl-highlight-on-margin (ovl type _shape)
   (let ((spec (cdr (assoc (cons type diff-hl-side)
+                          (diff-hl-margin-spec-cache)))))
+    (overlay-put ovl 'before-string spec)))
+
+(defun diff-hl-highlight-on-margin-flat (ovl type _shape)
+  (let ((spec (cdr (assoc (list type diff-hl-side 'reference)
                           (diff-hl-margin-spec-cache)))))
     (overlay-put ovl 'before-string spec)))
 
