@@ -18,6 +18,9 @@ The package also contains auxiliary modes:
 * `diff-hl-dired-mode` provides similar functionality in Dired.
 * `diff-hl-margin-mode` changes the highlighting function to
   use the margin instead of the fringe.
+* But if you use a non-graphical terminal, the package will fall back to using
+  the margins anyway, as long as `diff-hl-fallback-to-margin` is non-nil and the
+  margin width is non-zero.
 * `diff-hl-amend-mode` sets the reference revision to the one before
   recent one. Also, you could use `diff-hl-set-reference-rev` to set
   it to any revision, see its docstring for details.

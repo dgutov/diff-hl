@@ -1,6 +1,6 @@
 ;;; diff-hl.el --- Highlight uncommitted changes using VC -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2024  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2025  Free Software Foundation, Inc.
 
 ;; Author:   Dmitry Gutov <dmitry@gutov.dev>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -113,6 +113,14 @@
 
 (defcustom diff-hl-ask-before-revert-hunk t
   "Non-nil to ask for confirmation before revert a hunk."
+  :group 'diff-hl
+  :type 'boolean)
+
+(defcustom diff-hl-fallback-to-margin t
+  "Non-nil to use margin instead of fringe on non-graphic displays.
+
+This requires the corresponding margin width to be >0 already, which is
+normally the case on such displays."
   :group 'diff-hl
   :type 'boolean)
 
@@ -500,8 +508,11 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
     o))
 
 (defun diff-hl-highlight-on-fringe (ovl type shape)
-  (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
-                                                       diff-hl-side)))
+  (if (and diff-hl-fallback-to-margin
+           (not (display-graphic-p)))
+      (diff-hl-highlight-on-margin ovl type shape)
+    (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
+                                                         diff-hl-side))))
 
 (defun diff-hl-remove-overlays (&optional beg end)
   (save-restriction

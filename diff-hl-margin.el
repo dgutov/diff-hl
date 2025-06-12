@@ -1,6 +1,6 @@
 ;;; diff-hl-margin.el --- Highlight buffer changes on margins -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2017  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2025  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
@@ -147,6 +147,7 @@ You probably shouldn't use this function directly."
                         ,(propertize char 'face
                                      (intern (format "diff-hl-margin-%s" type)))))))))
 
+;;;###autoload
 (defun diff-hl-highlight-on-margin (ovl type _shape)
   (let ((spec (cdr (assoc (cons type diff-hl-side)
                           (diff-hl-margin-spec-cache)))))
