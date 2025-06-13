@@ -589,7 +589,11 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
       (let ((revs (diff-hl-diff-read-revisions rev1)))
         (setq rev1 (car revs)
               rev2 (cdr revs))))
-    (vc-diff-internal t (vc-deduce-fileset) rev1 rev2 t)
+    (vc-diff-internal
+     (if (boundp 'vc-allow-async-diff)
+         vc-allow-async-diff
+       t)
+     (vc-deduce-fileset) rev1 rev2 t)
     (vc-run-delayed (if (< (line-number-at-pos (point-max)) 3)
                         (with-current-buffer buffer (diff-hl-remove-overlays))
                       (when (or (not rev2) diff-hl-goto-hunk-old-revisions)
