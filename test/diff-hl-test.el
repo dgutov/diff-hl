@@ -207,14 +207,15 @@
             (diff-hl-diff-skip-to 10)))
         (let ((inhibit-read-only t))
           (diff-hl-split-away-changes 3))
-        (should (equal (buffer-substring (point) (point-max))
-                       "@@ -9,2 +9,2 @@
+        (should (string-prefix-p
+                 "@@ -9,2 +9,2 @@
 \x20
 -last line
 +last line
 \\ No newline at end of file
 
-"))))))
+Diff finished."
+                 (buffer-substring (point) (point-max))))))))
 
 (provide 'diff-hl-test)
 
