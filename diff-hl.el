@@ -506,6 +506,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
     (funcall diff-hl-highlight-function o type shape)
     o))
 
+(autoload 'diff-hl-highlight-on-margin "diff-hl-margin")
+
 (defun diff-hl-highlight-on-fringe (ovl type shape)
   (if (and diff-hl-fallback-to-margin
            (not (display-graphic-p)))

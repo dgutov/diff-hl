@@ -147,7 +147,6 @@ You probably shouldn't use this function directly."
                         ,(propertize char 'face
                                      (intern (format "diff-hl-margin-%s" type)))))))))
 
-;;;###autoload
 (defun diff-hl-highlight-on-margin (ovl type _shape)
   (let ((spec (cdr (assoc (cons type diff-hl-side)
                           (diff-hl-margin-spec-cache)))))
