@@ -119,7 +119,7 @@
 (defcustom diff-hl-fallback-to-margin t
   "Non-nil to use margin instead of fringe on non-graphic displays.
 
-This requires the corresponding margin width to be >0 already."
+This resizes the margin to 1 if it's not visible."
   :group 'diff-hl
   :type 'boolean)
 
