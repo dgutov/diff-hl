@@ -504,7 +504,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
     (when (and diff-hl-autohide-margin
                (> (symbol-value width-var) 0))
-      (set width-var 0)
+      (if (eql (default-value width-var) 0)
+          (kill-local-variable width-var)
+        (set width-var 0))
       (dolist (win (get-buffer-window-list))
         (set-window-buffer win (current-buffer))))))
 
