@@ -364,21 +364,24 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   (if (and (eq backend 'Git)
            (not diff-hl-reference-revision)
            (not diff-hl-show-staged-changes))
-      (apply #'vc-git-command buffer 1
+      (apply #'vc-git-command buffer
+             (if (diff-hl--use-async-p) 'async 1)
              (list file)
              "diff-files"
              (cons "-p" (vc-switches 'git 'diff)))
     (condition-case err
         (vc-call-backend backend 'diff (list file)
                          diff-hl-reference-revision nil
-                         buffer)
+                         buffer
+                         (diff-hl--use-async-p))
       (error
        ;; https://github.com/dgutov/diff-hl/issues/117
        (when (string-match-p "\\`Failed (status 128)" (error-message-string err))
          (vc-call-backend backend 'diff (list file)
                           "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
                           nil
-                          buffer)))))
+                          buffer
+                          (diff-hl--use-async-p))))))
   buffer)
 
 (defun diff-hl-changes ()
@@ -395,14 +398,19 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          ((eq state 'removed)
           `((1 ,(line-number-at-pos (point-max)) delete))))))))
 
+(defun diff-hl-process-wait (buf)
+  (let ((proc (get-buffer-process buf)))
+    (while (process-live-p proc)
+      (accept-process-output proc 0.01))))
+
 (defun diff-hl-changes-from-buffer (buf)
+  (diff-hl-process-wait buf)
   (with-current-buffer buf
     (let (res)
       (goto-char (point-min))
       (unless (eobp)
         ;; TODO: When 27.1 is the minimum requirement, we can drop
         ;; these bindings: that version, in addition to switching over
-        ;; to the diff-refine var, also added the
         ;; called-interactively-p check, so refinement can't be
         ;; triggered by code calling the navigation functions, only by
         ;; direct interactive invocations.
@@ -429,12 +437,15 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
               (push (list line len type) res)))))
       (nreverse res))))
 
+(defun diff-hl--use-async-p ()
+  (and diff-hl-update-async
+       (not
+        (run-hook-with-args-until-success 'diff-hl-async-inhibit-functions
+                                          default-directory))))
+
 (defun diff-hl-update ()
   "Updates the diff-hl overlay."
-  (if (and diff-hl-update-async
-           (not
-            (run-hook-with-args-until-success 'diff-hl-async-inhibit-functions
-                                              default-directory)))
+  (if (diff-hl--use-async-p)
       ;; TODO: debounce if a thread is already running.
       (let ((buf (current-buffer))
             (temp-buffer
@@ -667,6 +678,7 @@ in the source file, or the last line of the hunk above it."
     (let* ((diff-buffer (get-buffer-create
                          (generate-new-buffer-name "*diff-hl*")))
            (buffer (current-buffer))
+           (diff-hl-update-async nil)
            (line (save-excursion
                    (diff-hl-find-current-hunk)
                    (line-number-at-pos)))
@@ -838,7 +850,8 @@ Only supported with Git."
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (erase-buffer)))
-    (let (diff-hl-reference-revision)
+    (let (diff-hl-reference-revision
+          diff-hl-update-async)
       (diff-hl-diff-buffer-with-reference file dest-buffer nil 3))
     (with-current-buffer dest-buffer
       (with-no-warnings
@@ -1178,12 +1191,10 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
                (or (diff-hl-resolved-reference-revision backend)
                    (diff-hl-working-revision file backend)))))
            (switches (format "-U %d --strip-trailing-cr" (or context-lines 0))))
-      (diff-no-select rev (current-buffer) switches 'noasync
+      (diff-no-select rev (current-buffer) switches (not (diff-hl--use-async-p))
                       (get-buffer-create dest-buffer))
-      (with-current-buffer dest-buffer
-        (let ((inhibit-read-only t))
-          ;; Function `diff-sentinel' adds a final line, so remove it
-          (delete-matching-lines "^Diff finished.*")))
+      ;; Function `diff-sentinel' adds a summary line, but that seems fine.
+      ;; In all commands which use exact text we call it synchronously.
       (get-buffer-create dest-buffer))))
 
 (defun diff-hl-resolved-reference-revision (backend)
