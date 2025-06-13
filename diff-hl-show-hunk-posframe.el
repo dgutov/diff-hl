@@ -76,15 +76,7 @@ Customize it to change the base properties of the text.")
   (interactive)
   (diff-hl-show-hunk-posframe--transient-mode -1)
   (when (frame-live-p diff-hl-show-hunk--frame)
-    (make-frame-invisible diff-hl-show-hunk--frame))
-  (when diff-hl-show-hunk--original-frame
-    (when (frame-live-p diff-hl-show-hunk--original-frame)
-      (let ((frame diff-hl-show-hunk--original-frame))
-        (select-frame-set-input-focus frame)
-        ;; In Gnome, sometimes the input focus is not restored to the
-        ;; original frame, so we try harder in a while
-        (run-with-timer 0.1 nil (lambda () (select-frame-set-input-focus frame)))))
-    (setq diff-hl-show-hunk--original-frame nil)))
+    (make-frame-invisible diff-hl-show-hunk--frame)))
 
 (defvar diff-hl-show-hunk-posframe--transient-mode-map
   (let ((map (make-sparse-keymap)))
@@ -179,7 +171,6 @@ The button calls an ACTION."
     (user-error
      "Package `posframe' is not workable.  Please customize diff-hl-show-hunk-function"))
 
-  (diff-hl-show-hunk--posframe-hide)
   (setq diff-hl-show-hunk--hide-function #'diff-hl-show-hunk--posframe-hide)
 
   ;; put an overlay to override read-only-mode keymap
@@ -192,10 +183,14 @@ The button calls an ACTION."
                    'keymap diff-hl-show-hunk-posframe--transient-mode-map)))
 
   (setq posframe-mouse-banish nil)
-  (setq diff-hl-show-hunk--original-frame last-event-frame)
+  (setq diff-hl-show-hunk--original-frame (selected-frame))
 
-  (let* ((hunk-overlay diff-hl-show-hunk--original-overlay)
-         (position (overlay-end hunk-overlay)))
+  (let* ((overlay diff-hl-show-hunk--original-overlay)
+         (type (overlay-get overlay 'diff-hl-hunk-type))
+         (position (save-excursion
+                     (goto-char (overlay-end overlay))
+                     (forward-line -1)
+                     (point))))
     (setq
      diff-hl-show-hunk--frame
      (posframe-show buffer
@@ -207,12 +202,12 @@ The button calls an ACTION."
                     :internal-border-color diff-hl-show-hunk-posframe-internal-border-color
                     :hidehandler nil
                     ;; Sometimes, header-line is not taken into account, so put a min height and a min width
-                    :min-height (when diff-hl-show-hunk-posframe-show-header-line 10)
                     :min-width (when diff-hl-show-hunk-posframe-show-header-line
                                  (length (diff-hl-show-hunk-posframe--header-line)))
                     :respect-header-line diff-hl-show-hunk-posframe-show-header-line
                     :respect-tab-line nil
                     :respect-mode-line nil
+                    :y-pixel-offset (if (eq type 'delete) (- (default-line-height)))
                     :override-parameters diff-hl-show-hunk-posframe-parameters)))
 
   (set-frame-parameter diff-hl-show-hunk--frame 'drag-internal-border t)
@@ -231,8 +226,7 @@ The button calls an ACTION."
       (setq cursor-type 'box)
 
       ;; Recenter around point
-      (recenter)))
-  (select-frame-set-input-focus diff-hl-show-hunk--frame))
+      (recenter))))
 
 (provide 'diff-hl-show-hunk-posframe)
 ;;; diff-hl-show-hunk-posframe.el ends here

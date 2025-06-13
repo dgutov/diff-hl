@@ -132,6 +132,7 @@ point in that buffer to the corresponding line of the original
 buffer."
   (defvar vc-sentinel-movepoint)
   (let* ((buffer (or (buffer-base-buffer) (current-buffer)))
+         (diff-hl-update-async nil)
          (line (line-number-at-pos))
          (dest-buffer diff-hl-show-hunk-diff-buffer-name))
     (with-current-buffer buffer
@@ -338,7 +339,8 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
         (set-window-start nil (point)))
        ((> (point) pt)
         (redisplay))))
-    (goto-char (1- (overlay-end overlay)))))
+    (goto-char (1- (overlay-end overlay)))
+    (forward-line 0)))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-next ()
@@ -347,7 +349,8 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
   (let* ((point (if diff-hl-show-hunk--original-overlay
                     (overlay-start diff-hl-show-hunk--original-overlay)
                   nil))
-         (next-overlay (diff-hl-show-hunk--next-hunk nil point)))
+         (next-overlay (diff-hl-show-hunk--next-hunk nil point))
+         (inhibit-redisplay t))
     (if (not next-overlay)
         (message "There is no next change")
       (diff-hl-show-hunk-hide)
@@ -360,10 +363,6 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
   "Show the VC diff hunk at point.
 The backend is determined by `diff-hl-show-hunk-function'."
   (interactive)
-
-  ;; Close any previous hunk
-  (save-excursion
-    (diff-hl-show-hunk-hide))
 
   (unless (vc-backend buffer-file-name)
     (user-error "The buffer is not under version control"))

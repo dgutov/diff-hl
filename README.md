@@ -1,11 +1,12 @@
 About [![Build Status](https://github.com/dgutov/diff-hl/actions/workflows/ci.yml/badge.svg)](https://github.com/dgutov/diff-hl/actions/workflows/ci.yml)
 =====
 
-`diff-hl-mode` highlights uncommitted changes on the side of the window (area
-also known as the "gutter"), allows you to jump between and revert them
-selectively.
+`diff-hl-mode` highlights uncommitted changes on the side of the window, allows
+you to jump between and revert them selectively.
 
-In buffers controlled by Git, you can also stage and unstage the changes.
+This feature is also known as "source control gutter indicators".
+
+In buffers controlled by Git, you can stage and unstage the changes.
 
 For the usage instructions and the list of commands, see the Commentary section
 inside the file.
@@ -17,6 +18,9 @@ The package also contains auxiliary modes:
 * `diff-hl-dired-mode` provides similar functionality in Dired.
 * `diff-hl-margin-mode` changes the highlighting function to
   use the margin instead of the fringe.
+* But if you use a non-graphical terminal, the package will fall back to using
+  the margins anyway, as long as `diff-hl-fallback-to-margin` is non-nil and the
+  margin width is non-zero.
 * `diff-hl-amend-mode` sets the reference revision to the one before
   recent one. Also, you could use `diff-hl-set-reference-rev` to set
   it to any revision, see its docstring for details.
@@ -62,7 +66,7 @@ diff-hl-margin-mode
 Requirements
 =====
 
-Emacs 25.1+.
+Emacs 26.1+.
 
 Notes
 =====
@@ -89,17 +93,13 @@ Notes
 
 * There's no fringe when Emacs is running in the console, but the navigation
   and revert commands still work. Consider turning `diff-hl-margin-mode` on,
-  to show the indicators in the margin instead.
+  to show the indicators in the margin instead. It also helps avoid the conflict
+  with Flycheck/Flymake even on graphical frames.
 
 * Frame-local and buffer-local values of `line-spacing` are not supported.
 
 * Fringe width up to 16 works best (because we can't define a bitmap
   with width above that number).
-
-* [emacs-git-gutter](https://github.com/syohex/emacs-git-gutter) shows
-  indicators in the margin by default, allows you to customize how the
-  indicators look more easily. But it misses some of the other features,
-  such as the Dired integration.
 
 Integration
 =====
