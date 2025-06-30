@@ -1,4 +1,4 @@
-;; Copyright (C) 2015-2021 Free Software Foundation, Inc. -*- lexical-binding: t -*-
+;; Copyright (C) 2015-2025 Free Software Foundation, Inc. -*- lexical-binding: t -*-
 
 ;; Author:   Jonathan Hayase <PythonNut@gmail.com>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -40,9 +40,12 @@
 (defvar diff-hl-flydiff-timer nil)
 (make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
-(defun diff-hl-flydiff-changes-buffer (file &optional backend)
+(defun diff-hl-flydiff-changes-buffer (file backend &optional new-rev)
   (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
-  (diff-hl-diff-buffer-with-reference file " *diff-hl-diff*" backend))
+  (if new-rev
+      (diff-hl-with-diff-switches
+       (diff-hl-diff-against-reference file backend " *diff-hl-diff*" new-rev))
+    (diff-hl-diff-buffer-with-reference file " *diff-hl-diff*" backend)))
 
 (defun diff-hl-flydiff-update ()
   (unless (or
