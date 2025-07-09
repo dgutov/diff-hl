@@ -214,6 +214,10 @@ the NEW revision is not specified (meaning, the diff is against
 the current version of the file)."
   :type 'boolean)
 
+(defcustom diff-hl-context-lines 3
+  "The number of context lines to include."
+  :type 'integer)
+
 (defcustom diff-hl-update-async nil
   "When non-nil, `diff-hl-update' will run asynchronously.
 
@@ -707,7 +711,7 @@ in the source file, or the last line of the hunk above it."
                 (with-no-warnings
                   (let (diff-auto-refine-mode)
                     (diff-hl-diff-skip-to line)))
-                (setq m-end (diff-hl-split-away-changes 3))
+                (setq m-end (diff-hl-split-away-changes diff-hl-context-lines))
                 (setq m-beg (point-marker))
                 (funcall diff-hl-highlight-revert-hunk-function m-end)
                 (setq beg-line (line-number-at-pos m-beg)
@@ -856,13 +860,13 @@ Only supported with Git."
         (erase-buffer)))
     (let (diff-hl-reference-revision
           diff-hl-update-async)
-      (diff-hl-diff-buffer-with-reference file dest-buffer nil 3))
+      (diff-hl-diff-buffer-with-reference file dest-buffer nil diff-hl-context-lines))
     (with-current-buffer dest-buffer
       (with-no-warnings
         (let (diff-auto-refine-mode)
           (diff-hl-diff-skip-to line)))
       (let ((inhibit-read-only t))
-        (diff-hl-split-away-changes 3)
+        (diff-hl-split-away-changes diff-hl-context-lines)
         (save-excursion
           (diff-end-of-hunk)
           (delete-region (point) (point-max)))
@@ -927,24 +931,24 @@ Pops up a diff buffer that can be edited to choose the changes to stage."
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (erase-buffer)))
-    (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
+    (diff-hl-diff-buffer-with-reference file dest-buffer nil diff-hl-context-lines)
     (with-current-buffer dest-buffer
       (let ((inhibit-read-only t))
         (when end
           (with-no-warnings
             (let (diff-auto-refine-mode)
               (diff-hl-diff-skip-to line-end)
-              (diff-hl-split-away-changes 3)
+              (diff-hl-split-away-changes diff-hl-context-lines)
               (diff-end-of-hunk)))
           (delete-region (point) (point-max)))
         (if beg
             (with-no-warnings
               (let (diff-auto-refine-mode)
                 (diff-hl-diff-skip-to line-beg)
-                (diff-hl-split-away-changes 3)
+                (diff-hl-split-away-changes diff-hl-context-lines)
                 (diff-beginning-of-hunk)))
           (goto-char (point-min))
-          (forward-line 3))
+          (forward-line diff-hl-context-lines))
         (delete-region (point-min) (point))
         ;; diff-no-select creates a very ugly header; Git rejects it
         (insert (format "diff a/%s b/%s\n" file-base file-base))
