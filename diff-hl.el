@@ -388,7 +388,13 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   (let* ((file buffer-file-name)
          (backend (vc-backend file)))
     (when backend
-      (let ((state (vc-state file backend)))
+      (let ((state (vc-state file backend))
+            ;; Workaround for debbugs#78946.
+            ;; This is fiddly, but we basically allow the thread to start, while
+            ;; prohibiting the async process call inside.
+            ;; That still makes it partially async.
+            (diff-hl-update-async (and diff-hl-update-async
+                                       (not (eq window-system 'ns)))))
         (cond
          ((diff-hl-modified-p state)
           (diff-hl-changes-from-buffer
