@@ -964,14 +964,18 @@ Pops up a diff buffer that can be edited to choose the changes to stage."
 
 (defun diff-hl-stage-finish ()
   (interactive)
-  (let ((count 0))
-    (when (diff-hl-stage-diff diff-hl-stage--orig)
+  (let ((count 0)
+        (orig-buffer diff-hl-stage--orig))
+    (when (diff-hl-stage-diff orig-buffer)
       (save-excursion
         (goto-char (point-min))
         (while (re-search-forward diff-hunk-header-re-unified nil t)
           (cl-incf count)))
       (message "Staged %d hunks" count)
-      (bury-buffer))))
+      (bury-buffer)
+      (unless diff-hl-show-staged-changes
+        (with-current-buffer orig-buffer
+          (diff-hl-update))))))
 
 (defvar diff-hl-command-map
   (let ((map (make-sparse-keymap)))
