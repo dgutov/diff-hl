@@ -449,8 +449,11 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
         (run-hook-with-args-until-success 'diff-hl-async-inhibit-functions
                                           default-directory))))
 
+(defvar diff-hl-timer nil)
+
 (defun diff-hl-update ()
   "Updates the diff-hl overlay."
+  (setq diff-hl-timer nil)
   (if (diff-hl--use-async-p)
       ;; TODO: debounce if a thread is already running.
       (let ((buf (current-buffer))
@@ -527,14 +530,14 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
       (dolist (win (get-buffer-window-list))
         (set-window-buffer win (current-buffer))))))
 
-(defvar-local diff-hl--modified-tick nil)
-
 (put 'diff-hl--modified-tick 'permanent-local t)
 
 (defun diff-hl-update-once ()
-  (unless (equal diff-hl--modified-tick (buffer-chars-modified-tick))
-    (diff-hl-update)
-    (setq diff-hl--modified-tick (buffer-chars-modified-tick))))
+  ;; Ensure that the update happens once, after all major mode changes.
+  ;; That will keep the the local value of <side>-margin-width, if any.
+  (unless diff-hl-timer
+    (setq diff-hl-timer
+          (run-with-idle-timer 0 nil #'diff-hl-update))))
 
 (defun diff-hl-add-highlighting (type shape)
   (let ((o (make-overlay (point) (point))))
@@ -564,8 +567,6 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
       (diff-hl-remove-overlays (overlay-start ov) (overlay-end ov))
       (delete-overlay ov))))
 
-(defvar diff-hl-timer nil)
-
 (defun diff-hl-edit (_beg _end _len)
   "DTRT when we've `undo'-ne the buffer into unmodified state."
   (when undo-in-progress
@@ -579,10 +580,6 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
     (with-current-buffer buffer
       (unless (buffer-modified-p)
         (diff-hl-update)))))
-
-(defun diff-hl-after-revert ()
-  (when (bound-and-true-p revert-buffer-preserve-modes)
-    (diff-hl-update)))
 
 (defun diff-hl-diff-goto-hunk-1 (historic)
   (defvar vc-sentinel-movepoint)
@@ -1025,7 +1022,7 @@ The value of this variable is a mode line template as in
                   'diff-hl-update-once t t)
         ;; Never removed because it acts globally.
         (add-hook 'vc-checkin-hook 'diff-hl-after-checkin)
-        (add-hook 'after-revert-hook 'diff-hl-after-revert nil t)
+        (add-hook 'after-revert-hook 'diff-hl-update-once nil t)
         ;; Magit does call `auto-revert-handler', but it usually
         ;; doesn't do much, because `buffer-stale--default-function'
         ;; doesn't care about changed VC state.
@@ -1038,7 +1035,7 @@ The value of this variable is a mode line template as in
     (remove-hook 'after-save-hook 'diff-hl-update t)
     (remove-hook 'after-change-functions 'diff-hl-edit t)
     (remove-hook 'find-file-hook 'diff-hl-update-once t)
-    (remove-hook 'after-revert-hook 'diff-hl-after-revert t)
+    (remove-hook 'after-revert-hook 'diff-hl-update-once t)
     (remove-hook 'magit-revert-buffer-hook 'diff-hl-update t)
     (remove-hook 'magit-not-reverted-hook 'diff-hl-update t)
     (remove-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps t)
