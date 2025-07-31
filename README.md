@@ -72,8 +72,8 @@ Notes
 =====
 
 * By default `diff-hl-mode` only updates the display when the buffer is in
-  saved state. For a different tradeoff, try `diff-hl-flydiff-mode`, which
-  updates the buffer on a timer.
+  saved state. For a different tradeoff, also enable `diff-hl-flydiff-mode`,
+  which makes the updates happen on a timer.
 
 * To use an
   [alternative diff algorithm](http://stackoverflow.com/questions/32365271/whats-the-difference-between-git-diff-patience-and-git-diff-histogram)

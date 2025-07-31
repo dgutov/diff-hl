@@ -117,6 +117,7 @@
     (insert "added\n")
     (save-buffer)
     (diff-hl-mode 1)
+    (diff-hl-update)
     (diff-hl-previous-hunk)
     (should (looking-at "added"))
     (diff-hl-previous-hunk)
@@ -137,6 +138,7 @@
      (insert "added\n")
      (save-buffer)
      (diff-hl-mode 1)
+     (diff-hl-update)
 
      ;; wait for all thread to complete.
      (dolist (thread (all-threads))
