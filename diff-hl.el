@@ -778,6 +778,36 @@ reference revision."
   (with-current-buffer (or (buffer-base-buffer) (current-buffer))
     (diff-hl-diff-goto-hunk-1 nil diff-hl-reference-revision)))
 
+(defun diff-hl-root-diff-reference-goto-hunk ()
+  "Run VC diff command against the reference for the whole tree.
+And if the current buffer is visiting a file, and it has changes, the diff
+buffer will show the position corresponding to its current line."
+  (interactive)
+  (defvar vc-sentinel-movepoint)
+  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+    (let ((backend (vc-deduce-backend))
+          (default-directory default-directory)
+          rootdir fileset
+          relname)
+      (if backend
+          (setq rootdir (vc-call-backend backend 'root default-directory)
+                default-directory rootdir
+                fileset `(,backend (,rootdir))
+                relname (if buffer-file-name (file-relative-name buffer-file-name
+                                                                 rootdir)))
+        (error "Directory is not version controlled"))
+      (setq fileset (or fileset (vc-deduce-fileset)))
+      (vc-buffer-sync-fileset fileset t)
+      (let* ((line (line-number-at-pos)))
+        (vc-diff-internal
+         (if (boundp 'vc-allow-async-diff)
+             vc-allow-async-diff
+           t)
+         fileset diff-hl-reference-revision nil t)
+        (vc-run-delayed (when relname
+                          (diff-hl-diff-skip-to line relname)
+                          (setq vc-sentinel-movepoint (point))))))))
+
 (defun diff-hl-diff-read-revisions (rev1-default)
   (let* ((file buffer-file-name)
          (files (list file))
@@ -807,13 +837,31 @@ reference revision."
       (when (string= rev2 "") (setq rev2 nil))
       (cons rev1 rev2))))
 
-(defun diff-hl-diff-skip-to (line)
+(defun diff-hl-diff-skip-to (line &optional filename)
   "In `diff-mode', skip to the hunk and line corresponding to LINE
-in the source file, or the last line of the hunk above it."
+in the source file, or the last line of the hunk above it.
+
+When passed FILENAME, ensure that the line is in the section belonging to
+that file, if it's present."
   (goto-char (point-min)) ; Counteract any similar behavior in diff-mode.
-  (diff-hunk-next)
-  (let (found)
-    (while (and (looking-at diff-hunk-header-re-unified) (not found))
+  (let (found
+        (end-pos (point-max)))
+    (diff-hunk-next)
+    (when filename
+      (while (and (not (equal (diff-find-file-name nil t)
+                              filename))
+                  (not (eobp)))
+        (diff-file-next))
+      (if (not (eobp))
+          ;; Found our file in the changed set. Ensure that we don't go past.
+          (setq end-pos (save-excursion
+                          (diff-end-of-file)
+                          (point)))
+        (goto-char (point-min))
+        (setq line 0)))
+    (while (and (looking-at diff-hunk-header-re-unified)
+                (not found)
+                (< (point) end-pos))
       (let ((hunk-line (string-to-number (match-string 3)))
             (len (let ((m (match-string 4)))
                    (if m (string-to-number m) 1))))
@@ -827,7 +875,10 @@ in the source file, or the last line of the hunk above it."
               (while (cl-plusp to-go)
                 (forward-line 1)
                 (unless (looking-at "^[-\\]")
-                  (cl-decf to-go))))))))))
+                  (cl-decf to-go))))))))
+    (when (> (point) end-pos)
+      (diff-hunk-prev)
+      (diff-end-of-hunk))))
 
 (defface diff-hl-reverted-hunk-highlight
   '((default :inverse-video t))
