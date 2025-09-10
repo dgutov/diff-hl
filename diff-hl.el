@@ -453,6 +453,11 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
             (diff-hl-update-async (and diff-hl-update-async
                                        (not (eq window-system 'ns)))))
         (cond
+         ((and
+           (not diff-hl-highlight-reference-function)
+           (diff-hl-modified-p state))
+          `((:working . ,(diff-hl-changes-from-buffer
+                          (diff-hl-changes-buffer file backend)))))
          ((or
            diff-hl-reference-revision
            (diff-hl-modified-p state))
