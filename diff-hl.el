@@ -469,9 +469,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
             `((:reference . ,(diff-hl-adjust-changes ref-changes work-changes))
               (:working . ,work-changes))))
          ((eq state 'added)
-          `((1 ,(line-number-at-pos (point-max)) insert)))
+          `((:working . ((1 ,(line-number-at-pos (point-max)) 0 insert)))))
          ((eq state 'removed)
-          `((1 ,(line-number-at-pos (point-max)) delete))))))))
+          `((:working . ((1 0 ,(line-number-at-pos (point-max)) delete))))))))))
 
 (defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "last:1") (Hg . ".")))
 
@@ -664,7 +664,7 @@ Return a list of line overlays used."
 (defun diff-hl--update ()
   (let* ((cc (diff-hl-changes))
          (ref-changes (assoc-default :reference cc))
-         (changes (assoc-default :working cc nil cc))
+         (changes (assoc-default :working cc))
          reuse)
     (diff-hl-remove-overlays)
     (let ((diff-hl-highlight-function
