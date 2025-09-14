@@ -394,29 +394,29 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
     (ignored 'diff-hl-bmp-i)
     (t (intern (format "diff-hl-bmp-%s" type)))))
 
-(defvar vc-svn-diff-switches)
-(defvar vc-fossil-diff-switches)
-(defvar vc-jj-diff-switches)
-
 (defmacro diff-hl-with-diff-switches (body)
-  `(let ((vc-git-diff-switches
-          ;; https://github.com/dgutov/diff-hl/issues/67
-          (cons "-U0"
-                ;; https://github.com/dgutov/diff-hl/issues/9
-                (and (boundp 'vc-git-diff-switches)
-                     (listp vc-git-diff-switches)
-                     (cl-remove-if-not
-                      (lambda (arg)
-                        (member arg '("--histogram" "--patience" "--minimal" "--textconv")))
-                      vc-git-diff-switches))))
-         (vc-hg-diff-switches nil)
-         (vc-svn-diff-switches nil)
-         (vc-fossil-diff-switches '("-c" "0"))
-         (vc-jj-diff-switches '("--git" "--context=0"))
-         (vc-diff-switches '("-U0"))
-         ,@(when (boundp 'vc-disable-async-diff)
-             '((vc-disable-async-diff t))))
-     ,body))
+  `(progn
+     (defvar vc-svn-diff-switches)
+     (defvar vc-fossil-diff-switches)
+     (defvar vc-jj-diff-switches)
+     (let ((vc-git-diff-switches
+            ;; https://github.com/dgutov/diff-hl/issues/67
+            (cons "-U0"
+                  ;; https://github.com/dgutov/diff-hl/issues/9
+                  (and (boundp 'vc-git-diff-switches)
+                       (listp vc-git-diff-switches)
+                       (cl-remove-if-not
+                        (lambda (arg)
+                          (member arg '("--histogram" "--patience" "--minimal" "--textconv")))
+                        vc-git-diff-switches))))
+           (vc-hg-diff-switches nil)
+           (vc-svn-diff-switches nil)
+           (vc-fossil-diff-switches '("-c" "0"))
+           (vc-jj-diff-switches '("--git" "--context=0"))
+           (vc-diff-switches '("-U0"))
+           ,@(when (boundp 'vc-disable-async-diff)
+               '((vc-disable-async-diff t))))
+       ,body)))
 
 (defun diff-hl-modified-p (state)
   (or (memq state '(edited conflict))
