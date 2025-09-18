@@ -167,7 +167,8 @@ You probably shouldn't use this function directly."
                        `((margin ,(intern (format "%s-margin" side)))
                          ,(propertize char 'face
                                       (intern (format "diff-hl-margin-%s" type))))))))
-   (cl-loop for char = (assoc-default 'reference diff-hl-margin-symbols-alist nil " ")
+   (cl-loop for char = (or (assoc-default 'reference diff-hl-margin-symbols-alist)
+                           " ")
             for type in '(insert delete change)
             nconc
             (cl-loop for side in '(left right)
