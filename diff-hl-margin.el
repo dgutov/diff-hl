@@ -86,7 +86,7 @@
   "Associative list from symbols to strings."
   :type '(alist :key-type symbol
                 :value-type string
-                :options (insert delete change unknown ignored))
+                :options (insert delete change unknown ignored reference))
   :set (lambda (symbol value)
          (defvar diff-hl-margin-spec-cache)
          (set-default symbol value)
