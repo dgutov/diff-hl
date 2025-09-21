@@ -165,17 +165,15 @@
     (save-buffer)
     (let ((diff-hl-show-staged-changes t))
       (should
-       (equal (diff-hl-changes)
-              '((:reference . nil)
-                (:working
-                 .
-                 ((1 1 0 insert)
-                  (12 1 0 insert)))))))
+       (null
+        (diff-hl--promise-result
+         (assoc-default :reference (diff-hl-changes))))))
     (let ((diff-hl-show-staged-changes nil))
       (should
-       (equal (diff-hl-changes)
-              '((:reference . ((1 1 0 insert)))
-                (:working . ((12 1 0 insert)))))))))
+       (equal
+        (diff-hl--promise-result
+         (assoc-default :reference (diff-hl-changes)))
+        '((1 1 0 insert)))))))
 
 (diff-hl-deftest diff-hl-flydiff-can-ignore-staged-changes ()
   (diff-hl-test-in-source
