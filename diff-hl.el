@@ -254,10 +254,21 @@ the current version of the file)."
 (defcustom diff-hl-update-async nil
   "When non-nil, `diff-hl-update' will run asynchronously.
 
+When the value is `no-thread', it will call the diff process
+asynchronously.  Any other non-nil value will do that and use a background
+thread.
+
+Note that the `no-thread' approach is only compatible with a recent Emacs
+31+.  Whereas using a thread can help in older Emacs as well, but can lead
+to a crash in some configurations.
+
 This can help prevent Emacs from freezing, especially by a slow version
 control (VC) backend. It's disabled in remote buffers, though, since it
 didn't work reliably in such during testing."
-  :type 'boolean)
+  :type '(choice
+          (const :tag "Disabled" nil)
+          (const :tag "Background thread" t)
+          (const :tag "Full async" no-thread)))
 
 ;; Threads are not reliable with remote files, yet.
 (defcustom diff-hl-async-inhibit-functions (list #'diff-hl-with-editor-p
@@ -397,6 +408,42 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 (declare-function vc-hg-command "vc-hg")
 (declare-function vc-bzr-command "vc-bzr")
 
+(cl-defstruct (diff-hl--promise
+               (:constructor diff-hl--make-promise (&optional result)))
+  "Object containing the result of computation."
+  (result 'none)
+  callbacks)
+
+(defun diff-hl--promise-resolve (promise value)
+  (setf (diff-hl--promise-result promise) value)
+  (dolist (cb (diff-hl--promise-callbacks promise))
+    (funcall cb value)))
+
+(defun diff-hl--promise-then (promise function)
+  (if (eq (diff-hl--promise-result promise) 'none)
+      (push
+       function
+       (diff-hl--promise-callbacks promise))
+    (funcall function (diff-hl--promise-result promise))))
+
+(defun diff-hl--promise-map (&rest args)
+  (let* ((function (car (last args)))
+         (promises (butlast args 1))
+         (count (cl-count-if #'diff-hl--promise-p promises))
+         (res (diff-hl--make-promise)))
+    (when (zerop count)
+      (diff-hl--promise-resolve res (apply function promises)))
+    (dolist (p promises)
+      (when (diff-hl--promise-p p)
+        (diff-hl--promise-then
+         p
+         (lambda (v)
+           (setcar (member p promises) v)
+           (cl-decf count)
+           (when (zerop count)
+             (diff-hl--promise-resolve res (apply function promises)))))))
+    res))
+
 (defun diff-hl-changes-buffer (file backend &optional new-rev)
   (diff-hl-with-diff-switches
    (diff-hl-diff-against-reference file backend " *diff-hl* " new-rev)))
@@ -450,13 +497,13 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
             ;; This is fiddly, but we basically allow the thread to start, while
             ;; prohibiting the async process call inside.
             ;; That still makes it partially async.
-            (diff-hl-update-async (and diff-hl-update-async
-                                       (not (eq window-system 'ns)))))
+            (diff-hl-update-async (and (not (eq window-system 'ns))
+                                       diff-hl-update-async)))
         (cond
          ((and
            (not diff-hl-highlight-reference-function)
            (diff-hl-modified-p state))
-          `((:working . ,(diff-hl-changes-from-buffer
+          `((:working . ,(diff-hl--promise-from-buffer
                           (diff-hl-changes-buffer file backend)))))
          ((or
            diff-hl-reference-revision
@@ -464,19 +511,21 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
           (let* ((ref-changes
                   (and (or diff-hl-reference-revision
                            hide-staged)
-                       (diff-hl-changes-from-buffer
+                       (diff-hl--promise-from-buffer
                         (diff-hl-changes-buffer file backend (if hide-staged
                                                                  'git-index
                                                                (diff-hl-head-revision backend))))))
                  (diff-hl-reference-revision nil)
-                 (work-changes (diff-hl-changes-from-buffer
+                 (work-changes (diff-hl--promise-from-buffer
                                 (diff-hl-changes-buffer file backend))))
-            `((:reference . ,(diff-hl-adjust-changes ref-changes work-changes))
+            `((:reference . ,(diff-hl-adjust-promises ref-changes work-changes))
               (:working . ,work-changes))))
          ((eq state 'added)
-          `((:working . ((1 ,(line-number-at-pos (point-max)) 0 insert)))))
+          `((:working . ,(diff-hl--make-promise
+                          `((1 ,(line-number-at-pos (point-max)) 0 insert))))))
          ((eq state 'removed)
-          `((:working . ((1 0 ,(line-number-at-pos (point-max)) delete))))))))))
+          `((:working . ,(diff-hl--make-promise
+                          `((1 0 ,(line-number-at-pos (point-max)) delete)))))))))))
 
 (defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "last:1") (Hg . ".")))
 
@@ -485,6 +534,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
       ;; It's usually cached already (e.g. for mode-line).
       ;; So this is basically an optimization for rare cases.
       (vc-working-revision buffer-file-name backend)))
+
+(defun diff-hl-adjust-promises (old new)
+  (diff-hl--promise-map old new #'diff-hl-adjust-changes))
 
 (defun diff-hl-adjust-changes (old new)
   "Adjust changesets in OLD using changes in NEW.
@@ -544,13 +596,37 @@ contents as they are (or would be) after applying the changes in NEW."
       (setq old (cdr old)))
     ref))
 
+(defun diff-hl--process-to-promise (buf fun)
+  (let* ((promise (diff-hl--make-promise))
+         (proc (get-buffer-process buf))
+         (resolve-fun
+          (lambda (_proc _status)
+            (diff-hl--promise-resolve
+             promise
+             (funcall fun buf)))))
+    (unless (eq diff-hl-update-async 'no-thread)
+      (diff-hl-process-wait buf))
+    (cond
+     ((or (null proc) (eq (process-status proc) 'exit))
+      (when proc (accept-process-output proc))
+      (funcall resolve-fun proc nil))
+     ((eq (process-status proc) 'run)
+      (add-function :after (process-sentinel proc)
+                    resolve-fun))
+     (t (error "Unexpected process state")))
+    promise))
+
+(defun diff-hl--promise-from-buffer (buf)
+  (diff-hl--process-to-promise
+   buf
+   #'diff-hl-changes-from-buffer))
+
 (defun diff-hl-process-wait (buf)
   (let ((proc (get-buffer-process buf)))
     (while (process-live-p proc)
       (accept-process-output proc 0.01))))
 
 (defun diff-hl-changes-from-buffer (buf)
-  (diff-hl-process-wait buf)
   (with-current-buffer buf
     (let (res)
       (goto-char (point-min))
@@ -591,7 +667,8 @@ contents as they are (or would be) after applying the changes in NEW."
 (defun diff-hl-update ()
   "Updates the diff-hl overlay."
   (setq diff-hl-timer nil)
-  (if (diff-hl--use-async-p)
+  (if (and (diff-hl--use-async-p)
+           (not (eq diff-hl-update-async 'no-thread)))
       ;; TODO: debounce if a thread is already running.
       (let ((buf (current-buffer))
             (temp-buffer
@@ -668,18 +745,21 @@ Return a list of line overlays used."
 
 (defun diff-hl--update ()
   (let* ((cc (diff-hl-changes))
-         (ref-changes (assoc-default :reference cc))
-         (changes (assoc-default :working cc))
+         (refs-promise (assoc-default :reference cc))
+         (changes-promise (assoc-default :working cc))
          reuse)
-    (diff-hl-remove-overlays)
-    (let ((diff-hl-highlight-function
-           diff-hl-highlight-reference-function)
-          (diff-hl-fringe-face-function
-           diff-hl-fringe-reference-face-function))
-      (setq reuse (diff-hl--update-overlays ref-changes nil)))
-    (diff-hl--update-overlays changes reuse)
-    (when (not (or changes ref-changes))
-      (diff-hl--autohide-margin))))
+    (diff-hl--promise-map
+     refs-promise changes-promise
+     (lambda (ref-changes changes)
+       (diff-hl-remove-overlays)
+       (let ((diff-hl-highlight-function
+              diff-hl-highlight-reference-function)
+             (diff-hl-fringe-face-function
+              diff-hl-fringe-reference-face-function))
+         (setq reuse (diff-hl--update-overlays ref-changes nil)))
+       (diff-hl--update-overlays changes reuse)
+       (when (not (or changes ref-changes))
+         (diff-hl--autohide-margin))))))
 
 (defun diff-hl--autohide-margin ()
   (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
