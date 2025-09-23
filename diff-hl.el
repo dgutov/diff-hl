@@ -444,9 +444,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
              (diff-hl--promise-resolve res (apply function promises)))))))
     res))
 
-(defun diff-hl-changes-buffer (file backend &optional new-rev)
+(defun diff-hl-changes-buffer (file backend &optional new-rev bufname)
   (diff-hl-with-diff-switches
-   (diff-hl-diff-against-reference file backend " *diff-hl* " new-rev)))
+   (diff-hl-diff-against-reference file backend (or bufname " *diff-hl* ") new-rev)))
 
 (defun diff-hl-diff-against-reference (file backend buffer &optional new-rev)
   (cond
@@ -512,13 +512,15 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                   (and (or diff-hl-reference-revision
                            hide-staged)
                        (diff-hl--promise-from-buffer
-                        (diff-hl-changes-buffer file backend (if hide-staged
-                                                                 'git-index
-                                                               (diff-hl-head-revision backend))))))
+                        (diff-hl-changes-buffer file backend
+                                                (if hide-staged
+                                                    'git-index
+                                                  (diff-hl-head-revision backend))
+                                                " *diff-hl-reference* "))))
                  (diff-hl-reference-revision nil)
                  (work-changes (diff-hl--promise-from-buffer
                                 (diff-hl-changes-buffer file backend))))
-            `((:reference . ,(diff-hl-adjust-promises ref-changes work-changes))
+            `((:reference . ,ref-changes)
               (:working . ,work-changes))))
          ((eq state 'added)
           `((:working . ,(diff-hl--make-promise
@@ -534,9 +536,6 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
       ;; It's usually cached already (e.g. for mode-line).
       ;; So this is basically an optimization for rare cases.
       (vc-working-revision buffer-file-name backend)))
-
-(defun diff-hl-adjust-promises (old new)
-  (diff-hl--promise-map old new #'diff-hl-adjust-changes))
 
 (defun diff-hl-adjust-changes (old new)
   "Adjust changesets in OLD using changes in NEW.
@@ -756,7 +755,9 @@ Return a list of line overlays used."
               diff-hl-highlight-reference-function)
              (diff-hl-fringe-face-function
               diff-hl-fringe-reference-face-function))
-         (setq reuse (diff-hl--update-overlays ref-changes nil)))
+         (setq reuse (diff-hl--update-overlays
+                      (diff-hl-adjust-changes ref-changes changes)
+                      nil)))
        (diff-hl--update-overlays changes reuse)
        (when (not (or changes ref-changes))
          (diff-hl--autohide-margin))))))
