@@ -166,8 +166,7 @@
     (let ((diff-hl-show-staged-changes t))
       (should
        (null
-        (diff-hl--promise-result
-         (assoc-default :reference (diff-hl-changes))))))
+        (assoc-default :reference (diff-hl-changes)))))
     (let ((diff-hl-show-staged-changes nil))
       (should
        (equal
