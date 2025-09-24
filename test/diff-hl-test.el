@@ -223,6 +223,21 @@
 Diff finished."
                  (buffer-substring (point) (point-max))))))))
 
+(diff-hl-deftest diff-hl-resolved-reference-revision-buffer-local-hg ()
+  (diff-hl-test-in-source
+   (setq-local diff-hl-reference-revision "test-rev")
+   (setq-local vc-hg-program "chg")
+   (condition-case err
+       (progn
+         (diff-hl-resolved-reference-revision 'Hg)
+         (ert-fail "Expected an error to be signaled but none was."))
+     ;; We don't have a hg repo, but we can use the error message to verify the
+     ;; underlying command.
+     (error
+      (should (string-match-p
+               "chg .*identify -r test-rev -i"
+               (error-message-string err)))))))
+
 (provide 'diff-hl-test)
 
 ;;; diff-hl-test.el ends here

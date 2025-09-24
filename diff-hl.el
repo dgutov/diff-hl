@@ -1442,21 +1442,35 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
    ((eq backend 'Git)
     (vc-git--rev-parse diff-hl-reference-revision))
    ((eq backend 'Hg)
-    (with-temp-buffer
-      (vc-hg-command (current-buffer) 0 nil
-                     "identify" "-r" diff-hl-reference-revision
-                     "-i")
-      (goto-char (point-min))
-      (buffer-substring-no-properties (point) (line-end-position))))
+    ;;  Preserve the potentially buffer-local variables (e.g.,
+    ;;  `diff-hl-reference-revision`, `vc-hg-program`) by not switching buffer
+    ;;  until the vc-hg-command is done.
+    (let ((temp-buffer (generate-new-buffer " *temp*")))
+      (unwind-protect
+          (progn
+            (vc-hg-command temp-buffer 0 nil
+                           "identify" "-r" diff-hl-reference-revision "-i")
+            (with-current-buffer temp-buffer
+              (goto-char (point-min))
+              (buffer-substring-no-properties (point) (line-end-position))))
+        (kill-buffer temp-buffer))))
    ((eq backend 'Bzr)
-    (with-temp-buffer
-      (vc-bzr-command (current-buffer) 0 nil
-                      "log" "--log-format=template" "--template-str='{revno}'"
-                      "-r" diff-hl-reference-revision)
-      (goto-char (point-min))
-      (buffer-substring-no-properties (point) (line-end-position))))
-   (t
-    diff-hl-reference-revision)))
+    ;;  Preserve the potentially buffer-local variables (e.g.,
+    ;;  `diff-hl-reference-revision`, `vc-bzr-program`) by not switching buffer
+    ;;  until the vc-bzr-command is done.
+    (let ((temp-buffer (generate-new-buffer " *temp*")))
+      (unwind-protect
+          (progn
+            (vc-bzr-command temp-buffer 0 nil
+                            "log" "--log-format=template"
+                            "--template-str='{revno}'"
+                            "-r" diff-hl-reference-revision)
+            (with-current-buffer temp-buffer
+              (goto-char (point-min))
+              (buffer-substring-no-properties (point) (line-end-position))))
+        (kill-buffer temp-buffer))))
+    (t
+     diff-hl-reference-revision)))
 
 ;; TODO: Cache based on .git/index's mtime, maybe.
 (defun diff-hl-git-index-object-name (file)
