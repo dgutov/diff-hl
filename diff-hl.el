@@ -254,21 +254,22 @@ the current version of the file)."
 (defcustom diff-hl-update-async nil
   "When non-nil, `diff-hl-update' will run asynchronously.
 
-When the value is `no-thread', it will call the diff process
-asynchronously.  Any other non-nil value will do that and use a background
-thread.
+When the value is `thread', it will call the diff process in a Lisp thread.
 
-Note that the `no-thread' approach is only compatible with a recent Emacs
-31+.  Whereas using a thread can help in older Emacs as well, but can lead
-to a crash in some configurations.
+Any other non-nil value will do call it the diff process asynchronously in
+the main thread.
 
-This can help prevent Emacs from freezing, especially by a slow version
-control (VC) backend. It's disabled in remote buffers, though, since it
-didn't work reliably in such during testing."
+Note that the latter mechanism is only compatible with a recent Emacs
+31+ (for backends such as Git and Hg).  Whereas using a thread can help in
+older Emacs as well, but might crash in some configurations.
+
+This feature makes Emacs more responsive with slower version control (VC)
+backends and large projects. But it's disabled in remote buffers, since for
+now testing shows it doesn't work reliably in such."
   :type '(choice
           (const :tag "Disabled" nil)
-          (const :tag "Background thread" t)
-          (const :tag "Full async" no-thread)))
+          (const :tag "Simple async" t)
+          (const :tag "Thread" thread)))
 
 ;; Threads are not reliable with remote files, yet.
 (defcustom diff-hl-async-inhibit-functions (list #'diff-hl-with-editor-p
@@ -462,7 +463,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
             ;; prohibiting the async process call inside.
             ;; That still makes it partially async.
             (diff-hl-update-async (and (not (eq window-system 'ns))
-                                       diff-hl-update-async)))
+                                       (eq diff-hl-update-async t))))
         (cond
          ((and
            (not diff-hl-highlight-reference-function)
@@ -601,7 +602,7 @@ contents as they are (or would be) after applying the changes in NEW."
   "Updates the diff-hl overlay."
   (setq diff-hl-timer nil)
   (if (and (diff-hl--use-async-p)
-           (not (eq diff-hl-update-async 'no-thread)))
+           (eq diff-hl-update-async 'thread))
       ;; TODO: debounce if a thread is already running.
       (let ((buf (current-buffer))
             (temp-buffer
