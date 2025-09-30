@@ -167,11 +167,11 @@
       (should
        (null
         (assoc-default :reference (diff-hl-changes)))))
-    (let ((diff-hl-show-staged-changes nil))
+    (let* ((diff-hl-show-staged-changes nil)
+           (res-buf (assoc-default :reference (diff-hl-changes))))
       (should
        (equal
-        (diff-hl--promise-result
-         (assoc-default :reference (diff-hl-changes)))
+        (diff-hl-changes-from-buffer res-buf)
         '((1 1 0 insert)))))))
 
 (diff-hl-deftest diff-hl-flydiff-can-ignore-staged-changes ()
