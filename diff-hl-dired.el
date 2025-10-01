@@ -74,6 +74,10 @@ status indicators."
                               `(const :tag ,(symbol-name name) ,name))
                             vc-handled-backends))))
 
+(defcustom diff-hl-dired-fringe-bmp-function 'diff-hl-fringe-bmp-from-type
+  "Function to determine fringe bitmap from change type and position."
+  :type 'function)
+
 ;;;###autoload
 (define-minor-mode diff-hl-dired-mode
   "Toggle VC diff highlighting on the side of a Dired window."
@@ -151,7 +155,7 @@ for DIR containing FILES. Call UPDATE-FUNCTION as entries are added."
         (goto-char (point-min))
         (when (and type (dired-goto-file-1
                          file (expand-file-name file) nil))
-          (let* ((diff-hl-fringe-bmp-function 'diff-hl-fringe-bmp-from-type)
+          (let* ((diff-hl-fringe-bmp-function diff-hl-dired-fringe-bmp-function)
                  (diff-hl-fringe-face-function 'diff-hl-dired-face-from-type)
                  (o (diff-hl-add-highlighting type 'single)))
             (overlay-put o 'modification-hooks '(diff-hl-overlay-modified))
