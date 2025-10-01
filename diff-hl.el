@@ -256,16 +256,16 @@ the current version of the file)."
 
 When the value is `thread', it will call the diff process in a Lisp thread.
 
-Any other non-nil value will do call it the diff process asynchronously in
-the main thread.
+Any other non-nil value will make the the diff process called
+asynchronously in the main thread.
 
 Note that the latter mechanism is only compatible with a recent Emacs
-31+ (for backends such as Git and Hg).  Whereas using a thread can help in
-older Emacs as well, but might crash in some configurations.
+31+ (for built-in backends such as Git and Hg).  Whereas using a thread can
+help with older Emacs as well, but might crash in some configurations.
 
 This feature makes Emacs more responsive with slower version control (VC)
-backends and large projects. But it's disabled in remote buffers, since for
-now testing shows it doesn't work reliably in such."
+backends and large projects. But it's disabled in remote buffers, since
+current testing shows it doesn't work reliably over Tramp."
   :type '(choice
           (const :tag "Disabled" nil)
           (const :tag "Simple async" t)
