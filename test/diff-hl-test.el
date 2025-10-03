@@ -140,10 +140,11 @@
      (diff-hl-mode 1)
      (diff-hl-update)
 
-     ;; wait for all thread to complete.
-     (dolist (thread (all-threads))
-       (unless (eq thread main-thread)
-         (thread-join thread)))
+     (while (or (process-live-p
+                  (get-buffer-process " *diff-hl* "))
+                (process-live-p
+                  (get-buffer-process " *diff-hl-reference* ")))
+       (accept-process-output nil 0.05))
 
      (diff-hl-previous-hunk)
      (should (looking-at "added"))
