@@ -140,10 +140,11 @@
      (diff-hl-mode 1)
      (diff-hl-update)
 
-     ;; wait for all thread to complete.
-     (dolist (thread (all-threads))
-       (unless (eq thread main-thread)
-         (thread-join thread)))
+     (while (or (process-live-p
+                  (get-buffer-process " *diff-hl* "))
+                (process-live-p
+                  (get-buffer-process " *diff-hl-reference* ")))
+       (accept-process-output nil 0.05))
 
      (diff-hl-previous-hunk)
      (should (looking-at "added"))
@@ -165,17 +166,14 @@
     (save-buffer)
     (let ((diff-hl-show-staged-changes t))
       (should
-       (equal (diff-hl-changes)
-              '((:reference . nil)
-                (:working
-                 .
-                 ((1 1 0 insert)
-                  (12 1 0 insert)))))))
-    (let ((diff-hl-show-staged-changes nil))
+       (null
+        (assoc-default :reference (diff-hl-changes)))))
+    (let* ((diff-hl-show-staged-changes nil)
+           (res-buf (assoc-default :reference (diff-hl-changes))))
       (should
-       (equal (diff-hl-changes)
-              '((:reference . ((1 1 0 insert)))
-                (:working . ((12 1 0 insert)))))))))
+       (equal
+        (diff-hl-changes-from-buffer res-buf)
+        '((1 1 0 insert)))))))
 
 (diff-hl-deftest diff-hl-flydiff-can-ignore-staged-changes ()
   (diff-hl-test-in-source
