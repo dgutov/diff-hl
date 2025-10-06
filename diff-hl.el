@@ -933,7 +933,7 @@ that file, if it's present."
     (widen)
     (vc-buffer-sync)
     (let* ((diff-buffer (get-buffer-create
-                         (generate-new-buffer-name "*diff-hl*")))
+                         (generate-new-buffer-name "*diff-hl-revert*")))
            (buffer (current-buffer))
            (diff-hl-update-async nil)
            (line (save-excursion
