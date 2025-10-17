@@ -489,7 +489,8 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          ((eq state 'removed)
           `((:working . ,`((1 0 ,(line-number-at-pos (point-max)) delete))))))))))
 
-(defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "last:1") (Hg . ".")))
+(defvar diff-hl-head-revision-alist '((Git . "HEAD") (Bzr . "last:1") (Hg . ".")
+                                      (JJ . "@-")))
 
 (defun diff-hl-head-revision (backend)
   (or (assoc-default backend diff-hl-head-revision-alist)
@@ -1451,8 +1452,11 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
                  (diff-hl-git-index-object-name file))
               (diff-hl-create-revision
                file
-               (or (diff-hl-resolved-reference-revision backend)
-                   (diff-hl-working-revision file backend)))))
+               (or (diff-hl-resolved-revision
+                    backend
+                    (or diff-hl-reference-revision
+                        (assoc-default backend diff-hl-head-revision-alist)))
+                   (diff-hl-working-revision buffer-file-name backend)))))
            (switches (format "-U %d --strip-trailing-cr" (or context-lines 0))))
       (diff-no-select rev (current-buffer) switches (not (diff-hl--use-async-p))
                       (get-buffer-create dest-buffer))
@@ -1460,42 +1464,32 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
       ;; In all commands which use exact text we call it synchronously.
       (get-buffer-create dest-buffer))))
 
-(defun diff-hl-resolved-reference-revision (backend)
+(declare-function vc-jj--process-lines "vc-jj")
+
+(defun diff-hl-resolved-revision (backend revision)
   (cond
-   ((null diff-hl-reference-revision)
-    nil)
    ((eq backend 'Git)
-    (vc-git--rev-parse diff-hl-reference-revision))
+    (vc-git--rev-parse revision))
    ((eq backend 'Hg)
-    ;;  Preserve the potentially buffer-local variables (e.g.,
-    ;;  `diff-hl-reference-revision`, `vc-hg-program`) by not switching buffer
-    ;;  until the vc-hg-command is done.
-    (let ((temp-buffer (generate-new-buffer " *temp*")))
-      (unwind-protect
-          (progn
-            (vc-hg-command temp-buffer 0 nil
-                           "identify" "-r" diff-hl-reference-revision "-i")
-            (with-current-buffer temp-buffer
-              (goto-char (point-min))
-              (buffer-substring-no-properties (point) (line-end-position))))
-        (kill-buffer temp-buffer))))
+    (with-temp-buffer
+      (vc-hg-command (current-buffer) 0 nil
+                     "identify" "-r" revision "-i")
+      (goto-char (point-min))
+      (buffer-substring-no-properties (point) (line-end-position))))
    ((eq backend 'Bzr)
-    ;;  Preserve the potentially buffer-local variables (e.g.,
-    ;;  `diff-hl-reference-revision`, `vc-bzr-program`) by not switching buffer
-    ;;  until the vc-bzr-command is done.
-    (let ((temp-buffer (generate-new-buffer " *temp*")))
-      (unwind-protect
-          (progn
-            (vc-bzr-command temp-buffer 0 nil
-                            "log" "--log-format=template"
-                            "--template-str='{revno}'"
-                            "-r" diff-hl-reference-revision)
-            (with-current-buffer temp-buffer
-              (goto-char (point-min))
-              (buffer-substring-no-properties (point) (line-end-position))))
-        (kill-buffer temp-buffer))))
-    (t
-     diff-hl-reference-revision)))
+    (with-temp-buffer
+      (vc-bzr-command (current-buffer) 0 nil
+                      "log" "--log-format=template"
+                      "--template-str='{revno}'"
+                      "-r" revision)
+      (goto-char (point-min))
+      (buffer-substring-no-properties (point) (line-end-position))))
+   ((eq backend 'JJ)
+    (car (last (vc-jj--process-lines "log" "--no-graph"
+                                     "-r" revision
+                                     "-T" "change_id" "-n" "1"))))
+   (t
+    revision)))
 
 ;; TODO: Cache based on .git/index's mtime, maybe.
 (defun diff-hl-git-index-object-name (file)
