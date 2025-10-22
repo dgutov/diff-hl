@@ -1293,10 +1293,10 @@ The value of this variable is a mode line template as in
         ;; instead, but only when they don't call `revert-buffer':
         (add-hook 'magit-not-reverted-hook 'diff-hl-update nil t)
         (add-hook 'text-scale-mode-hook 'diff-hl-maybe-redefine-bitmaps nil t)
-        (when-let* ((rev (map-some
-                          (lambda (root rev)
-                            (when (string-prefix-p root default-directory)
-                              rev))
+        (when-let* ((rev (cl-find-if
+                          (lambda (pair)
+                            (when (string-prefix-p (car pair) default-directory)
+                              (cdr pair)))
                           diff-hl-reference-revision-projects-cache)))
           (setq-local diff-hl-reference-revision rev)))
     (remove-hook 'after-save-hook 'diff-hl-update t)
