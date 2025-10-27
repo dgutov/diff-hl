@@ -713,9 +713,31 @@ Return a list of line overlays used."
 (defun diff-hl--resolve (value-or-buffer cb)
   (if (listp value-or-buffer)
       (funcall cb value-or-buffer)
-    (with-current-buffer value-or-buffer
-      (vc-run-delayed
-        (funcall cb (diff-hl-changes-from-buffer (current-buffer)))))))
+    (diff-hl--when-done value-or-buffer
+                        #'diff-hl-changes-from-buffer
+                        cb)))
+
+(defun diff-hl--when-done (buffer get-value callback)
+  (let ((proc (get-buffer-process buffer)))
+    (cond
+     ;; If there's no background process, just execute the code.
+     ((or (null proc) (eq (process-status proc) 'exit))
+      ;; Make sure we've read the process's output before going further.
+      (when proc (accept-process-output proc))
+      (when (get-buffer buffer)
+        (with-current-buffer buffer
+          (funcall callback (funcall get-value buffer)))))
+     ;; If process was deleted, we ignore it.
+     ((eq (process-status proc) 'signal))
+     ;; If a process is running, set the sentinel.
+     ((eq (process-status proc) 'run)
+      (set-process-sentinel
+       proc
+       (lambda (_proc _status)
+         ;; Delegate to the parent cond for decision logic.
+         (diff-hl--when-done buffer get-value callback))))
+     ;; Maybe we should ignore all other states as well.
+     (t (error "Unexpected process state")))))
 
 (defun diff-hl--autohide-margin ()
   (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
