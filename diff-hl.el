@@ -727,8 +727,6 @@ Return a list of line overlays used."
       (dolist (win (get-buffer-window-list))
         (set-window-buffer win (current-buffer))))))
 
-(put 'diff-hl--modified-tick 'permanent-local t)
-
 (defun diff-hl-update-once ()
   ;; Ensure that the update happens once, after all major mode changes.
   ;; That will keep the the local value of <side>-margin-width, if any.
