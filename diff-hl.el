@@ -69,6 +69,9 @@
   (require 'vc-git)
   (require 'vc-hg)
   (require 'face-remap)
+  (declare-function project-buffers 'project)
+  (declare-function project-name 'project)
+  (declare-function project-roots 'project)
   (declare-function smartrep-define-key 'smartrep))
 
 (defgroup diff-hl nil
