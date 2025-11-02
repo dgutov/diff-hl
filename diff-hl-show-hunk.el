@@ -22,9 +22,9 @@
 ;;; Commentary:
 
 ;; `diff-hl-show-hunk' shows a popup with the modification hunk at point.
-;; `diff-hl-show-hunk-function' points to the backend used to show the
-;; hunk.  Its default value is `diff-hl-show-hunk-inline-popup', that
-;; shows diffs inline using overlay.  There is another built-in backend:
+;; `diff-hl-show-hunk-function' points to the backend used to show the hunk.
+;; Its default value is `diff-hl-show-hunk-inline', that shows diffs inline
+;; using overlay.  There is another built-in backend:
 ;; `diff-hl-show-hunk-posframe' (based on posframe).
 ;;
 ;; `diff-hl-show-hunk-mouse-mode' adds interaction on clicking in the
@@ -73,24 +73,24 @@
 (defconst diff-hl-show-hunk-boundary "^@@.*@@")
 (defconst diff-hl-show-hunk--no-lines-removed-message (list "<<no lines removed>>"))
 
-(defcustom diff-hl-show-hunk-inline-popup-hide-hunk nil
+(defcustom diff-hl-show-hunk-inline-hide-hunk nil
   "If t, inline-popup is shown over the hunk, hiding it."
   :type 'boolean)
 
-(defcustom diff-hl-show-hunk-inline-popup-smart-lines t
+(defcustom diff-hl-show-hunk-inline-smart-lines t
   "If t, inline-popup tries to show only the deleted lines of the
 hunk.  The added lines are shown when scrolling the popup.  If
 the hunk consist only on added lines, then
 `diff-hl-show-hunk--no-lines-removed-message' it is shown."
   :type 'boolean)
 
-(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline-popup
+(defcustom diff-hl-show-hunk-function 'diff-hl-show-hunk-inline
   "The function used to render the hunk.
 The function receives as first parameter a buffer with the
 contents of the hunk, and as second parameter the line number
 corresponding to the clicked line in the original buffer."
   :type '(choice
-          (const :tag "Show inline" diff-hl-show-hunk-inline-popup)
+          (const :tag "Show inline" diff-hl-show-hunk-inline)
           (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
 
 (defvar diff-hl-show-hunk--hide-function nil
@@ -232,7 +232,7 @@ Returns a list with the buffer and the line number of the clicked line."
 (defvar diff-hl-show-hunk--hide-function)
 
 ;;;###autoload
-(defun diff-hl-show-hunk-inline-popup (buffer &optional _ignored-line)
+(defun diff-hl-show-hunk-inline (buffer &optional _ignored-line)
   "Implementation to show the hunk in a inline popup.
 BUFFER is a buffer with the hunk."
   ;; prevent diff-hl-inline-popup-hide from being called twice
@@ -240,7 +240,7 @@ BUFFER is a buffer with the hunk."
     (diff-hl-inline-popup-hide))
   (setq diff-hl-show-hunk--hide-function #'diff-hl-inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
-         (smart-lines diff-hl-show-hunk-inline-popup-smart-lines)
+         (smart-lines diff-hl-show-hunk-inline-smart-lines)
          (original-lines-number (cl-count-if (lambda (s) (string-prefix-p "-" s)) lines))
          (lines (if (string= (car (last lines)) "" ) (butlast lines) lines))
          (lines (if (and (eq original-lines-number 0) smart-lines)
@@ -261,7 +261,7 @@ BUFFER is a buffer with the hunk."
       ;; Save point in case the hunk is hidden, so next/previous works as expected
       ;; If the hunk is delete type, then don't hide the hunk
       ;; (because the hunk is located in a non deleted line)
-      (when (and diff-hl-show-hunk-inline-popup-hide-hunk
+      (when (and diff-hl-show-hunk-inline-hide-hunk
                  (not (eq type 'delete)))
         (let* ((invisible-overlay (make-overlay (overlay-start overlay)
                                                 (overlay-end overlay))))
