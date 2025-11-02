@@ -36,7 +36,7 @@
 
 ;;; Code:
 
-(require 'diff-hl-inline-popup)
+(require 'diff-hl-show-hunk-inline)
 (require 'diff-hl)
 
 (defvar diff-hl-show-hunk-mouse-mode-map
@@ -272,7 +272,7 @@ BUFFER is a buffer with the hunk."
                 (lambda ()
                   (overlay-put invisible-overlay 'invisible nil)
                   (delete-overlay invisible-overlay)
-                  (diff-hl-inline-popup-hide)))))
+                  (diff-hl-show-hunk-inline-hide)))))
       (diff-hl-show-hunk--goto-hunk-overlay overlay)
       (let ((height
              (when smart-lines
@@ -281,7 +281,7 @@ BUFFER is a buffer with the hunk."
             (footer "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"))
         (unless diff-hl-show-staged-changes
           (setq footer (concat footer " (S)Stage")))
-        (diff-hl-inline-popup-show
+        (diff-hl-show-hunk-inline-show
          propertized-lines
          (if (and (boundp 'diff-hl-reference-revision) diff-hl-reference-revision)
              (concat "Diff with " diff-hl-reference-revision)
