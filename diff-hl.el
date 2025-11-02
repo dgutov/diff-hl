@@ -422,7 +422,9 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   (or (memq state '(edited conflict))
       (and (eq state 'up-to-date)
            ;; VC state is stale in after-revert-hook.
-           (or revert-buffer-in-progress-p
+           (or (static-if (>= emacs-major-version 31)
+                   revert-buffer-in-progress
+                 revert-buffer-in-progress-p)
                ;; Diffing against an older revision.
                diff-hl-reference-revision))))
 
