@@ -69,10 +69,19 @@
   (require 'vc-git)
   (require 'vc-hg)
   (require 'face-remap)
-  (declare-function project-buffers 'project)
-  (declare-function project-name 'project)
-  (declare-function project-roots 'project)
+  (require 'project)
   (declare-function smartrep-define-key 'smartrep))
+
+(defmacro static-if (condition then-form &rest else-forms) ; since Emacs 30.1
+  "A conditional compilation macro.
+Evaluate CONDITION at macro-expansion time.  If it is non-nil,
+expand the macro to THEN-FORM.  Otherwise expand it to ELSE-FORMS
+enclosed in a `progn' form.  ELSE-FORMS may be empty."
+  (declare (indent 2)
+           (debug (sexp sexp &rest sexp)))
+  (if (eval condition lexical-binding)
+      then-form
+    (cons 'progn else-forms)))
 
 (defgroup diff-hl nil
   "VC diff highlighting on the side of a window"
@@ -1666,9 +1675,9 @@ effect."
 
 (defun diff-hl--project-root (proj)
   ;; Emacs 26 and 27 don't have `project-root'.
-  (expand-file-name
-   (or (and (fboundp 'project-root) (project-root proj))
-       (project-roots proj))))
+  (expand-file-name (static-if (>= emacs-major-version 28)
+                        (project-root proj)
+                      (project-roots proj))))
 
 (defun diff-hl-set-reference-rev-in-project-internal (rev proj)
   (let* ((root (diff-hl--project-root proj)))
