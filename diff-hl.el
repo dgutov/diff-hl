@@ -717,8 +717,8 @@ Return a list of line overlays used."
                         #'diff-hl-changes-from-buffer
                         cb)))
 
-(defun diff-hl--when-done (buffer get-value callback)
-  (let ((proc (get-buffer-process buffer)))
+(defun diff-hl--when-done (buffer get-value callback &optional proc)
+  (let ((proc (or proc (get-buffer-process buffer))))
     (cond
      ;; If there's no background process, just execute the code.
      ((or (null proc) (eq (process-status proc) 'exit))
@@ -733,9 +733,9 @@ Return a list of line overlays used."
      ((eq (process-status proc) 'run)
       (set-process-sentinel
        proc
-       (lambda (_proc _status)
+       (lambda (proc _status)
          ;; Delegate to the parent cond for decision logic.
-         (diff-hl--when-done buffer get-value callback))))
+         (diff-hl--when-done buffer get-value callback proc))))
      ;; Maybe we should ignore all other states as well.
      (t (error "Unexpected process state")))))
 
