@@ -69,8 +69,7 @@
   (require 'vc-git)
   (require 'vc-hg)
   (require 'face-remap)
-  (require 'project)
-  (declare-function smartrep-define-key 'smartrep))
+  (require 'project))
 
 (defmacro static-if (condition then-form &rest else-forms) ; since Emacs 30.1
   "A conditional compilation macro.
@@ -1336,6 +1335,7 @@ The value of this variable is a mode line template as in
                                     diff-hl-show-hunk-next))
 
 (when (require 'smartrep nil t)
+  (declare-function smartrep-define-key 'smartrep)
   (let (smart-keys)
     (cl-labels ((scan (map)
                       (map-keymap
