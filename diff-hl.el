@@ -362,6 +362,16 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   (when (window-system)
     (diff-hl-define-bitmaps)))
 
+(defun diff-hl-use-fringe-p ()
+  (or (not diff-hl-fallback-to-margin)
+      (and
+       (display-graphic-p)
+       (< 0 (nth
+             (if (eq 'left diff-hl-side)
+                 0
+               1)
+             (window-fringes))))))
+
 (defvar diff-hl-spec-cache (make-hash-table :test 'equal))
 
 (defun diff-hl-fringe-spec (type pos side)
@@ -372,8 +382,21 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
     (unless val
       (let* ((face-sym (funcall diff-hl-fringe-face-function type pos))
              (bmp-sym (funcall diff-hl-fringe-bmp-function type pos)))
-        (setq val (propertize " " 'display `((,(intern (format "%s-fringe" side))
-                                              ,bmp-sym ,face-sym))))
+        (setq val (propertize " " 'display `((when (diff-hl-use-fringe-p)
+                                               .
+                                               (,(intern (format "%s-fringe" side))
+                                                ,bmp-sym ,face-sym))
+                                             (when (and (not (diff-hl-use-fringe-p))
+                                                        (progn
+                                                          (diff-hl-margin-ensure-visible)
+                                                          t))
+                                               .
+                                               ,(cdr
+                                                 (assoc
+                                                  (if pos
+                                                      (cons type diff-hl-side)
+                                                    (list type diff-hl-side 'reference))
+                                                  (diff-hl-margin-spec-cache)))))))
         (puthash key val diff-hl-spec-cache)))
     val))
 
@@ -756,11 +779,8 @@ Return a list of line overlays used."
 (autoload 'diff-hl-highlight-on-margin "diff-hl-margin")
 
 (defun diff-hl-highlight-on-fringe (ovl type shape)
-  (if (and diff-hl-fallback-to-margin
-           (not (display-graphic-p)))
-      (diff-hl-highlight-on-margin ovl type shape)
-    (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
-                                                         diff-hl-side))))
+  (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
+                                                       diff-hl-side)))
 
 (defun diff-hl-highlight-on-fringe-flat (ovl type _shape)
   (let ((diff-hl-fringe-bmp-function (lambda (&rest _s) diff-hl-fringe-flat-bmp)))

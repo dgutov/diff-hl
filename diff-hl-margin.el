@@ -148,6 +148,7 @@ You probably shouldn't use this function directly."
 
 (defvar diff-hl-margin-spec-cache nil)
 
+;;;###autoload
 (defun diff-hl-margin-spec-cache ()
   (or diff-hl-margin-spec-cache
       (setq diff-hl-margin-spec-cache
@@ -162,11 +163,9 @@ You probably shouldn't use this function directly."
                      collect
                      (cons
                       (cons type side)
-                      (propertize
-                       " " 'display
-                       `((margin ,(intern (format "%s-margin" side)))
-                         ,(propertize char 'face
-                                      (intern (format "diff-hl-margin-%s" type))))))))
+                      `((margin ,(intern (format "%s-margin" side)))
+                        ,(propertize char 'face
+                                     (intern (format "diff-hl-margin-%s" type)))))))
    (cl-loop for char = (or (assoc-default 'reference diff-hl-margin-symbols-alist)
                            " ")
             for type in '(insert delete change)
@@ -175,11 +174,9 @@ You probably shouldn't use this function directly."
                      collect
                      (cons
                       (list type side 'reference)
-                      (propertize
-                       " " 'display
-                       `((margin ,(intern (format "%s-margin" side)))
-                         ,(propertize char 'face
-                                      (intern (format "diff-hl-margin-reference-%s" type))))))))))
+                      `((margin ,(intern (format "%s-margin" side)))
+                        ,(propertize char 'face
+                                     (intern (format "diff-hl-margin-reference-%s" type)))))))))
 
 (defun diff-hl-margin-ensure-visible ()
   (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
@@ -192,7 +189,7 @@ You probably shouldn't use this function directly."
   (diff-hl-margin-ensure-visible)
   (let ((spec (cdr (assoc (cons type diff-hl-side)
                           (diff-hl-margin-spec-cache)))))
-    (overlay-put ovl 'before-string spec)))
+    (overlay-put ovl 'before-string (propertize " " 'display spec))))
 
 (defun diff-hl-highlight-on-margin-flat (ovl type _shape)
   (let ((spec (cdr (assoc (list type diff-hl-side 'reference)
