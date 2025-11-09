@@ -178,15 +178,7 @@ You probably shouldn't use this function directly."
                         ,(propertize char 'face
                                      (intern (format "diff-hl-margin-reference-%s" type)))))))))
 
-(defun diff-hl-margin-ensure-visible ()
-  (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
-    (when (zerop (symbol-value width-var))
-      (set width-var 1)
-      (dolist (win (get-buffer-window-list))
-        (set-window-buffer win (current-buffer))))))
-
 (defun diff-hl-highlight-on-margin (ovl type _shape)
-  (diff-hl-margin-ensure-visible)
   (let ((spec (cdr (assoc (cons type diff-hl-side)
                           (diff-hl-margin-spec-cache)))))
     (overlay-put ovl 'before-string (propertize " " 'display spec))))

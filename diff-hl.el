@@ -386,10 +386,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                                                .
                                                (,(intern (format "%s-fringe" side))
                                                 ,bmp-sym ,face-sym))
-                                             (when (and (not (diff-hl-use-fringe-p))
-                                                        (progn
-                                                          (diff-hl-margin-ensure-visible)
-                                                          t))
+                                             (when (not (diff-hl-use-fringe-p))
                                                .
                                                ,(cdr
                                                  (assoc
@@ -724,6 +721,11 @@ Return a list of line overlays used."
                 (overlay-put h 'insert-behind-hooks hook)))))))
     (nreverse ovls)))
 
+(defun diff-hl-buffer-visible-p ()
+  (and (or (not (daemonp))
+           (not (eq (selected-frame) terminal-frame)))
+       (get-buffer-window (current-buffer))))
+
 (defun diff-hl--update ()
   (let* ((orig (current-buffer))
          (cc (diff-hl-changes)))
@@ -743,8 +745,18 @@ Return a list of line overlays used."
                      diff-hl-fringe-reference-face-function))
                 (setq reuse (diff-hl--update-overlays ref-changes nil)))
               (diff-hl--update-overlays changes reuse)
-              (when (not (or changes ref-changes))
-                (diff-hl--autohide-margin))))))))))
+              (cond
+               ((not (or changes ref-changes))
+                (remove-hook 'window-configuration-change-hook
+                             #'diff-hl--autoshow-margin
+                             t)
+                (diff-hl--autohide-margin))
+               ((diff-hl-buffer-visible-p)
+                (diff-hl--autoshow-margin))
+               (t
+                (add-hook 'window-configuration-change-hook
+                          #'diff-hl--autoshow-margin
+                          nil t)))))))))))
 
 (defun diff-hl--resolve (value-or-buffer cb)
   (if (listp value-or-buffer)
@@ -763,6 +775,15 @@ Return a list of line overlays used."
       (dolist (win (get-buffer-window-list))
         (set-window-buffer win (current-buffer))))))
 
+(defun diff-hl--autoshow-margin ()
+  (remove-hook 'window-configuration-change-hook #'diff-hl--autoshow-margin t)
+  (let ((width-var (intern (format "%s-margin-width" diff-hl-side))))
+    (when (and (not (diff-hl-use-fringe-p))
+               (zerop (symbol-value width-var)))
+      (set width-var 1)
+      (dolist (win (get-buffer-window-list))
+        (set-window-buffer win (current-buffer))))))
+
 (defun diff-hl-update-once ()
   ;; Ensure that the update happens once, after all major mode changes.
   ;; That will keep the the local value of <side>-margin-width, if any.
@@ -775,8 +796,6 @@ Return a list of line overlays used."
     (overlay-put o 'diff-hl t)
     (funcall diff-hl-highlight-function o type shape)
     o))
-
-(autoload 'diff-hl-highlight-on-margin "diff-hl-margin")
 
 (defun diff-hl-highlight-on-fringe (ovl type shape)
   (overlay-put ovl 'before-string (diff-hl-fringe-spec type shape
