@@ -664,6 +664,10 @@ contents as they are (or would be) after applying the changes in NEW."
            "diff-hl--update-safe")))
     (diff-hl--update)))
 
+(defun diff-hl--update-buffer (buf)
+  (with-current-buffer buf
+    (diff-hl-update)))
+
 (defun diff-hl-with-editor-p (_dir)
   (bound-and-true-p with-editor-mode))
 
@@ -789,7 +793,7 @@ Return a list of line overlays used."
   ;; That will keep the the local value of <side>-margin-width, if any.
   (unless diff-hl-timer
     (setq diff-hl-timer
-          (run-with-idle-timer 0 nil #'diff-hl-update))))
+          (run-with-idle-timer 0 nil #'diff-hl--update-buffer (current-buffer)))))
 
 (defun diff-hl-add-highlighting (type shape &optional ovl)
   (let ((o (or ovl (make-overlay (point) (point)))))
