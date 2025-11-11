@@ -232,7 +232,9 @@ Returns a list with the buffer and the line number of the clicked line."
 (defun diff-hl-show-hunk-inline-popup (buffer &optional _ignored-line)
   "Implementation to show the hunk in a inline popup.
 BUFFER is a buffer with the hunk."
-  (diff-hl-inline-popup-hide)
+  ;; prevent diff-hl-inline-popup-hide from being called twice
+  (let ((diff-hl-inline-popup--close-hook nil))
+    (diff-hl-inline-popup-hide))
   (setq diff-hl-show-hunk--hide-function #'diff-hl-inline-popup-hide)
   (let* ((lines (split-string (with-current-buffer buffer (buffer-string)) "[\n\r]+" ))
          (smart-lines diff-hl-show-hunk-inline-popup-smart-lines)
