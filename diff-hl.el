@@ -980,8 +980,9 @@ that file, if it's present."
       (unwind-protect
           (progn
             (vc-setup-buffer diff-buffer)
-            (diff-hl-diff-against-reference file backend diff-buffer)
-            (set-buffer diff-buffer)
+            (with-current-buffer buffer
+              ;; Ensure that the buffer-local variable value is applied.
+              (diff-hl-diff-against-reference file backend diff-buffer))
             (diff-mode)
             (setq-local diff-vc-backend backend)
             (setq-local diff-vc-revisions (list diff-hl-reference-revision nil))
