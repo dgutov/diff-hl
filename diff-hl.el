@@ -1098,7 +1098,8 @@ its end position."
   (diff-hl-next-hunk t))
 
 (defun diff-hl-find-current-hunk ()
-  (let (o)
+  (let ((o)
+        (diff-hl-next-previous-hunk-auto-recenter nil))
     (cond
      ((diff-hl-hunk-overlay-at (point)))
      ((setq o (diff-hl-search-next-hunk t))
