@@ -1,6 +1,6 @@
 ;;; diff-hl-show-hunk-inline.el --- inline popup using phantom overlays -*- lexical-binding: t -*-
 
-;; Copyright (C) 2020-2021  Free Software Foundation, Inc.
+;; Copyright (C) 2020-2025  Free Software Foundation, Inc.
 
 ;; Author:   Álvaro González <alvarogonzalezsotillo@gmail.com>
 
@@ -25,6 +25,19 @@
 ;;; Code:
 
 (require 'subr-x)
+(require 'diff-hl-show-hunk)
+
+(define-obsolete-variable-alias 'diff-hl-inline-popup--current-lines 'diff-hl-show-hunk-inline--current-lines "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup--current-index 'diff-hl-show-hunk-inline--current-index "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup--invoking-command 'diff-hl-show-hunk-inline--invoking-command "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup--current-footer 'diff-hl-show-hunk-inline--current-footer "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup--current-header 'diff-hl-show-hunk-inline--current-header "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup--height 'diff-hl-show-hunk-inline--height "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup--current-custom-keymap 'diff-hl-show-hunk-inline--current-custom-keymap "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup--close-hook 'diff-hl-show-hunk-inline--close-hook "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-show-hunk-inline-popup-hide-hunk 'diff-hl-show-hunk-inline-hide-hunk "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-show-hunk-inline-popup-smart-lines 'diff-hl-show-hunk-inline-smart-lines "0.11.0")
+(define-obsolete-variable-alias 'diff-hl-inline-popup-transient-mode-map 'diff-hl-show-hunk-inline-transient-mode-map "0.11.0")
 
 (defvar diff-hl-show-hunk-inline--current-popup nil "The overlay of the current inline popup.")
 (defvar diff-hl-show-hunk-inline--current-lines nil "A list of the lines to show in the popup.")
@@ -45,6 +58,10 @@
 (make-variable-buffer-local 'diff-hl-show-hunk-inline--current-custom-keymap)
 (make-variable-buffer-local 'diff-hl-show-hunk-inline--height)
 (make-variable-buffer-local 'diff-hl-show-hunk-inline--close-hook)
+
+(defgroup diff-hl-show-hunk-inline nil
+  "Show vc diffs inline inside a buffer."
+  :group 'diff-hl-show-hunk)
 
 (defcustom diff-hl-show-hunk-inline-hide-hunk nil
   "If t, inline-popup is shown over the hunk, hiding it."
@@ -358,19 +375,6 @@ BUFFER is a buffer with the hunk."
          point
          height))
       )))
-
-(define-obsolete-variable-alias 'diff-hl-inline-popup--current-popup 'diff-hl-show-hunk-inline--current-popup "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--current-lines 'diff-hl-show-hunk-inline--current-lines "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--current-index 'diff-hl-show-hunk-inline--current-index "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--invoking-command 'diff-hl-show-hunk-inline--invoking-command "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--current-footer 'diff-hl-show-hunk-inline--current-footer "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--current-header 'diff-hl-show-hunk-inline--current-header "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--height 'diff-hl-show-hunk-inline--height "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--current-custom-keymap 'diff-hl-show-hunk-inline--current-custom-keymap "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup--close-hook 'diff-hl-show-hunk-inline--close-hook "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-show-hunk-inline-popup-hide-hunk 'diff-hl-show-hunk-inline-hide-hunk "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-show-hunk-inline-popup-smart-lines 'diff-hl-show-hunk-inline-smart-lines "0.11.0")
-(define-obsolete-variable-alias 'diff-hl-inline-popup-transient-mode-map 'diff-hl-show-hunk-inline-transient-mode-map "0.11.0")
 
 (define-obsolete-function-alias 'diff-hl-inline-popup--splice 'diff-hl-show-hunk-inline--splice "0.11.0")
 (define-obsolete-function-alias 'diff-hl-inline-popup--ensure-enough-lines 'diff-hl-show-hunk-inline--ensure-enough-lines "0.11.0")
