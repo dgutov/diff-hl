@@ -1,6 +1,6 @@
 ;;; diff-hl-show-hunk.el --- Integrate popup/posframe and diff-hl-diff-goto-hunk -*- lexical-binding: t -*-
 
-;; Copyright (C) 2020-2021  Free Software Foundation, Inc.
+;; Copyright (C) 2020-2025  Free Software Foundation, Inc.
 
 ;; Author: Álvaro González <alvarogonzalezsotillo@gmail.com>
 
