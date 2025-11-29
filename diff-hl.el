@@ -625,24 +625,37 @@ contents as they are (or would be) after applying the changes in NEW."
 (defun diff-hl-update ()
   "Updates the diff-hl overlay."
   (setq diff-hl-timer nil)
-  (if (and (diff-hl--use-async-p)
-           (eq diff-hl-update-async 'thread))
-      ;; TODO: debounce if a thread is already running.
-      (let ((buf (current-buffer))
-            (temp-buffer
-             (if (< emacs-major-version 28)
-                 (generate-new-buffer " *temp*")
-               (generate-new-buffer " *temp*" t))))
-        ;; Switch buffer temporarily, to "unlock" it for other threads.
-        (with-current-buffer temp-buffer
-          (make-thread
-           (lambda ()
-             (kill-buffer temp-buffer)
-             (when (buffer-live-p buf)
-               (set-buffer buf)
-               (diff-hl--update-safe)))
-           "diff-hl--update-safe")))
-    (diff-hl--update)))
+  (cond
+   ((not (diff-hl-buffer-visible-p))
+    (add-hook 'window-configuration-change-hook #'diff-hl--update-after-wcc nil t))
+   ((and (diff-hl--use-async-p)
+         (eq diff-hl-update-async 'thread))
+    ;; TODO: debounce if a thread is already running.
+    (let ((buf (current-buffer))
+          (temp-buffer
+           (if (< emacs-major-version 28)
+               (generate-new-buffer " *temp*")
+             (generate-new-buffer " *temp*" t))))
+      ;; Switch buffer temporarily, to "unlock" it for other threads.
+      (with-current-buffer temp-buffer
+        (make-thread
+         (lambda ()
+           (kill-buffer temp-buffer)
+           (when (buffer-live-p buf)
+             (set-buffer buf)
+             (diff-hl--update-safe)))
+         "diff-hl--update-safe"))))
+   (t
+    (diff-hl--update))))
+
+(defun diff-hl--update-after-wcc ()
+  (remove-hook 'window-configuration-change-hook #'diff-hl--update-after-wcc t)
+  (diff-hl-update))
+
+(defun diff-hl-buffer-visible-p ()
+  (and (or (not (daemonp))
+           (not (eq (selected-frame) terminal-frame)))
+       (get-buffer-window (current-buffer))))
 
 (defun diff-hl--update-buffer (buf)
   (when (buffer-live-p buf)
