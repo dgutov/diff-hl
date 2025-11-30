@@ -741,6 +741,7 @@ Return a list of line overlays used."
                 reuse)
             (with-current-buffer orig
               (diff-hl-remove-overlays)
+              (diff-hl-maybe-define-bitmaps)
               (let ((diff-hl-highlight-function
                      diff-hl-highlight-reference-function)
                     (diff-hl-fringe-face-function
@@ -1330,7 +1331,6 @@ The value of this variable is a mode line template as in
             (,diff-hl-command-prefix . diff-hl-command-map))
   (if diff-hl-mode
       (progn
-        (diff-hl-maybe-define-bitmaps)
         (add-hook 'after-save-hook 'diff-hl-update nil t)
         (add-hook 'after-change-functions 'diff-hl-edit nil t)
         (add-hook (if vc-mode
