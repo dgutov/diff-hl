@@ -740,9 +740,13 @@ Return a list of line overlays used."
 (defun diff-hl--resolve (value-or-buffer cb)
   (if (listp value-or-buffer)
       (funcall cb value-or-buffer)
-    (diff-hl--when-done value-or-buffer
-                        #'diff-hl-changes-from-buffer
-                        cb)))
+    (static-if (>= emacs-major-version 31)
+        (with-current-buffer value-or-buffer
+          (vc-run-delayed-success 1
+            (funcall cb (diff-hl-changes-from-buffer (current-buffer)))))
+      (diff-hl--when-done value-or-buffer
+                          #'diff-hl-changes-from-buffer
+                          cb))))
 
 (defun diff-hl--when-done (buffer get-value callback &optional proc)
   (let ((proc (or proc (get-buffer-process buffer))))
