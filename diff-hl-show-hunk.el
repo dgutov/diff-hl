@@ -219,6 +219,7 @@ Returns a list with the buffer and the line number of the clicked line."
     (define-key map (kbd "p") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "n") #'diff-hl-show-hunk-next)
     (define-key map (kbd "c") #'diff-hl-show-hunk-copy-original-text)
+    (define-key map (kbd "e") #'diff-hl-show-hunk-ediff)
     (define-key map (kbd "r") #'diff-hl-show-hunk-revert-hunk)
     (define-key map (kbd "[") #'diff-hl-show-hunk-previous)
     (define-key map (kbd "]") #'diff-hl-show-hunk-next)
@@ -245,6 +246,12 @@ Returns a list with the buffer and the line number of the clicked line."
   (interactive)
   (diff-hl-show-hunk-hide)
   (diff-hl-stage-current-hunk))
+
+(defun diff-hl-show-hunk-ediff ()
+  "Dismiss the popup and run Ediff for the current hunk."
+  (interactive)
+  (diff-hl-show-hunk-hide)
+  (diff-hl-ediff-current-hunk))
 
 ;;;###autoload
 (defun diff-hl-show-hunk-previous ()

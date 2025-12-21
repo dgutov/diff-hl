@@ -146,6 +146,11 @@ The button calls an ACTION."
     #'diff-hl-show-hunk-copy-original-text)
 
    (diff-hl-show-hunk--posframe-button
+    "⇄ Ediff"
+    "Ediff (\\[diff-hl-show-hunk-ediff])"
+    #'diff-hl-show-hunk-ediff)
+
+   (diff-hl-show-hunk--posframe-button
     "♻ Revert hunk"
     "Revert hunk (\\[diff-hl-show-hunk-revert-hunk])"
     #'diff-hl-show-hunk-revert-hunk)
