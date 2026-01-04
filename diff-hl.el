@@ -36,6 +36,7 @@
 ;; `diff-hl-previous-hunk'   C-x v [
 ;; `diff-hl-next-hunk'       C-x v ]
 ;; `diff-hl-show-hunk'       C-x v *
+;; `diff-hl-ediff-current-hunk' C-x v e
 ;; `diff-hl-stage-current-hunk' C-x v S
 ;; `diff-hl-set-reference-rev'
 ;; `diff-hl-reset-reference-rev'
@@ -432,6 +433,17 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 (declare-function vc-git--rev-parse "vc-git")
 (declare-function vc-hg-command "vc-hg")
 (declare-function vc-bzr-command "vc-bzr")
+(declare-function vc-find-revision-no-save "vc")
+(declare-function ediff-buffers "ediff")
+(declare-function ediff-diff-at-point "ediff-util")
+(declare-function ediff-jump-to-difference "ediff-util")
+(defvar ediff-number-of-differences)
+
+(defun diff-hl--use-git-index-base-p (backend)
+  "Whether diff-hl should use the Git index as the reference base."
+  (and (eq backend 'Git)
+       (not diff-hl-reference-revision)
+       (not diff-hl-show-staged-changes)))
 
 (defun diff-hl-changes-buffer (file backend &optional new-rev bufname)
   (diff-hl-with-diff-switches
@@ -440,9 +452,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 (defun diff-hl-diff-against-reference (file backend buffer &optional new-rev)
   (cond
    ((and (not new-rev)
-         (not diff-hl-reference-revision)
-         (not diff-hl-show-staged-changes)
-         (eq backend 'Git))
+         (diff-hl--use-git-index-base-p backend))
     (apply #'vc-git-command buffer
            (if (diff-hl--use-async-p) 'async 1)
            (list file)
@@ -902,6 +912,54 @@ buffer will show the position corresponding to its current line."
                           (diff-hl-diff-skip-to line relname)
                           (setq vc-sentinel-movepoint (point))))))))
 
+(defun diff-hl--ediff-reference-buffer (file)
+  "Return the reference buffer for FILE used in Ediff."
+  (unless file
+    (user-error "No current file"))
+  (let ((backend (vc-backend file)))
+    (unless backend
+      (user-error "The buffer is not under version control"))
+    (let* ((reference diff-hl-reference-revision)
+           ;; Use the index snapshot only when diff-hl hides staged changes.
+           (use-index (and (diff-hl--use-git-index-base-p backend)
+                           (not diff-hl-highlight-reference-function)))
+           (buf
+            (if use-index
+                (let ((obj (diff-hl-git-index-object-name file)))
+                  (unless obj
+                    (user-error "No index entry for %s" file))
+                  (let ((filename (diff-hl-git-index-revision file obj)))
+                    (find-file-noselect filename)))
+              (let ((rev (or reference
+                             (assoc-default backend diff-hl-head-revision-alist)
+                             (diff-hl-working-revision file backend))))
+                (unless rev
+                  (user-error "No reference revision specified"))
+                (setq rev (diff-hl-resolved-revision backend rev))
+                (vc-find-revision-no-save file rev backend)))))
+      (with-current-buffer buf
+        (set-buffer-modified-p nil)
+        (read-only-mode 1))
+      buf)))
+
+;;;###autoload
+(defun diff-hl-ediff-current-hunk ()
+  "Run Ediff against current comparison base.  Jump to hunk at point."
+  (interactive)
+  (require 'ediff)
+  (let* ((pos (point))
+         (file (or buffer-file-name
+                   (and-let* ((base (buffer-base-buffer)))
+                     (buffer-file-name base))))
+         (refbuf (diff-hl--ediff-reference-buffer file))
+         (startup
+          (list
+           (lambda ()
+             (unless (zerop ediff-number-of-differences)
+               (ediff-jump-to-difference
+                (max 1 (ediff-diff-at-point 'B pos))))))))
+    (ediff-buffers refbuf (current-buffer) startup 'diff-hl-ediff)))
+
 (defun diff-hl-diff-read-revisions (rev1-default)
   (let* ((file buffer-file-name)
          (files (list file))
@@ -1303,6 +1361,7 @@ Pops up a diff buffer that can be edited to choose the changes to stage."
     (define-key map "[" 'diff-hl-previous-hunk)
     (define-key map "]" 'diff-hl-next-hunk)
     (define-key map "*" 'diff-hl-show-hunk)
+    (define-key map "e" 'diff-hl-ediff-current-hunk)
     (define-key map "{" 'diff-hl-show-hunk-previous)
     (define-key map "}" 'diff-hl-show-hunk-next)
     (define-key map "S" 'diff-hl-stage-dwim)
@@ -1375,7 +1434,8 @@ The value of this variable is a mode line template as in
 
 (defvar diff-hl-repeat-exceptions '(diff-hl-show-hunk
                                     diff-hl-show-hunk-previous
-                                    diff-hl-show-hunk-next))
+                                    diff-hl-show-hunk-next
+                                    diff-hl-ediff-current-hunk))
 
 (when (require 'smartrep nil t)
   (declare-function smartrep-define-key 'smartrep)
@@ -1515,9 +1575,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
            (backend (or backend (vc-backend file)))
            (temporary-file-directory diff-hl-temporary-directory)
            (rev
-            (if (and (eq backend 'Git)
-                     (not diff-hl-reference-revision)
-                     (not diff-hl-show-staged-changes))
+            (if (diff-hl--use-git-index-base-p backend)
                 (diff-hl-git-index-revision
                  file
                  (diff-hl-git-index-object-name file))
