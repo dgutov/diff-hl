@@ -38,6 +38,9 @@
 
 (require 'diff-hl)
 
+(defvar diff-refine)
+(autoload 'diff-refine-hunk "diff-mode" nil t)
+
 (defgroup diff-hl-show-hunk nil
   "Show vc diffs in a posframe or popup."
   :group 'diff-hl)
@@ -171,7 +174,7 @@ Returns a list with the buffer and the line number of the clicked line."
     (save-window-excursion
       (save-excursion
         (with-current-buffer (diff-hl-show-hunk--compute-diffs)
-          (setq content (buffer-substring-no-properties (point-min) (point-max)))
+          (setq content (buffer-substring (point-min) (point-max)))
           (setq point-in-buffer (point)))))
 
     (with-current-buffer buffer
@@ -206,6 +209,34 @@ Returns a list with the buffer and the line number of the clicked line."
       (setq line (line-number-at-pos)))
 
     (list buffer line)))
+
+(defun diff-hl-show-hunk--refine (diff-buffer)
+  "Apply refinement highlighting to DIFF-BUFFER.
+Calls `diff-refine-hunk' to add fine-grained highlighting to the hunk."
+  (when (and (boundp 'diff-refine) diff-refine)
+    (require 'diff-mode)
+    (with-current-buffer diff-buffer
+      ;; Buffer is narrowed to hunk content (after @@).
+      ;; We need to widen temporarily to let diff-refine-hunk find the hunk header.
+      (let ((narrowed-start (point-min)))
+        (save-restriction
+          (widen)
+          ;; Find the @@ line before our narrowed region and call diff-refine-hunk there
+          (goto-char narrowed-start)
+          (when (re-search-backward "^@@" nil t)
+            (condition-case nil
+                (diff-refine-hunk)
+              (error nil)))))
+      ;; Convert refinement overlays to text properties so they survive buffer-substring
+      ;; Need to temporarily disable read-only mode
+      (let ((inhibit-read-only t))
+        (dolist (ov (overlays-in (point-min) (point-max)))
+          (when (eq (overlay-get ov 'diff-mode) 'fine)
+            (let ((start (overlay-start ov))
+                  (end (overlay-end ov))
+                  (face (overlay-get ov 'face)))
+              (when face
+                (add-face-text-property start end face nil)))))))))
 
 (defun diff-hl-show-hunk--click (event)
   "Called when user clicks on margins.  EVENT is click information."
@@ -326,9 +357,12 @@ The backend is determined by `diff-hl-show-hunk-function'."
    ((not diff-hl-show-hunk-function)
     (message "Please configure `diff-hl-show-hunk-function'")
     (diff-hl-diff-goto-hunk))
-   ((let ((buffer-and-line (diff-hl-show-hunk-buffer)))
+   ((let* ((buffer-and-line (diff-hl-show-hunk-buffer))
+           (buffer (car buffer-and-line)))
       (setq diff-hl-show-hunk--original-buffer (current-buffer))
       (setq diff-hl-show-hunk--original-window (selected-window))
+      ;; Apply refinement highlighting to the diff buffer
+      (diff-hl-show-hunk--refine buffer)
       (apply diff-hl-show-hunk-function buffer-and-line))
     ;; We could fall back to `diff-hl-diff-goto-hunk', but the
     ;; current default should work in all environments (both GUI
