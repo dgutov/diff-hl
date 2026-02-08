@@ -361,7 +361,7 @@ BUFFER is a buffer with the hunk."
              (when smart-lines
                (when (not (eq 0 original-lines-number))
                  original-lines-number)))
-            (footer "(q)Quit  (p)Previous  (n)Next  (r)Revert  (c)Copy original"))
+            (footer "(q)Quit  (p)Previous  (n)Next  (e)Ediff  (r)Revert  (c)Copy original"))
         (unless diff-hl-show-staged-changes
           (setq footer (concat footer " (S)Stage")))
         (diff-hl-show-hunk-inline-show
