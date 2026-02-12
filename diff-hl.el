@@ -142,6 +142,11 @@ enclosed in a `progn' form.  ELSE-FORMS may be empty."
   :group 'diff-hl
   :type 'boolean)
 
+(defcustom diff-hl-next-previous-hunk-auto-recenter nil
+  "Non-nil to `recenter' after `diff-hl-next-hunk' and `diff-hl-previous-hunk'."
+  :group 'diff-hl
+  :type 'boolean)
+
 (defcustom diff-hl-fallback-to-margin t
   "Non-nil to use margin instead of fringe on non-graphic displays.
 
@@ -1112,9 +1117,11 @@ its end position."
   "Go to the beginning of the next hunk in the current buffer."
   (interactive)
   (let ((overlay (diff-hl-search-next-hunk backward)))
-    (if overlay
-        (goto-char (overlay-start overlay))
-      (user-error "No further hunks found"))))
+    (unless overlay
+      (user-error "No further hunks found"))
+    (goto-char (overlay-start overlay))
+    (when diff-hl-next-previous-hunk-auto-recenter
+      (recenter))))
 
 (defun diff-hl-previous-hunk ()
   "Go to the beginning of the previous hunk in the current buffer."
@@ -1122,7 +1129,8 @@ its end position."
   (diff-hl-next-hunk t))
 
 (defun diff-hl-find-current-hunk ()
-  (let (o)
+  (let ((o)
+        (diff-hl-next-previous-hunk-auto-recenter nil))
     (cond
      ((diff-hl-hunk-overlay-at (point)))
      ((setq o (diff-hl-search-next-hunk t))
