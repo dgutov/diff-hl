@@ -37,6 +37,9 @@
 
 (defvar diff-hl-dired-process-buffer nil)
 
+(defvar diff-hl-dired--pending nil
+  "Non-nil if a `diff-hl-dired-update' is pending due to concurrent VC process.")
+
 (defgroup diff-hl-dired nil
   "VC diff highlighting on the side of a Dired window."
   :group 'diff-hl)
@@ -59,7 +62,7 @@
 
 (defface diff-hl-dired-ignored
   '((default :inherit dired-ignored))
-  "Face used to highlight unregistered files.")
+  "Face used to highlight ignored files.")
 
 (defcustom diff-hl-dired-extra-indicators t
   "Non-nil to indicate ignored files."
@@ -86,6 +89,7 @@ status indicators."
       (progn
         (diff-hl-maybe-define-bitmaps)
         (set (make-local-variable 'diff-hl-dired-process-buffer) nil)
+        (set (make-local-variable 'diff-hl-dired--pending) nil)
         (add-hook 'dired-after-readin-hook 'diff-hl-dired-update nil t))
     (remove-hook 'dired-after-readin-hook 'diff-hl-dired-update t)
     (diff-hl-dired-clear)))
@@ -95,66 +99,90 @@ status indicators."
   (let ((backend (ignore-errors (vc-responsible-backend default-directory)))
         (def-dir default-directory)
         (buffer (current-buffer))
+        (state-to-type '( edited change
+                          added insert
+                          removed delete
+                          unregistered unknown
+                          ignored ignored))
         dirs-alist files-alist)
     (when (and backend (not (memq backend diff-hl-dired-ignored-backends)))
-      (diff-hl-dired-clear)
-      (if (buffer-live-p diff-hl-dired-process-buffer)
-          (let ((proc (get-buffer-process diff-hl-dired-process-buffer)))
-            (when proc (kill-process proc)))
-        (setq diff-hl-dired-process-buffer
-              (generate-new-buffer " *diff-hl-dired* tmp status")))
-      (with-current-buffer diff-hl-dired-process-buffer
-        (setq default-directory (expand-file-name def-dir))
-        (erase-buffer)
-        (diff-hl-dired-status-files
-         backend def-dir
-         (when diff-hl-dired-extra-indicators
-           (cl-loop for file in (directory-files def-dir)
-                    unless (member file '("." ".." ".hg"))
-                    collect file))
-         (lambda (entries &optional more-to-come)
-           (when (buffer-live-p buffer)
-             (with-current-buffer buffer
-               (dolist (entry entries)
-                 (cl-destructuring-bind (file state &rest r) entry
-                   ;; Work around http://debbugs.gnu.org/18605
-                   (setq file (replace-regexp-in-string "\\` " "" file))
-                   (let ((type (plist-get
-                                '( edited change added insert removed delete
-                                   unregistered unknown ignored ignored)
-                                state)))
-                     (if (string-match "\\`\\([^/]+\\)/" file)
-                         (let* ((dir (match-string 1 file))
-                                (value (cdr (assoc dir dirs-alist))))
-                           (unless (eq value type)
-                             (cond
-                              ((eq state 'up-to-date))
-                              ((null value)
-                               (push (cons dir type) dirs-alist))
-                              ((not (eq type 'ignored))
-                               (setcdr (assoc dir dirs-alist) 'change)))))
-                       (push (cons file type) files-alist)))))
-               (unless more-to-come
-                 (diff-hl-dired-highlight-items
-                  (append dirs-alist files-alist))))
-             (unless more-to-come
-               (kill-buffer diff-hl-dired-process-buffer))))
-         )))))
+      ;; queue update if VC process running
+      ;; pending flag debounces: N calls -> 1 retry
+      ;; e.g., open N subtrees while VC runs -> 1 retry after completion
+      (if (and (buffer-live-p diff-hl-dired-process-buffer)
+               (get-buffer-process diff-hl-dired-process-buffer)
+               (process-live-p (get-buffer-process diff-hl-dired-process-buffer)))
+          (setq diff-hl-dired--pending t) ;; queued, early return
+        (setq diff-hl-dired--pending nil)
+        (unless (buffer-live-p diff-hl-dired-process-buffer)
+          (setq diff-hl-dired-process-buffer
+                (generate-new-buffer " *diff-hl-dired* tmp status")))
+        (with-current-buffer diff-hl-dired-process-buffer
+          (setq default-directory (expand-file-name def-dir))
+          (erase-buffer)
+          (let ((files
+                 (when diff-hl-dired-extra-indicators
+                   (cl-loop for file in (directory-files def-dir)
+                            unless (member file '("." ".." ".hg"))
+                            collect file)))
+                (update-fn
+                 (lambda (entries &optional more-to-come)
+                   (when (buffer-live-p buffer)
+                     (with-current-buffer buffer
+                       (dolist (entry entries)
+                         (cl-destructuring-bind (file state &rest r) entry
+                           ;; Work around http://debbugs.gnu.org/18605
+                           (setq file (replace-regexp-in-string "\\` " "" file))
+                           (let ((type (plist-get state-to-type state))
+                                 (dirs (cl-loop with pos = 0
+                                                while (string-match "/" file pos)
+                                                do (setq pos (match-end 0))
+                                                collect (substring file 0 (1- pos)))))
+                             (dolist (dir dirs)
+                               (let ((value (cdr (assoc dir dirs-alist))))
+                                 (cond
+                                  ((eq value type)) ;; skip
+                                  ((eq state 'up-to-date)) ;; skip
+                                  ((null value)
+                                   (push (cons dir type) dirs-alist))
+                                  ((not (eq type 'ignored))
+                                   (setcdr (assoc dir dirs-alist) 'change)))))
+                             (push (cons file type) files-alist)
+                             )))
+                       (unless more-to-come
+                         (diff-hl-dired-highlight-items
+                          (append dirs-alist files-alist))
+                         (when diff-hl-dired--pending
+                           (run-at-time 0 nil
+                                        (lambda ()
+                                          (when (buffer-live-p buffer)
+                                            (with-current-buffer buffer
+                                              (setq diff-hl-dired--pending nil)
+                                              (diff-hl-dired-update))))))))
+                     (unless more-to-come
+                       (kill-buffer diff-hl-dired-process-buffer))))))
+            (diff-hl-dired-status-files backend def-dir files update-fn)))
+        ))))
 
 (defun diff-hl-dired-status-files (backend dir files update-function)
   "Using version control BACKEND, return list of (FILE STATE EXTRA) entries
 for DIR containing FILES. Call UPDATE-FUNCTION as entries are added."
-  (vc-call-backend backend 'dir-status-files dir files update-function))
+  (vc-call-backend backend 'dir-status-files
+                   dir files update-function))
 
 (defun diff-hl-dired-highlight-items (alist)
   "Highlight ALIST containing (FILE . TYPE) elements."
+  ;; clear overlays right before drawing to avoid flicker
+  (diff-hl-dired-clear)
   (dolist (pair alist)
     (let ((file (car pair))
           (type (cdr pair)))
       (save-excursion
         (goto-char (point-min))
-        (when (and type (dired-goto-file-1
-                         file (expand-file-name file) nil))
+        (when (and type
+                   (dired-goto-file-1
+                    (file-name-nondirectory file) ;; basename
+                    (expand-file-name file) nil))
           (let* ((diff-hl-fringe-bmp-function diff-hl-dired-fringe-bmp-function)
                  (diff-hl-fringe-face-function 'diff-hl-dired-face-from-type)
                  (o (diff-hl-add-highlighting type 'single)))
