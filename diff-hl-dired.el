@@ -116,25 +116,25 @@ status indicators."
              (with-current-buffer buffer
                (dolist (entry entries)
                  (cl-destructuring-bind (file state &rest r) entry
-                   ;; Work around http://debbugs.gnu.org/18605
-                   (setq file (replace-regexp-in-string "\\` " "" file))
-                   (let ((type (plist-get '( edited change added insert removed delete
-                                             unregistered unknown ignored ignored)
-                                          state))
-                         (dirs (cl-loop with pos = 0
-                                        while (string-match "/" file pos)
-                                        do (setq pos (match-end 0))
-                                        collect (substring file 0 (1- pos)))))
-                     (dolist (dir dirs)
-                       (let ((value (cdr (assoc dir dirs-alist))))
-                         (unless (eq value type)
-                           (cond
-                            ((eq state 'up-to-date))
-                            ((null value)
-                             (push (cons dir type) dirs-alist))
-                            ((not (eq type 'ignored))
-                             (setcdr (assoc dir dirs-alist) 'change))))))
-                     (push (cons file type) files-alist))))
+                   (unless (eq state 'up-to-date)
+                     ;; Work around http://debbugs.gnu.org/18605
+                     (setq file (replace-regexp-in-string "\\` " "" file))
+                     (let ((type (plist-get '( edited change added insert removed delete
+                                               unregistered unknown ignored ignored)
+                                            state))
+                           (dirs (cl-loop with pos = 0
+                                          while (string-match "/" file pos)
+                                          do (setq pos (match-end 0))
+                                          collect (substring file 0 (1- pos)))))
+                       (dolist (dir dirs)
+                         (let ((value (cdr (assoc dir dirs-alist))))
+                           (unless (eq value type)
+                             (cond
+                              ((null value)
+                               (push (cons dir type) dirs-alist))
+                              ((not (eq type 'ignored))
+                               (setcdr (assoc dir dirs-alist) 'change))))))
+                       (push (cons file type) files-alist)))))
                (unless more-to-come
                  (diff-hl-dired-highlight-items
                   (append dirs-alist files-alist))))
