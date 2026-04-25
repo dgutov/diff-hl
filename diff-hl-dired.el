@@ -1,6 +1,6 @@
 ;;; diff-hl-dired.el --- Highlight changed files in Dired -*- lexical-binding: t -*-
 
-;; Copyright (C) 2012-2017, 2023  Free Software Foundation, Inc.
+;; Copyright (C) 2012-2017, 2023-2026  Free Software Foundation, Inc.
 
 ;; This file is part of GNU Emacs.
 
