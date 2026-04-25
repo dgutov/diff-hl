@@ -117,8 +117,6 @@ status indicators."
                (dolist (entry entries)
                  (cl-destructuring-bind (file state &rest r) entry
                    (unless (eq state 'up-to-date)
-                     ;; Work around http://debbugs.gnu.org/18605
-                     (setq file (replace-regexp-in-string "\\` " "" file))
                      (let ((type (plist-get '( edited change added insert removed delete
                                                unregistered unknown ignored ignored)
                                             state))
