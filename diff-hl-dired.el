@@ -86,7 +86,7 @@ status indicators."
       (progn
         (diff-hl-maybe-define-bitmaps)
         (set (make-local-variable 'diff-hl-dired-process-buffer) nil)
-        (add-hook 'dired-after-readin-hook 'diff-hl-dired-update nil t))
+        (add-hook 'dired-after-readin-hook 'diff-hl-dired-update 10 t))
     (remove-hook 'dired-after-readin-hook 'diff-hl-dired-update t)
     (diff-hl-dired-clear)))
 
@@ -97,7 +97,6 @@ status indicators."
         (buffer (current-buffer))
         dirs-alist files-alist)
     (when (and backend (not (memq backend diff-hl-dired-ignored-backends)))
-      (diff-hl-dired-clear)
       (if (buffer-live-p diff-hl-dired-process-buffer)
           (let ((proc (get-buffer-process diff-hl-dired-process-buffer)))
             (when proc (kill-process proc)))
@@ -117,22 +116,24 @@ status indicators."
              (with-current-buffer buffer
                (dolist (entry entries)
                  (cl-destructuring-bind (file state &rest r) entry
-                   ;; Work around http://debbugs.gnu.org/18605
-                   (setq file (replace-regexp-in-string "\\` " "" file))
-                   (let ((type (plist-get
-                                '( edited change added insert removed delete
-                                   unregistered unknown ignored ignored)
-                                state)))
-                     (if (string-match "\\`\\([^/]+\\)/" file)
-                         (let* ((dir (match-string 1 file))
-                                (value (cdr (assoc dir dirs-alist))))
+                   (unless (eq state 'up-to-date)
+                     ;; Work around http://debbugs.gnu.org/18605
+                     (setq file (replace-regexp-in-string "\\` " "" file))
+                     (let ((type (plist-get '( edited change added insert removed delete
+                                               unregistered unknown ignored ignored)
+                                            state))
+                           (dirs (cl-loop with pos = 0
+                                          while (string-match "/" file pos)
+                                          do (setq pos (match-end 0))
+                                          collect (substring file 0 (1- pos)))))
+                       (dolist (dir dirs)
+                         (let ((value (cdr (assoc dir dirs-alist))))
                            (unless (eq value type)
                              (cond
-                              ((eq state 'up-to-date))
                               ((null value)
                                (push (cons dir type) dirs-alist))
                               ((not (eq type 'ignored))
-                               (setcdr (assoc dir dirs-alist) 'change)))))
+                               (setcdr (assoc dir dirs-alist) 'change))))))
                        (push (cons file type) files-alist)))))
                (unless more-to-come
                  (diff-hl-dired-highlight-items
@@ -148,13 +149,14 @@ for DIR containing FILES. Call UPDATE-FUNCTION as entries are added."
 
 (defun diff-hl-dired-highlight-items (alist)
   "Highlight ALIST containing (FILE . TYPE) elements."
+  (diff-hl-dired-clear) ;; clear overlays right before drawing to avoid flicker
   (dolist (pair alist)
     (let ((file (car pair))
           (type (cdr pair)))
       (save-excursion
         (goto-char (point-min))
         (when (and type (dired-goto-file-1
-                         file (expand-file-name file) nil))
+                         (file-name-nondirectory file) (expand-file-name file) nil))
           (let* ((diff-hl-fringe-bmp-function diff-hl-dired-fringe-bmp-function)
                  (diff-hl-fringe-face-function 'diff-hl-dired-face-from-type)
                  (o (diff-hl-add-highlighting type 'single)))
