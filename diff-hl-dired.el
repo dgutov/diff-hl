@@ -108,9 +108,8 @@ status indicators."
         (diff-hl-dired-status-files
          backend def-dir
          (when diff-hl-dired-extra-indicators
-           (cl-loop for file in (directory-files def-dir)
-                    unless (member file '("." ".." ".hg"))
-                    collect file))
+           (with-current-buffer buffer
+             (diff-hl-dired-nondirectory-files)))
          (lambda (entries &optional more-to-come)
            (when (buffer-live-p buffer)
              (with-current-buffer buffer
@@ -141,9 +140,63 @@ status indicators."
          )))))
 
 (defun diff-hl-dired-status-files (backend dir files update-function)
-  "Using version control BACKEND, return list of (FILE STATE EXTRA) entries
-for DIR containing FILES. Call UPDATE-FUNCTION as entries are added."
-  (vc-call-backend backend 'dir-status-files dir files update-function))
+  "Using VC BACKEND, fetch list of (FILE STATE EXTRA) entries for DIR.
+Call UPDATE-FUNCTION as entries are added."
+  (vc-call-backend
+   backend 'dir-status-files
+   dir nil
+   (lambda (entries &optional more-to-come)
+     (if (or more-to-come
+             (not diff-hl-dired-extra-indicators))
+         (funcall update-function entries more-to-come)
+       (diff-hl-dir-status-ignored-files
+        backend
+        dir
+        files
+        (lambda (ignored-entries &optional more-to-come)
+          (funcall update-function ignored-entries t)
+          (unless more-to-come
+            (funcall update-function entries nil))))
+       ))))
+
+(defun diff-hl-dired-nondirectory-files ()
+  (cl-mapcan
+   (lambda (entry)
+     (let* ((dir (file-relative-name (car entry)))
+            (all (file-name-all-completions "" dir))
+            res)
+       (dolist (file all)
+         (unless (directory-name-p file)
+           (push
+            (if (equal dir "./")
+                file
+              (concat dir file))
+            res)))
+       res))
+   dired-subdir-alist))
+
+(defun diff-hl-dir-status-ignored-files (backend dir files update-function)
+  (cond
+   ((eq backend 'Git)
+    (vc-git-dir-status-goto-stage
+     (make-vc-git-dir-status-state :stage 'ls-files-ignored
+                                   :files files
+                                   :update-function update-function)))
+   ((eq backend 'Hg)
+    (let ((default-directory dir))
+      (apply #'vc-hg-command '(t nil) 'async files
+             "status" "-i"
+             (if (version<= "4.2" (vc-hg--program-version))
+                 '("--config" "commands.status.relative=1")
+               '("re:" "-I" "."))))
+    (vc-run-delayed-success 0
+      (vc-hg-after-dir-status update-function)))
+   ;; No specialized solution for "list only ignored state", list all.
+   ;; If the backend doesn't use several process calls (like Git), the
+   ;; difference should be trivial.
+   (t
+    (vc-call-backend backend 'dir-status-files dir files
+                     update-function))))
 
 (defun diff-hl-dired-highlight-items (alist)
   "Highlight ALIST containing (FILE . TYPE) elements."
