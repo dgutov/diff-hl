@@ -1,4 +1,4 @@
-;; Copyright (C) 2015-2025 Free Software Foundation, Inc. -*- lexical-binding: t -*-
+;; Copyright (C) 2015-2026 Free Software Foundation, Inc. -*- lexical-binding: t -*-
 
 ;; Author:   Jonathan Hayase <PythonNut@gmail.com>
 ;; URL:      https://github.com/dgutov/diff-hl
@@ -57,8 +57,9 @@
            (not (file-exists-p buffer-file-name)))
     (diff-hl-update)))
 
-(defun diff-hl-flydiff/modified-p (_state)
-  (buffer-modified-p))
+(defun diff-hl-flydiff/modified-p (state)
+  (unless (memq state '(added missing nil))
+    (buffer-modified-p)))
 
 ;;;###autoload
 (define-minor-mode diff-hl-flydiff-mode
