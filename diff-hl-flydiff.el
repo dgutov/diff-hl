@@ -52,9 +52,10 @@
   (unless (or
            (not diff-hl-mode)
            (eq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
-           (not buffer-file-name)
-           (file-remote-p default-directory)
-           (not (file-exists-p buffer-file-name)))
+           (let ((file (diff-hl--buffer-file-name)))
+             (or (not file)
+                 (file-remote-p default-directory)
+                 (not (file-exists-p file)))))
     (diff-hl-update)))
 
 (defun diff-hl-flydiff/modified-p (_state)

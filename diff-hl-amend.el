@@ -44,7 +44,7 @@ Currently only supports Git, Mercurial and Bazaar."
     (diff-hl-update)))
 
 (defun diff-hl-amend-setup ()
-  (let ((backend (vc-backend buffer-file-name)))
+  (let ((backend (vc-backend (diff-hl--buffer-file-name))))
     (when backend
       (setq-local diff-hl-reference-revision
                   (cl-case backend
@@ -62,7 +62,7 @@ Currently only supports Git, Mercurial and Bazaar."
 
 (defun turn-on-diff-hl-amend-mode ()
   "Turn on `diff-hl-amend-mode' in a buffer if appropriate."
-  (and buffer-file-name (diff-hl-amend-mode 1)))
+  (and (diff-hl--buffer-file-name) (diff-hl-amend-mode 1)))
 
 (provide 'diff-hl-amend)
 
