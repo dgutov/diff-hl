@@ -740,17 +740,23 @@ Return a list of line overlays used."
         reference
         (lambda (ref-changes)
           (let ((ref-changes (diff-hl-adjust-changes ref-changes changes))
-                reuse)
-            (with-current-buffer orig
-              (diff-hl-remove-overlays)
-              (let ((diff-hl-highlight-function
-                     diff-hl-highlight-reference-function)
-                    (diff-hl-fringe-face-function
-                     diff-hl-fringe-reference-face-function))
-                (setq reuse (diff-hl--update-overlays ref-changes nil)))
-              (diff-hl--update-overlays changes reuse)
-              (when (not (or changes ref-changes))
-                (diff-hl--autohide-margin))))))))))
+                (base (or (buffer-base-buffer orig) orig)))
+            (dolist (buf (buffer-list))
+              (when (and (buffer-live-p buf)
+                         (or (eq buf base)
+                             (eq (buffer-base-buffer buf) base))
+                         (buffer-local-value 'diff-hl-mode buf))
+                (with-current-buffer buf
+                  (let (reuse)
+                    (diff-hl-remove-overlays)
+                    (let ((diff-hl-highlight-function
+                           diff-hl-highlight-reference-function)
+                          (diff-hl-fringe-face-function
+                           diff-hl-fringe-reference-face-function))
+                      (setq reuse (diff-hl--update-overlays ref-changes nil)))
+                    (diff-hl--update-overlays changes reuse)
+                    (when (not (or changes ref-changes))
+                      (diff-hl--autohide-margin)))))))))))))
 
 (defun diff-hl--resolve (value-or-buffer cb)
   (if (listp value-or-buffer)
