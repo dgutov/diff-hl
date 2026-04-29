@@ -129,7 +129,7 @@ Then put the differences inside a special buffer and set the
 point in that buffer to the corresponding line of the original
 buffer."
   (defvar vc-sentinel-movepoint)
-  (let* ((buffer (or (buffer-base-buffer) (current-buffer)))
+  (let* ((buffer (current-buffer))
          (diff-hl-update-async nil)
          (line (line-number-at-pos))
          (dest-buffer diff-hl-show-hunk-diff-buffer-name))

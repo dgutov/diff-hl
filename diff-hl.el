@@ -876,7 +876,7 @@ Return a list of line overlays used."
 With double prefix argument (C-u C-u), the diff is made against the
 reference revision."
   (interactive (list current-prefix-arg))
-  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+  (with-current-buffer (current-buffer)
     (if (equal historic '(16))
         (diff-hl-diff-reference-goto-hunk)
       (diff-hl-diff-goto-hunk-1 historic nil))))
@@ -884,7 +884,7 @@ reference revision."
 (defun diff-hl-diff-reference-goto-hunk ()
   "Run VC diff command against the reference and go to the corresponding line."
   (interactive)
-  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+  (with-current-buffer (current-buffer)
     (diff-hl-diff-goto-hunk-1 nil diff-hl-reference-revision)))
 
 (defun diff-hl-root-diff-reference-goto-hunk ()
@@ -893,7 +893,7 @@ And if the current buffer is visiting a file, and it has changes, the diff
 buffer will show the position corresponding to its current line."
   (interactive)
   (defvar vc-sentinel-movepoint)
-  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+  (with-current-buffer (current-buffer)
     (let ((backend (vc-deduce-backend))
           (default-directory default-directory)
           rootdir fileset
@@ -1099,7 +1099,7 @@ its end position."
 (defun diff-hl-revert-hunk ()
   "Revert the diff hunk with changes at or above the point."
   (interactive)
-  (with-current-buffer (or (buffer-base-buffer) (current-buffer))
+  (with-current-buffer (current-buffer)
     (diff-hl-revert-hunk-1)))
 
 (defun diff-hl-hunk-overlay-at (pos)
