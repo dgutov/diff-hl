@@ -319,7 +319,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
 BUFFER defaults to the current buffer."
   (let* ((buffer (or buffer (current-buffer)))
          (base-buffer (buffer-base-buffer buffer)))
-    (if base-buffer 
+    (if base-buffer
         (buffer-file-name base-buffer)
       (buffer-file-name buffer))))
 
@@ -741,17 +741,23 @@ Return a list of line overlays used."
         (lambda (ref-changes)
           (when (buffer-live-p orig)
             (let ((ref-changes (diff-hl-adjust-changes ref-changes changes))
-                  reuse)
-              (with-current-buffer orig
-                (diff-hl-remove-overlays)
-                (let ((diff-hl-highlight-function
-                       diff-hl-highlight-reference-function)
-                      (diff-hl-fringe-face-function
-                       diff-hl-fringe-reference-face-function))
-                  (setq reuse (diff-hl--update-overlays ref-changes nil)))
-                (diff-hl--update-overlays changes reuse)
-                (when (not (or changes ref-changes))
-                  (diff-hl--autohide-margin)))))))))))
+                  (base (or (buffer-base-buffer orig) orig)))
+              (dolist (buf (buffer-list))
+                (when (and (buffer-live-p buf)
+                           (or (eq buf base)
+                               (eq (buffer-base-buffer buf) base))
+                           (buffer-local-value 'diff-hl-mode buf))
+                  (with-current-buffer buf
+                    (let (reuse)
+                      (diff-hl-remove-overlays)
+                      (let ((diff-hl-highlight-function
+                             diff-hl-highlight-reference-function)
+                            (diff-hl-fringe-face-function
+                             diff-hl-fringe-reference-face-function))
+                        (setq reuse (diff-hl--update-overlays ref-changes nil)))
+                      (diff-hl--update-overlays changes reuse)
+                      (when (not (or changes ref-changes))
+                        (diff-hl--autohide-margin))))))))))))))
 
 (defun diff-hl--resolve (value-or-buffer cb)
   (if (listp value-or-buffer)
@@ -1403,14 +1409,14 @@ The value of this variable is a mode line template as in
   (declare-function smartrep-define-key 'smartrep)
   (let (smart-keys)
     (cl-labels ((scan (map)
-                      (map-keymap
-                       (lambda (event binding)
-                         (if (consp binding)
-                             (scan binding)
-                           (when (and (characterp event)
-                                      (not (memq binding diff-hl-repeat-exceptions)))
-                             (push (cons (string event) binding) smart-keys))))
-                       map)))
+                  (map-keymap
+                   (lambda (event binding)
+                     (if (consp binding)
+                         (scan binding)
+                       (when (and (characterp event)
+                                  (not (memq binding diff-hl-repeat-exceptions)))
+                         (push (cons (string event) binding) smart-keys))))
+                   map)))
       (scan diff-hl-command-map)
       (smartrep-define-key diff-hl-mode-map diff-hl-command-prefix smart-keys))))
 
@@ -1435,28 +1441,30 @@ The value of this variable is a mode line template as in
     (let* ((topdir (magit-toplevel))
            (modified-files
             (magit-git-items "diff-tree" "-z" "--name-only" "-r" "HEAD~" "HEAD"))
-           (unmodified-states '(up-to-date ignored unregistered)))
+           (unmodified-states '(up-to-date ignored unregistered))
+           file)
       (dolist (buf (buffer-list))
-        (let ((file (diff-hl--buffer-file-name buf)))
-          (when (and (buffer-local-value 'diff-hl-mode buf)
-                     (not (buffer-modified-p buf))
-                     ;; Solve the "cloned indirect buffer" problem
-                     ;; (diff-hl-mode could be non-nil there, even if
-                     ;; buffer-file-name is nil):
-                     file
-                     (file-in-directory-p file topdir)
-                     (file-exists-p file))
-            (with-current-buffer buf
-              (let* ((backend (vc-backend file)))
-                (when backend
-                  (cond
-                   ((member file modified-files)
-                    (when (memq (vc-state file) unmodified-states)
-                      (vc-state-refresh file backend))
-                    (diff-hl-update))
-                   ((not (memq (vc-state file backend) unmodified-states))
-                    (vc-state-refresh file backend)
-                    (diff-hl-update))))))))))))
+        (setq file (diff-hl--buffer-file-name buf))
+        (when (and
+               (buffer-local-value 'diff-hl-mode buf)
+               (not (buffer-modified-p buf))
+               ;; Solve the "cloned indirect buffer" problem
+               ;; (diff-hl-mode could be non-nil there, even if
+               ;; buffer-file-name is nil):
+               file
+               (file-in-directory-p file topdir)
+               (file-exists-p file))
+          (with-current-buffer buf
+            (let* ((backend (vc-backend file)))
+              (when backend
+                (cond
+                 ((member file modified-files)
+                  (when (memq (vc-state file) unmodified-states)
+                    (vc-state-refresh file backend))
+                  (diff-hl-update))
+                 ((not (memq (vc-state file backend) unmodified-states))
+                  (vc-state-refresh file backend)
+                  (diff-hl-update)))))))))))
 
 (defun diff-hl-dir-update ()
   (dolist (pair (if (vc-dir-marked-files)
