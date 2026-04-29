@@ -314,6 +314,15 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
      (lambda (value)
        (or (null value) (stringp value))))
 
+(defun diff-hl--buffer-file-name (&optional buffer)
+  "Return the file name of the BUFFER or its base buffer.
+BUFFER defaults to the current buffer."
+  (let* ((buffer (or buffer (current-buffer)))
+         (base-buffer (buffer-base-buffer buffer)))
+    (if base-buffer 
+        (buffer-file-name base-buffer)
+      (buffer-file-name buffer))))
+
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
                          (numberp text-scale-mode-amount))
@@ -485,7 +494,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   buffer)
 
 (defun diff-hl-changes ()
-  (let* ((file buffer-file-name)
+  (let* ((file (diff-hl--buffer-file-name))
          (backend (vc-backend file))
          (hide-staged (and (eq backend 'Git) (not diff-hl-show-staged-changes))))
     (when backend
@@ -530,7 +539,7 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
   (or (assoc-default backend diff-hl-head-revision-alist)
       ;; It's usually cached already (e.g. for mode-line).
       ;; So this is basically an optimization for rare cases.
-      (vc-working-revision buffer-file-name backend)))
+      (vc-working-revision (diff-hl--buffer-file-name) backend)))
 
 (defun diff-hl-adjust-changes (old new)
   "Adjust changesets in OLD using changes in NEW.
@@ -893,8 +902,9 @@ buffer will show the position corresponding to its current line."
           (setq rootdir (vc-call-backend backend 'root default-directory)
                 default-directory rootdir
                 fileset `(,backend (,rootdir))
-                relname (if buffer-file-name (file-relative-name buffer-file-name
-                                                                 rootdir)))
+                relname (let ((file (diff-hl--buffer-file-name)))
+                          (when file
+                            (file-relative-name file rootdir))))
         (error "Directory is not version controlled"))
       (setq fileset (or fileset (vc-deduce-fileset)))
       (vc-buffer-sync-fileset fileset t)
@@ -909,7 +919,7 @@ buffer will show the position corresponding to its current line."
                           (setq vc-sentinel-movepoint (point))))))))
 
 (defun diff-hl-diff-read-revisions (rev1-default)
-  (let* ((file buffer-file-name)
+  (let* ((file (diff-hl--buffer-file-name))
          (files (list file))
          (backend (vc-backend file))
          (rev2-default nil))
@@ -1009,7 +1019,7 @@ that file, if it's present."
            (line (save-excursion
                    (diff-hl-find-current-hunk)
                    (line-number-at-pos)))
-           (file buffer-file-name)
+           (file (diff-hl--buffer-file-name))
            (backend (vc-backend file)))
       (unwind-protect
           (progn
@@ -1145,7 +1155,7 @@ its end position."
     (push-mark (overlay-end hunk) nil t)))
 
 (defun diff-hl--ensure-staging-supported ()
-  (let ((backend (vc-backend buffer-file-name)))
+  (let ((backend (vc-backend (diff-hl--buffer-file-name))))
     (unless (eq backend 'Git)
       (user-error "Only Git supports staging; this file is controlled by %s" backend))))
 
@@ -1172,7 +1182,7 @@ Only supported with Git."
   (diff-hl--ensure-staging-supported)
   (diff-hl-find-current-hunk)
   (let* ((line (line-number-at-pos))
-         (file buffer-file-name)
+         (file (diff-hl--buffer-file-name))
          (dest-buffer (get-buffer-create " *diff-hl-stage*"))
          (orig-buffer (current-buffer))
          ;; FIXME: If the file name has double quotes, these need to be quoted.
@@ -1213,13 +1223,14 @@ Only supported with Git."
 
 Only supported with Git."
   (interactive)
-  (unless buffer-file-name
-    (user-error "No current file"))
-  (diff-hl--ensure-staging-supported)
-  (vc-git-command nil 0 buffer-file-name "reset")
-  (message "Unstaged all")
-  (unless diff-hl-show-staged-changes
-    (diff-hl-update)))
+  (let ((file (diff-hl--buffer-file-name)))
+    (unless file
+      (user-error "No current file"))
+    (diff-hl--ensure-staging-supported)
+    (vc-git-command nil 0 file "reset")
+    (message "Unstaged all")
+    (unless diff-hl-show-staged-changes
+      (diff-hl-update))))
 
 (defun diff-hl-stage-dwim (&optional with-edit)
   "Stage the current hunk or choose the hunks to stage.
@@ -1246,7 +1257,7 @@ Pops up a diff buffer that can be edited to choose the changes to stage."
   (diff-hl--ensure-staging-supported)
   (let* ((line-beg (and beg (line-number-at-pos beg t)))
          (line-end (and end (line-number-at-pos end t)))
-         (file buffer-file-name)
+         (file (diff-hl--buffer-file-name))
          (dest-buffer (get-buffer-create "*diff-hl-stage-some*"))
          (orig-buffer (current-buffer))
          (diff-hl-update-async nil)
@@ -1424,26 +1435,26 @@ The value of this variable is a mode line template as in
             (magit-git-items "diff-tree" "-z" "--name-only" "-r" "HEAD~" "HEAD"))
            (unmodified-states '(up-to-date ignored unregistered)))
       (dolist (buf (buffer-list))
-        (when (and (buffer-local-value 'diff-hl-mode buf)
-                   (not (buffer-modified-p buf))
-                   ;; Solve the "cloned indirect buffer" problem
-                   ;; (diff-hl-mode could be non-nil there, even if
-                   ;; buffer-file-name is nil):
-                   (buffer-file-name buf)
-                   (file-in-directory-p (buffer-file-name buf) topdir)
-                   (file-exists-p (buffer-file-name buf)))
-          (with-current-buffer buf
-            (let* ((file buffer-file-name)
-                   (backend (vc-backend file)))
-              (when backend
-                (cond
-                 ((member file modified-files)
-                  (when (memq (vc-state file) unmodified-states)
-                    (vc-state-refresh file backend))
-                  (diff-hl-update))
-                 ((not (memq (vc-state file backend) unmodified-states))
-                  (vc-state-refresh file backend)
-                  (diff-hl-update)))))))))))
+        (let ((file (diff-hl--buffer-file-name buf)))
+          (when (and (buffer-local-value 'diff-hl-mode buf)
+                     (not (buffer-modified-p buf))
+                     ;; Solve the "cloned indirect buffer" problem
+                     ;; (diff-hl-mode could be non-nil there, even if
+                     ;; buffer-file-name is nil):
+                     file
+                     (file-in-directory-p file topdir)
+                     (file-exists-p file))
+            (with-current-buffer buf
+              (let* ((backend (vc-backend file)))
+                (when backend
+                  (cond
+                   ((member file modified-files)
+                    (when (memq (vc-state file) unmodified-states)
+                      (vc-state-refresh file backend))
+                    (diff-hl-update))
+                   ((not (memq (vc-state file backend) unmodified-states))
+                    (vc-state-refresh file backend)
+                    (diff-hl-update))))))))))))
 
 (defun diff-hl-dir-update ()
   (dolist (pair (if (vc-dir-marked-files)
@@ -1536,7 +1547,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
                     backend
                     (or diff-hl-reference-revision
                         (assoc-default backend diff-hl-head-revision-alist)))
-                   (diff-hl-working-revision buffer-file-name backend)))))
+                   (diff-hl-working-revision (diff-hl--buffer-file-name) backend)))))
            (switches (format "-U %d --strip-trailing-cr" (or context-lines 0))))
       (diff-no-select rev (current-buffer) switches (not (diff-hl--use-async-p))
                       (get-buffer-create dest-buffer))
@@ -1604,13 +1615,14 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
 ;;;###autoload
 (defun turn-on-diff-hl-mode ()
   "Turn on `diff-hl-mode' or `diff-hl-dir-mode' in a buffer if appropriate."
-  (cond
-   (buffer-file-name
-    (unless (and diff-hl-disable-on-remote
-                 (file-remote-p buffer-file-name))
-      (diff-hl-mode 1)))
-   ((eq major-mode 'vc-dir-mode)
-    (diff-hl-dir-mode 1))))
+  (let ((file (diff-hl--buffer-file-name)))
+    (cond
+     (file
+      (unless (and diff-hl-disable-on-remote
+                   (file-remote-p file))
+        (diff-hl-mode 1)))
+     ((eq major-mode 'vc-dir-mode)
+      (diff-hl-dir-mode 1)))))
 
 ;;;###autoload
 (defun diff-hl--global-turn-on ()
