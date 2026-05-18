@@ -129,15 +129,16 @@ Then put the differences inside a special buffer and set the
 point in that buffer to the corresponding line of the original
 buffer."
   (defvar vc-sentinel-movepoint)
-  (let* ((buffer (or (buffer-base-buffer) (current-buffer)))
+  (let* ((buffer (current-buffer))
          (diff-hl-update-async nil)
          (line (line-number-at-pos))
          (dest-buffer diff-hl-show-hunk-diff-buffer-name))
     (with-current-buffer buffer
-      (if (buffer-modified-p)
-          (diff-hl-diff-buffer-with-reference buffer-file-name dest-buffer)
-        (diff-hl-changes-buffer buffer-file-name (vc-backend buffer-file-name)
-                                nil dest-buffer))
+      (let ((file (diff-hl--buffer-file-name)))
+        (if (buffer-modified-p)
+            (diff-hl-diff-buffer-with-reference file dest-buffer)
+          (diff-hl-changes-buffer file (vc-backend file)
+                                  nil dest-buffer)))
       (switch-to-buffer dest-buffer)
       (diff-hl-diff-skip-to line)
       (setq vc-sentinel-movepoint (point)))
@@ -303,7 +304,7 @@ end of the OVERLAY, so posframe/inline is placed below the hunk."
 The backend is determined by `diff-hl-show-hunk-function'."
   (interactive)
 
-  (unless (vc-backend buffer-file-name)
+  (unless (vc-backend (diff-hl--buffer-file-name))
     (user-error "The buffer is not under version control"))
 
   (diff-hl-find-current-hunk)

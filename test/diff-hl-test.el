@@ -50,11 +50,11 @@
     (erase-buffer)
     (insert diff-hl-test-initial-content)
     (save-buffer)
-    (pcase (vc-backend buffer-file-name)
+    (pcase (vc-backend (diff-hl--buffer-file-name))
       (`Git
-       (vc-git-command nil 0 buffer-file-name "reset"))
+       (vc-git-command nil 0 (diff-hl--buffer-file-name) "reset"))
       (`Hg
-       (vc-hg-command nil 0 buffer-file-name "revert")))))
+       (vc-hg-command nil 0 (diff-hl--buffer-file-name) "revert")))))
 
 (defun diff-hl-test-compute-diff-lines ()
   (diff-hl-test-in-source
@@ -160,7 +160,7 @@
     (goto-char (point-min))
     (insert "new line 1\n")
     (save-buffer)
-    (vc-git-command nil 0 buffer-file-name "add")
+    (vc-git-command nil 0 (diff-hl--buffer-file-name) "add")
     (goto-char (point-max))
     (insert "new line 2\n")
     (save-buffer)
@@ -180,19 +180,19 @@
     (goto-char (point-min))
     (insert "new line 1\n")
     (save-buffer)
-    (vc-git-command nil 0 buffer-file-name "add")
+    (vc-git-command nil 0 (diff-hl--buffer-file-name) "add")
     (goto-char (point-max))
     (insert "new line 2\n")
     (let ((diff-hl-show-staged-changes t))
       (should
        (equal (diff-hl-changes-from-buffer
-               (diff-hl-diff-buffer-with-reference buffer-file-name))
+               (diff-hl-diff-buffer-with-reference (diff-hl--buffer-file-name)))
               '((1 1 0 insert)
                 (12 1 0 insert)))))
     (let ((diff-hl-show-staged-changes nil))
       (should
        (equal (diff-hl-changes-from-buffer
-               (diff-hl-diff-buffer-with-reference buffer-file-name))
+               (diff-hl-diff-buffer-with-reference (diff-hl--buffer-file-name)))
               '((12 1 0 insert)))))))
 
 (diff-hl-deftest diff-hl-can-split-away-no-trailing-newline ()
@@ -202,7 +202,7 @@
     (search-backward "}")
     (insert " ")
     (save-buffer)
-    (let ((file buffer-file-name)
+    (let ((file (diff-hl--buffer-file-name))
           (dest-buffer (get-buffer-create " *diff-hl-test*")))
       (diff-hl-diff-buffer-with-reference file dest-buffer nil 3)
       (with-current-buffer dest-buffer
