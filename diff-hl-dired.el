@@ -189,7 +189,10 @@ Call UPDATE-FUNCTION as entries are added."
              (if (version<= "4.2" (vc-hg--program-version))
                  '("--config" "commands.status.relative=1")
                '("re:" "-I" "."))))
-    (vc-run-delayed-success 0
+    (static-if (fboundp 'vc-run-delayed-success)
+        ;; Emacs 31.
+        (vc-run-delayed-success 0
+                                (vc-hg-after-dir-status update-function))
       (vc-hg-after-dir-status update-function)))
    ;; No specialized solution for "list only ignored state", list all.
    ;; If the backend doesn't use several process calls (like Git), the

@@ -34,32 +34,40 @@
 
 (defcustom diff-hl-flydiff-delay 0.3
   "The idle delay in seconds before highlighting is updated."
-  :type 'number)
+  :type 'number
+  :group 'diff-hl-flydiff)
 
-(defvar diff-hl-flydiff-modified-tick nil)
+(defvar-local diff-hl-flydiff-modified-tick nil)
 (defvar diff-hl-flydiff-timer nil)
-(make-variable-buffer-local 'diff-hl-flydiff-modified-tick)
 
 (defun diff-hl-flydiff-changes-buffer (file backend &optional new-rev buffer)
   (setq buffer (or buffer " *diff-hl-diff*"))
-  (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
   (if new-rev
       (diff-hl-with-diff-switches
        (diff-hl-diff-against-reference file backend buffer new-rev))
     (diff-hl-diff-buffer-with-reference file buffer backend)))
 
-(defun diff-hl-flydiff-update ()
-  (unless (or
-           (not diff-hl-mode)
-           (eq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick))
-           (not buffer-file-name)
-           (file-remote-p default-directory)
-           (not (file-exists-p buffer-file-name)))
-    (diff-hl-update)))
+(defun diff-hl-flydiff-update (orig-fun)
+  "Update diff markings if buffer has been modified since last call.
+
+Calls ORIG-FUN only when buffer has been modified since last
+call, buffer exists as a file, and it is not a remote file."
+  (when (and diff-hl-mode
+             (diff-hl-flydiff/modified-p nil)
+             (stringp buffer-file-name)
+             (not (file-remote-p default-directory))
+             (file-exists-p buffer-file-name))
+    (apply orig-fun nil)))
 
 (defun diff-hl-flydiff/modified-p (state)
-  (unless (memq state '(added missing nil))
-    (buffer-modified-p)))
+  "Return t if buffer modified since last call unless given STATE
+is one of `added' or `missing', otherwise nil."
+  (unless (memq state '(added missing))
+    (let ((buffer-state (not (eq diff-hl-flydiff-modified-tick
+                          (buffer-chars-modified-tick)))))
+      (if buffer-state
+          (setq diff-hl-flydiff-modified-tick (buffer-chars-modified-tick)))
+      buffer-state)))
 
 ;;;###autoload
 (define-minor-mode diff-hl-flydiff-mode
@@ -71,15 +79,21 @@ This is a global minor mode.  It alters how `diff-hl-mode' works."
 
   (if diff-hl-flydiff-mode
       (progn
+        ;; Ensure current diff state is shown when mode is enabled.
+        (setq diff-hl-flydiff-modified-tick nil)
+
         (advice-add 'diff-hl-overlay-modified :override #'ignore)
 
         (advice-add 'diff-hl-modified-p :before-until
                     #'diff-hl-flydiff/modified-p)
         (advice-add 'diff-hl-changes-buffer :override
                     #'diff-hl-flydiff-changes-buffer)
+        (advice-add 'diff-hl-update :around
+                    #'diff-hl-flydiff-update)
         (setq diff-hl-flydiff-timer
-              (run-with-idle-timer diff-hl-flydiff-delay t #'diff-hl-flydiff-update)))
+              (run-with-idle-timer diff-hl-flydiff-delay t #'diff-hl-update)))
 
+    (advice-remove 'diff-hl-update #'diff-hl-flydiff-update)
     (advice-remove 'diff-hl-overlay-modified #'ignore)
 
     (advice-remove 'diff-hl-modified-p #'diff-hl-flydiff/modified-p)
