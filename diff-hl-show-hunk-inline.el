@@ -74,6 +74,24 @@ the hunk consist only on added lines, then
 `diff-hl-show-hunk--no-lines-removed-message' it is shown."
   :type 'boolean)
 
+(defface diff-hl-show-hunk-inline-base
+  '((((class color) (min-colors 88) (background light))
+     :foreground "black" :background "gray88" :extend t)
+    (((class color) (min-colors 88) (background dark))
+     :foreground "white" :background "#gray13" :extend t))
+  "Face used for background of shown hunk."
+  :group 'diff-hl-show-hunk-inline)
+
+(defface diff-hl-show-hunk-inline-ul
+  '((((class color) (min-colors 88))
+     :inherit diff-hl-show-hunk-inline-base :underline t))
+  "Face used for background of shown hunk with underline.")
+
+(defface diff-hl-show-hunk-inline-ol
+  '((((class color) (min-colors 88))
+     :inherit diff-hl-show-hunk-inline-base :overline t))
+  "Face used for background of shown hunk with overline.")
+
 (defun diff-hl-show-hunk-inline--splice (list offset length)
   "Compute a sublist of LIST starting at OFFSET, of LENGTH."
   (butlast
@@ -115,7 +133,7 @@ Compute it from some WIDTH, and some optional HEADER text."
          (new-width (- width (length header) (length scroll-indicator)))
          (line (propertize (concat (diff-hl-show-hunk-inline--separator new-width)
                                    header scroll-indicator )
-                           'face '(:underline t))))
+                           'face 'diff-hl-show-hunk-inline-ul)))
     (concat line "\n") ))
 
 (defun diff-hl-show-hunk-inline--compute-footer (width &optional footer)
@@ -136,7 +154,7 @@ Compute it from some WIDTH, and some optional FOOTER text."
                                                 'face '(:underline t)))))
          (line (propertize (concat (diff-hl-show-hunk-inline--separator new-width)
                                    footer scroll-indicator)
-                           'face '(:overline t))))
+                           'face 'diff-hl-show-hunk-inline-ol)))
     (concat blank-line "\n" line)))
 
 (defun diff-hl-show-hunk-inline--separator (width &optional sep)
