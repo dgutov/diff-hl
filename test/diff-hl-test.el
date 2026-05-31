@@ -140,10 +140,15 @@
      (diff-hl-mode 1)
      (diff-hl-update)
 
-     (while (or (process-live-p
-                  (get-buffer-process " *diff-hl* "))
-                (process-live-p
-                  (get-buffer-process " *diff-hl-reference* ")))
+     ;; Diff buffers now have unique, generated names, so wait for any
+     ;; still-running diff-hl process instead of fixed buffer names.
+     (while (let (running)
+              (dolist (p (process-list))
+                (let ((b (process-buffer p)))
+                  (when (and (buffer-live-p b)
+                             (string-prefix-p " *diff-hl" (buffer-name b)))
+                    (setq running t))))
+              running)
        (accept-process-output nil 0.05))
 
      (diff-hl-previous-hunk)

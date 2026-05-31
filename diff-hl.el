@@ -502,7 +502,12 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
          ((and
            (not diff-hl-highlight-reference-function)
            (diff-hl-modified-p state))
-          `((:working . ,(diff-hl-changes-buffer file backend))))
+          ;; Use fresh, unique buffers: with async updates several can be
+          ;; in flight at once, and a shared buffer name would let them
+          ;; clobber each other's output (or get killed mid-flight).
+          `((:working . ,(diff-hl-changes-buffer
+                          file backend nil
+                          (generate-new-buffer-name " *diff-hl* ")))))
          ((or
            diff-hl-reference-revision
            (diff-hl-modified-p state))
@@ -513,9 +518,12 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
                                                (if hide-staged
                                                    'git-index
                                                  (diff-hl-head-revision backend))
-                                               " *diff-hl-reference* ")))
+                                               (generate-new-buffer-name
+                                                " *diff-hl-reference* "))))
                  (diff-hl-reference-revision nil)
-                 (work-changes (diff-hl-changes-buffer file backend)))
+                 (work-changes (diff-hl-changes-buffer
+                                file backend nil
+                                (generate-new-buffer-name " *diff-hl* "))))
             `((:reference . ,ref-changes)
               (:working . ,work-changes))))
          ((eq state 'added)
@@ -743,14 +751,29 @@ Return a list of line overlays used."
               (when (not (or changes ref-changes))
                 (diff-hl--autohide-margin))))))))))
 
+(defun diff-hl--with-resolved-buffer (cb)
+  "Parse the diff in the current buffer, pass the changes to CB, then kill it.
+The buffer is created per-update by `diff-hl-changes', so we own it."
+  (let ((buf (current-buffer)))
+    (unwind-protect
+        (funcall cb (diff-hl-changes-from-buffer buf))
+      (when (buffer-live-p buf)
+        (kill-buffer buf)))))
+
 (defun diff-hl--resolve (value-or-buffer cb)
   (if (listp value-or-buffer)
       (funcall cb value-or-buffer)
+    ;; VALUE-OR-BUFFER is a fresh per-update diff buffer.  It can still be
+    ;; killed out from under us (e.g. the visited buffer is closed
+    ;; mid-update), so guard the access; and since it's ours, kill it when
+    ;; we're done parsing it.
     (static-if (fboundp 'vc-run-delayed-success)
         ;; Emacs 31.
-        (with-current-buffer value-or-buffer
-          (vc-run-delayed-success 1
-            (funcall cb (diff-hl-changes-from-buffer (current-buffer)))))
+        (if (buffer-live-p (get-buffer value-or-buffer))
+            (with-current-buffer value-or-buffer
+              (vc-run-delayed-success 1
+                (diff-hl--with-resolved-buffer cb)))
+          (funcall cb nil))
       (diff-hl--when-done value-or-buffer
                           #'diff-hl-changes-from-buffer
                           cb))))
@@ -762,11 +785,21 @@ Return a list of line overlays used."
      ((or (null proc) (eq (process-status proc) 'exit))
       ;; Make sure we've read the process's output before going further.
       (when proc (accept-process-output proc))
+      (if (buffer-live-p (get-buffer buffer))
+          ;; The buffer is ours (created per-update): parse it, then kill it.
+          (unwind-protect
+              (with-current-buffer buffer
+                (funcall callback (funcall get-value buffer)))
+            (when (get-buffer buffer)
+              (kill-buffer buffer)))
+        ;; It was killed out from under us; keep the chain going.
+        (funcall callback nil)))
+     ;; If the process was deleted, give up but keep the chain going, so
+     ;; the rest of the update (and any sibling buffer's cleanup) proceeds.
+     ((eq (process-status proc) 'signal)
       (when (get-buffer buffer)
-        (with-current-buffer buffer
-          (funcall callback (funcall get-value buffer)))))
-     ;; If process was deleted, we ignore it.
-     ((eq (process-status proc) 'signal))
+        (kill-buffer buffer))
+      (funcall callback nil))
      ;; If a process is running, set the sentinel.
      ((eq (process-status proc) 'run)
       (add-function
