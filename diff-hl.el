@@ -314,14 +314,14 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
      (lambda (value)
        (or (null value) (stringp value))))
 
+(defun diff-hl--target-buffer (buf)
+  "Return the correct buffer for the situation, preferring the base buffer."
+  (or (buffer-base-buffer buf) buf))
+
 (defun diff-hl--buffer-file-name (&optional buffer)
   "Return the file name of the BUFFER or its base buffer.
 BUFFER defaults to the current buffer."
-  (let* ((buffer (or buffer (current-buffer)))
-         (base-buffer (buffer-base-buffer buffer)))
-    (if base-buffer
-        (buffer-file-name base-buffer)
-      (buffer-file-name buffer))))
+  (buffer-file-name (diff-hl--target-buffer (or buffer (current-buffer)))))
 
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
@@ -741,11 +741,10 @@ Return a list of line overlays used."
         (lambda (ref-changes)
           (when (buffer-live-p orig)
             (let ((ref-changes (diff-hl-adjust-changes ref-changes changes))
-                  (base (or (buffer-base-buffer orig) orig)))
+                  (base (diff-hl--target-buffer orig)))
               (dolist (buf (buffer-list))
                 (when (and (buffer-live-p buf)
-                           (or (eq buf base)
-                               (eq (buffer-base-buffer buf) base))
+                           (eq (diff-hl--target-buffer buf) base)
                            (buffer-local-value 'diff-hl-mode buf))
                   (with-current-buffer buf
                     (let (reuse)
