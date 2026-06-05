@@ -1543,6 +1543,7 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
     (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-buffer-with-reference*"))
            (backend (or backend (vc-backend file)))
            (temporary-file-directory diff-hl-temporary-directory)
+           (enable-local-variables nil)
            (rev
             (if (and (eq backend 'Git)
                      (not diff-hl-reference-revision)
