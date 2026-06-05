@@ -1457,7 +1457,7 @@ The value of this variable is a mode line template as in
             (let* ((backend (vc-backend file)))
               (when backend
                 (cond
-                 ((member file modified-files)
+                 ((member (file-relative-name file topdir) modified-files)
                   (when (memq (vc-state file) unmodified-states)
                     (vc-state-refresh file backend))
                   (diff-hl-update))
