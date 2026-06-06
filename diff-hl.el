@@ -1538,7 +1538,8 @@ The diffs are computed in the buffer DEST-BUFFER. This requires
 the `diff-program' to be in your `exec-path'.
 CONTEXT-LINES is the size of the unified diff context, defaults to 0."
   (require 'diff)
-  (vc-ensure-vc-buffer)
+  (unless (or backend (vc-backend file))
+    (error "File %s is not under version control" file))
   (save-current-buffer
     (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-buffer-with-reference*"))
            (backend (or backend (vc-backend file)))
