@@ -20,6 +20,11 @@ test:
 compile:
 	$(EMACS) -batch -L . -f batch-byte-compile $(SOURCES)
 
+compile-warn:
+	${EMACS} -Q --batch -L . \
+	--eval "(setq byte-compile-error-on-warn t)" \
+	-f batch-byte-compile diff-hl*.el test/*.el
+
 clean:
 	$(RM) $(ARTIFACTS)
 
