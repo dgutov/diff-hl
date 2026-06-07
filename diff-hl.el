@@ -6,7 +6,7 @@
 ;; URL:      https://github.com/dgutov/diff-hl
 ;; Keywords: vc, diff
 ;; Version:  1.10.0
-;; Package-Requires: ((cl-lib "0.2") (emacs "26.1"))
+;; Package-Requires: ((cl-lib "0.2") (emacs "27.1"))
 
 ;; This file is part of GNU Emacs.
 
@@ -314,14 +314,15 @@ It can be a relative expression as well, such as \"HEAD^\" with Git, or
      (lambda (value)
        (or (null value) (stringp value))))
 
-(defun diff-hl--target-buffer (buf)
+(defun diff-hl--target-buffer (&optional buf)
   "Return the correct buffer for the situation, preferring the base buffer."
-  (or (buffer-base-buffer buf) buf))
+  (let ((buf (or buf (current-buffer))))
+    (or (buffer-base-buffer buf) buf)))
 
 (defun diff-hl--buffer-file-name (&optional buffer)
   "Return the file name of the BUFFER or its base buffer.
 BUFFER defaults to the current buffer."
-  (buffer-file-name (diff-hl--target-buffer (or buffer (current-buffer)))))
+  (buffer-file-name (diff-hl--target-buffer buffer)))
 
 (defun diff-hl-define-bitmaps ()
   (let* ((scale (if (and (boundp 'text-scale-mode-amount)
@@ -859,7 +860,8 @@ Return a list of line overlays used."
 
 (defun diff-hl-diff-goto-hunk-1 (historic rev1)
   (defvar vc-sentinel-movepoint)
-  (vc-buffer-sync)
+  (with-current-buffer (diff-hl--target-buffer)
+    (vc-buffer-sync))
   (let* ((line (line-number-at-pos))
          (buffer (current-buffer))
          rev2)
@@ -1018,7 +1020,8 @@ that file, if it's present."
 (defun diff-hl-revert-hunk-1 ()
   (save-restriction
     (widen)
-    (vc-buffer-sync)
+    (with-current-buffer (diff-hl--target-buffer)
+      (vc-buffer-sync))
     (let* ((diff-buffer (get-buffer-create
                          (generate-new-buffer-name "*diff-hl-revert*")))
            (buffer (current-buffer))
@@ -1538,11 +1541,13 @@ The diffs are computed in the buffer DEST-BUFFER. This requires
 the `diff-program' to be in your `exec-path'.
 CONTEXT-LINES is the size of the unified diff context, defaults to 0."
   (require 'diff)
-  (unless (or backend (vc-backend file))
+  (unless file
+    (error "Buffer %s is not visiting a file" (buffer-name)))
+  (setq backend (or backend (vc-backend file)))
+  (unless backend
     (error "File %s is not under version control" file))
   (save-current-buffer
     (let* ((dest-buffer (or dest-buffer "*diff-hl-diff-buffer-with-reference*"))
-           (backend (or backend (vc-backend file)))
            (temporary-file-directory diff-hl-temporary-directory)
            (enable-local-variables nil)
            (rev
