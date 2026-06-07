@@ -916,7 +916,9 @@ buffer will show the position corresponding to its current line."
                             (file-relative-name file rootdir))))
         (error "Directory is not version controlled"))
       (setq fileset (or fileset (vc-deduce-fileset)))
-      (vc-buffer-sync-fileset fileset t)
+      (static-if (< emacs-major-version 28)
+          (vc-maybe-buffer-sync)
+        (vc-buffer-sync-fileset fileset t))
       (let* ((line (line-number-at-pos)))
         (vc-diff-internal
          (if (boundp 'vc-allow-async-diff)
@@ -1763,6 +1765,7 @@ effect."
 
 ;; Commands below will only work with recent enough project.el.
 (declare-function project-name "project")
+(declare-function project-buffers "project")
 
 (defun diff-hl-set-reference-rev-in-project-internal (rev proj)
   (let* ((root (diff-hl--project-root proj)))
