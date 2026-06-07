@@ -190,6 +190,7 @@ Call UPDATE-FUNCTION as entries are added."
                                    :update-function update-function)))
    ((eq backend 'Hg)
     (let ((default-directory dir))
+      (erase-buffer)
       (apply #'vc-hg-command (current-buffer) 'async files
              "status" "-i"
              (if (version<= "4.2" (vc-hg--program-version))
