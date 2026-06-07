@@ -917,7 +917,7 @@ buffer will show the position corresponding to its current line."
         (error "Directory is not version controlled"))
       (setq fileset (or fileset (vc-deduce-fileset)))
       (static-if (< emacs-major-version 28)
-          (vc-maybe-buffer-sync)
+          (when buffer-file-name (vc-buffer-sync t))
         (vc-buffer-sync-fileset fileset t))
       (let* ((line (line-number-at-pos)))
         (vc-diff-internal
