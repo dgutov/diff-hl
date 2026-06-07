@@ -646,7 +646,7 @@ contents as they are (or would be) after applying the changes in NEW."
       ;; TODO: debounce if a thread is already running.
       (let ((buf (current-buffer))
             (temp-buffer
-             (if (< emacs-major-version 28)
+             (static-if (< emacs-major-version 28)
                  (generate-new-buffer " *temp*")
                (generate-new-buffer " *temp*" t))))
         ;; Switch buffer temporarily, to "unlock" it for other threads.
@@ -1760,6 +1760,9 @@ effect."
   (expand-file-name (static-if (>= emacs-major-version 28)
                         (project-root proj)
                       (project-roots proj))))
+
+;; Commands below will only work with recent enough project.el.
+(declare-function project-name "project")
 
 (defun diff-hl-set-reference-rev-in-project-internal (rev proj)
   (let* ((root (diff-hl--project-root proj)))
