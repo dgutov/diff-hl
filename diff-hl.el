@@ -1037,12 +1037,15 @@ that file, if it's present."
           (progn
             (vc-setup-buffer diff-buffer)
             (with-current-buffer buffer
-              ;; Ensure that the buffer-local variable value is applied.
               (diff-hl-diff-against-reference file backend diff-buffer))
-            (diff-mode)
-            (setq-local diff-vc-backend backend)
-            (setq-local diff-vc-revisions (list diff-hl-reference-revision nil))
-            (setq buffer-read-only t)
+            (with-current-buffer diff-buffer
+              ;; Prevent diff-mode from registering track-changes for this
+              ;; temporary buffer
+              (cl-letf (((symbol-function 'track-changes-register) #'ignore))
+                (diff-mode))
+              (setq-local diff-vc-backend backend)
+              (setq-local diff-vc-revisions (list diff-hl-reference-revision nil))
+              (setq buffer-read-only t))
             (pop-to-buffer diff-buffer)
             (vc-run-delayed
               (vc-diff-finish diff-buffer nil)
