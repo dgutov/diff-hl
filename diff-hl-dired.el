@@ -190,13 +190,16 @@ Call UPDATE-FUNCTION as entries are added."
                                    :update-function update-function)))
    ((eq backend 'Hg)
     (let ((default-directory dir))
-      (apply #'vc-hg-command '(t nil) 'async files
+      (apply #'vc-hg-command (current-buffer) 'async files
              "status" "-i"
              (if (version<= "4.2" (vc-hg--program-version))
                  '("--config" "commands.status.relative=1")
                '("re:" "-I" "."))))
-    (vc-run-delayed-success 0
-      (vc-hg-after-dir-status update-function)))
+    (static-if (fboundp 'vc-run-delayed-success)
+        (vc-run-delayed-success 0
+          (vc-hg-after-dir-status update-function))
+      (vc-run-delayed
+        (vc-hg-after-dir-status update-function))))
    ;; No specialized solution for "list only ignored state", list all.
    ;; If the backend doesn't use several process calls (like Git), the
    ;; difference should be trivial.
