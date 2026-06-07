@@ -1758,7 +1758,7 @@ effect."
       (message "Showing changes against %s (project %s)" rev name)))))
 
 (defun diff-hl--project-root (proj)
-  ;; Emacs 26 and 27 don't have `project-root'.
+  ;; Emacs 27 does not have `project-root'.
   (expand-file-name (static-if (>= emacs-major-version 28)
                         (project-root proj)
                       (project-roots proj))))

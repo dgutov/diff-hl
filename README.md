@@ -66,7 +66,7 @@ diff-hl-margin-mode
 Requirements
 =====
 
-Emacs 26.1+.
+Emacs 27.1+.
 
 Notes
 =====
