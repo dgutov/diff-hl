@@ -175,6 +175,12 @@ Call UPDATE-FUNCTION as entries are added."
        res))
    dired-subdir-alist))
 
+(declare-function vc-git-dir-status-goto-stage "vc-git")
+(declare-function make-vc-git-dir-status-state "vc-git")
+(declare-function vc-hg-command "vc-hg")
+(declare-function vc-hg--program-version "vc-hg")
+(declare-function vc-hg-after-dir-status "vc-hg")
+
 (defun diff-hl-dir-status-ignored-files (backend dir files update-function)
   (cond
    ((eq backend 'Git)
