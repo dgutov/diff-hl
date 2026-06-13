@@ -61,6 +61,14 @@ corresponding to the clicked line in the original buffer."
           (const :tag "Show inline" diff-hl-show-hunk-inline)
           (const :tag "Show using posframe" diff-hl-show-hunk-posframe)))
 
+(defface diff-hl-show-hunk-bg
+  '((((class color) (min-colors 88) (background light))
+     :background "old lace" :extend t)
+    (((class color) (min-colors 88) (background dark))
+     :background "#555533" :extend t))
+  "Face used for background of shown hunk."
+  :group 'diff-hl-show-hunk)
+
 (defvar diff-hl-show-hunk-mouse-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "<left-margin> <mouse-1>") 'diff-hl-show-hunk--click)
@@ -213,7 +221,9 @@ Returns a list with the buffer and the line number of the clicked line."
   (interactive "e")
   ;; Go the click's position.
   (posn-set-point (event-start event))
-  (diff-hl-show-hunk))
+  (if (and diff-hl-show-hunk--original-window (window-live-p diff-hl-show-hunk--original-window))
+      (diff-hl-show-hunk-hide)
+    (diff-hl-show-hunk)))
 
 (defvar diff-hl-show-hunk-map
   (let ((map (make-sparse-keymap)))
@@ -318,6 +328,7 @@ The backend is determined by `diff-hl-show-hunk-function'."
             (end (overlay-end overlay))
             (type (overlay-get overlay 'diff-hl-hunk-type)))
         (setq diff-hl-show-hunk--original-overlay (make-overlay start end))
+        (overlay-put diff-hl-show-hunk--original-overlay 'face 'diff-hl-show-hunk-bg)
         (overlay-put diff-hl-show-hunk--original-overlay 'diff-hl-hunk-type type)))
 
     (unless overlay
