@@ -132,13 +132,15 @@ You probably shouldn't use this function directly."
                       #'diff-hl-highlight-on-margin)
           (setq-local diff-hl-highlight-reference-function
                       #'diff-hl-highlight-on-margin-flat)
-          (setq-local diff-hl-margin-old-width (symbol-value width-var))
-          (set width-var 1))
+          (when (zerop (symbol-value width-var))
+            (setq-local diff-hl-margin-old-width (symbol-value width-var))
+            (set width-var 1)))
       (when diff-hl-margin-old-highlight-function
         (setq diff-hl-highlight-function diff-hl-margin-old-highlight-function
               diff-hl-highlight-reference-function diff-hl-margin-old-highlight-ref-function
               diff-hl-margin-old-highlight-function nil))
-      (set width-var diff-hl-margin-old-width)
+      (when diff-hl-margin-old-width
+        (set width-var diff-hl-margin-old-width))
       (kill-local-variable 'diff-hl-margin-old-width)))
   (dolist (win (get-buffer-window-list))
     (set-window-buffer win (current-buffer))))
