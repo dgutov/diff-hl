@@ -74,6 +74,13 @@ the hunk consist only on added lines, then
 `diff-hl-show-hunk--no-lines-removed-message' it is shown."
   :type 'boolean)
 
+(defcustom diff-hl-show-hunk-inline-scroll-indicators '(" ⬆ " . " ⬇ ")
+  "Strings used to indicate hidden inline popup content.
+The car is used for hidden content above the popup; the cdr is used for
+hidden content below it.  Each string includes any surrounding padding."
+  :type '(cons (string :tag "Above")
+               (string :tag "Below")))
+
 (defun diff-hl-show-hunk-inline--splice (list offset length)
   "Compute a sublist of LIST starting at OFFSET, of LENGTH."
   (butlast
@@ -112,7 +119,11 @@ Compute it from LINES starting at INDEX with a WINDOW-SIZE."
 (defun diff-hl-show-hunk-inline--compute-header (width &optional header)
   "Compute the header of the popup.
 Compute it from some WIDTH, and some optional HEADER text."
-  (let* ((scroll-indicator (if (eq diff-hl-show-hunk-inline--current-index 0) "   " " ⬆ "))
+  (let* ((above-indicator (car diff-hl-show-hunk-inline-scroll-indicators))
+         (scroll-indicator
+          (if (eq diff-hl-show-hunk-inline--current-index 0)
+              (make-string (length above-indicator) ?\s)
+            above-indicator))
          (header (or header ""))
          (new-width (- width (length header) (length scroll-indicator)))
          (header (if (< new-width 0) "" header))
@@ -125,11 +136,13 @@ Compute it from some WIDTH, and some optional HEADER text."
 (defun diff-hl-show-hunk-inline--compute-footer (width &optional footer)
   "Compute the header of the popup.
 Compute it from some WIDTH, and some optional FOOTER text."
-  (let* ((scroll-indicator (if (>= diff-hl-show-hunk-inline--current-index
-                                   (- (length diff-hl-show-hunk-inline--current-lines)
-                                      diff-hl-show-hunk-inline--height))
-                               "   "
-                             " ⬇ "))
+  (let* ((below-indicator (cdr diff-hl-show-hunk-inline-scroll-indicators))
+         (scroll-indicator
+          (if (>= diff-hl-show-hunk-inline--current-index
+                  (- (length diff-hl-show-hunk-inline--current-lines)
+                     diff-hl-show-hunk-inline--height))
+              (make-string (length below-indicator) ?\s)
+            below-indicator))
          (footer (or footer ""))
          (new-width (- width (length footer) (length scroll-indicator)))
          (footer (if (< new-width 0) "" footer))
