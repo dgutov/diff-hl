@@ -1582,7 +1582,8 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
       (goto-char (point-min))
       (buffer-substring-no-properties (point) (line-end-position))))
    ((eq backend 'JJ)
-    (car (last (vc-jj--process-lines "log" "--no-graph"
+    (car (last (vc-jj--process-lines nil
+                                     "log" "--no-graph"
                                      "-r" revision
                                      "-T" "change_id" "-n" "1"))))
    (t
