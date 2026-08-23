@@ -168,12 +168,14 @@
       (should
        (null
         (assoc-default :reference (diff-hl-changes)))))
-    (let* ((diff-hl-show-staged-changes nil)
-           (res-buf (assoc-default :reference (diff-hl-changes))))
-      (should
-       (equal
-        (diff-hl-changes-from-buffer res-buf)
-        '((1 1 0 insert)))))))
+    (dolist (reference '(nil "HEAD"))
+      (let* ((diff-hl-reference-revision reference)
+             (diff-hl-show-staged-changes nil)
+             (res-buf (assoc-default :reference (diff-hl-changes))))
+        (should
+         (equal
+          (diff-hl-changes-from-buffer res-buf)
+          '((1 1 0 insert))))))))
 
 (diff-hl-deftest diff-hl-flydiff-can-ignore-staged-changes ()
   (diff-hl-test-in-source
@@ -194,6 +196,41 @@
        (equal (diff-hl-changes-from-buffer
                (diff-hl-diff-buffer-with-reference (diff-hl--buffer-file-name)))
               '((12 1 0 insert)))))))
+
+(ert-deftest diff-hl-can-ignore-staged-changes-in-unborn-repository ()
+  (let* ((directory (make-temp-file "diff-hl-unborn-" t))
+         (default-directory directory)
+         (file (expand-file-name "tracked" directory))
+         buffer)
+    (unwind-protect
+        (progn
+          (vc-git-command nil 0 nil "init")
+          (with-temp-file file
+            (insert "staged\n"))
+          (vc-git-command nil 0 file "add")
+          (with-temp-file file
+            (insert "staged\nworking\n"))
+          (setq buffer (find-file-noselect file))
+          (with-current-buffer buffer
+            (dolist (async '(t nil))
+              (let* ((diff-hl-highlight-reference-function #'ignore)
+                     (diff-hl-show-staged-changes nil)
+                     (diff-hl-update-async async)
+                     (changes (diff-hl-changes))
+                     (reference (assoc-default :reference changes))
+                     (working (assoc-default :working changes)))
+                (while (or (process-live-p (get-buffer-process reference))
+                           (process-live-p (get-buffer-process working)))
+                  (accept-process-output nil 0.05))
+                (should (equal (diff-hl-changes-from-buffer reference)
+                               '((1 1 0 insert))))
+                (should (equal (diff-hl-changes-from-buffer working)
+                               '((2 1 0 insert))))))))
+      (when (buffer-live-p buffer)
+        (with-current-buffer buffer
+          (set-buffer-modified-p nil))
+        (kill-buffer buffer))
+      (delete-directory directory t))))
 
 (diff-hl-deftest diff-hl-can-split-away-no-trailing-newline ()
   (diff-hl-test-in-source
