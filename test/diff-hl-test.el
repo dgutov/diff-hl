@@ -79,6 +79,15 @@
        (diff-hl-test-teardown))))
 (put 'diff-hl-deftest 'lisp-indent-function 'defun)
 
+(ert-deftest diff-hl-update-once-schedules-per-buffer ()
+  (let ((diff-hl-timer nil)
+        (calls 0))
+    (cl-letf (((symbol-function 'run-with-idle-timer)
+               (lambda (&rest _) (cl-incf calls))))
+      (with-temp-buffer (diff-hl-update-once))
+      (with-temp-buffer (diff-hl-update-once)))
+    (should (= calls 2))))
+
 (diff-hl-deftest diff-hl-insert ()
   (diff-hl-test-in-source
     (goto-char (point-max))
