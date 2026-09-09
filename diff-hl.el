@@ -639,6 +639,7 @@ contents as they are (or would be) after applying the changes in NEW."
                                           default-directory))))
 
 (defvar-local diff-hl-timer nil)
+(put 'diff-hl-timer 'permanent-local t)
 
 (defun diff-hl-update ()
   "Updates the diff-hl overlay."
