@@ -638,7 +638,7 @@ contents as they are (or would be) after applying the changes in NEW."
         (run-hook-with-args-until-success 'diff-hl-async-inhibit-functions
                                           default-directory))))
 
-(defvar diff-hl-timer nil)
+(defvar-local diff-hl-timer nil)
 
 (defun diff-hl-update ()
   "Updates the diff-hl overlay."
