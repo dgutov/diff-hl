@@ -448,6 +448,7 @@ BUFFER defaults to the current buffer."
 
 (declare-function vc-git-command "vc-git")
 (declare-function vc-git--rev-parse "vc-git")
+(declare-function vc-git--empty-db-p "vc-git")
 (declare-function vc-hg-command "vc-hg")
 (declare-function vc-bzr-command "vc-bzr")
 (declare-function vc-find-revision-no-save "vc")
@@ -484,6 +485,8 @@ BUFFER defaults to the current buffer."
             (vc-switches 'git 'diff)
             (list "-p" "--cached"
                   (or diff-hl-reference-revision
+                      (if (vc-git--empty-db-p)
+                          vc-git--empty-tree)
                       (diff-hl-head-revision backend))
                   "--"))))
    (t
