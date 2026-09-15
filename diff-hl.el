@@ -476,16 +476,18 @@ BUFFER defaults to the current buffer."
            "diff-files"
            (cons "-p" (vc-switches 'git 'diff))))
    ((eq new-rev 'git-index)
+    ;; With no revision, `git diff --cached' uses HEAD when it exists and
+    ;; the empty tree on an unborn branch.
     (apply #'vc-git-command buffer
            (if (diff-hl--use-async-p) 'async 1)
            (list file)
-           "diff-index"
+           "diff"
            (append
             (vc-switches 'git 'diff)
-            (list "-p" "--cached"
-                  (or diff-hl-reference-revision
-                      (diff-hl-head-revision backend))
-                  "--"))))
+            (list "-p" "--cached")
+            (when diff-hl-reference-revision
+              (list diff-hl-reference-revision))
+            (list "--"))))
    (t
     (condition-case err
         (vc-call-backend backend 'diff (list file)
