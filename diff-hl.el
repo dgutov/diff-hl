@@ -467,6 +467,8 @@ BUFFER defaults to the current buffer."
   (diff-hl-with-diff-switches
    (diff-hl-diff-against-reference file backend (or bufname " *diff-hl* ") new-rev)))
 
+(defconst diff-hl--git-empty-tree "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
+
 (defun diff-hl-diff-against-reference (file backend buffer &optional new-rev)
   (cond
    ((and (not new-rev)
@@ -486,7 +488,7 @@ BUFFER defaults to the current buffer."
             (list "-p" "--cached"
                   (or diff-hl-reference-revision
                       (if (vc-git--empty-db-p)
-                          vc-git--empty-tree)
+                          diff-hl--git-empty-tree)
                       (diff-hl-head-revision backend))
                   "--"))))
    (t
@@ -500,7 +502,7 @@ BUFFER defaults to the current buffer."
        ;; https://github.com/dgutov/diff-hl/issues/117
        (when (string-match-p "\\`Failed (status 128)" (error-message-string err))
          (vc-call-backend backend 'diff (list file)
-                          "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+                          diff-hl--git-empty-tree
                           nil
                           buffer
                           (diff-hl--use-async-p)))))))
