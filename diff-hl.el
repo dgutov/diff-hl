@@ -290,7 +290,7 @@ current testing shows it doesn't work reliably over Tramp."
 ;; Threads are not reliable with remote files, yet.
 (defcustom diff-hl-async-inhibit-functions (list #'diff-hl-with-editor-p
                                                  #'file-remote-p)
-  "Functions to call to check whether asychronous method should be disabled.
+  "Functions to call to check whether asynchronous method should be disabled.
 
 When `diff-hl-update-async' is non-nil, these functions are called in turn
 and passed the value `default-directory'.
