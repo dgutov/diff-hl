@@ -1544,7 +1544,8 @@ The value of this variable is a mode line template as in
 If MANUAL is non-nil it means that a name for backups created by
 the user should be returned."
   (let* ((auto-save-file-name-transforms
-          `((".*" ,temporary-file-directory t)))
+          `((".*" ,temporary-file-directory
+             ,(if (>= emacs-major-version 28) 'sha1 t))))
          (buffer-file-name file))
     (expand-file-name
      (concat (make-auto-save-file-name)

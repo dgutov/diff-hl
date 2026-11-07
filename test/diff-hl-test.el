@@ -88,6 +88,13 @@
       (with-temp-buffer (diff-hl-update-once)))
     (should (= calls 2))))
 
+(ert-deftest diff-hl-make-temp-file-name-fits-name-max ()
+  (skip-unless (>= emacs-major-version 28))
+  (let ((file (concat "/" (make-string 300 ?a) "/foo.el")))
+    (should (<= (string-bytes (file-name-nondirectory
+                               (diff-hl-make-temp-file-name file "HEAD")))
+                255))))
+
 (diff-hl-deftest diff-hl-insert ()
   (diff-hl-test-in-source
     (goto-char (point-max))
