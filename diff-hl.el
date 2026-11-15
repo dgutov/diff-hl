@@ -1173,6 +1173,36 @@ its end position."
            when (overlay-get o 'diff-hl-hunk)
            return o))
 
+(defun diff-hl--annotate ()
+  "Annotate the current file with `vc-annotate', starting at the current line."
+  (interactive)
+  (let ((file (or buffer-file-name (user-error "Buffer is not visiting a file"))))
+    (vc-annotate file (vc-working-revision file) nil nil nil (vc-backend file))))
+
+(defconst diff-hl-menu-actions
+  '(("Annotate" diff-hl--annotate nil)
+    ("Show old state" diff-hl-show-hunk t)
+    ("Revert change" diff-hl-revert-hunk t))
+  "Context menu actions as (LABEL COMMAND HUNK-ONLY), in display order.
+HUNK-ONLY actions are greyed out unless the line is part of a hunk.")
+
+(defun diff-hl-fringe-menu (event)
+  "Pop up a context menu for the line clicked in the fringe at EVENT."
+  (interactive "e")
+  (posn-set-point (event-start event))
+  (let* ((pos (point))
+         (in-hunk (and (diff-hl-hunk-overlay-at pos) t))
+         (menu (make-sparse-keymap "Hunk")))
+    (pcase-dolist (`(,label ,command ,hunk-only) diff-hl-menu-actions)
+      (define-key-after menu (vector command)
+        `(menu-item ,label
+                    ,(lambda ()
+                       (interactive)
+                       (goto-char pos)
+                       (call-interactively command))
+                    :enable ,(or in-hunk (not hunk-only)))))
+    (popup-menu menu)))
+
 (defun diff-hl-search-next-hunk (&optional backward point)
   "Search the next hunk in the current buffer, or previous if BACKWARD."
   (save-excursion
@@ -1404,6 +1434,8 @@ The value of this variable is a mode line template as in
   "Toggle VC diff highlighting."
   :lighter diff-hl-lighter
   :keymap `(([remap vc-diff] . diff-hl-diff-goto-hunk)
+            ([left-fringe mouse-3] . diff-hl-fringe-menu)
+            ([right-fringe mouse-3] . diff-hl-fringe-menu)
             (,diff-hl-command-prefix . diff-hl-command-map))
   (if diff-hl-mode
       (progn
