@@ -1644,10 +1644,16 @@ CONTEXT-LINES is the size of the unified diff context, defaults to 0."
       (goto-char (point-min))
       (buffer-substring-no-properties (point) (line-end-position))))
    ((eq backend 'JJ)
-    (car (last (vc-jj--process-lines nil
-                                     "log" "--no-graph"
-                                     "-r" revision
-                                     "-T" "commit_id" "-n" "1"))))
+    (let ((jj-args '("log" "--no-graph"
+                     "-r" revision
+                     "-T" "commit_id" "-n" "1")))
+      (car (last
+            (if (> (car (func-arity 'vc-jj--process-lines))
+                   0)
+                ;; unreleased yet
+                (apply #'vc-jj--process-lines nil jj-args)
+              ;; version 0.5
+              (apply #'vc-jj--process-lines jj-args))))))
    (t
     revision)))
 
