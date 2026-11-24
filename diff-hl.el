@@ -1145,8 +1145,12 @@ its end position."
     (save-excursion
       (while (looking-at "[-+\\]") (forward-line 1))
       (dotimes (_i max-context)
-        (unless (looking-at "@\\|[-+]")
+        ;; get extra context lines
+        (when (looking-at " ")
           (forward-line 1)))
+      ;; go past \ No newline at end of file
+      (when (looking-at "\\\\")
+        (forward-line 1))
       (setq end-marker (point-marker))
       (unless (or (eobp)
                   (looking-at "@"))
